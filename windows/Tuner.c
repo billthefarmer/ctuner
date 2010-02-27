@@ -39,19 +39,9 @@
 #define OCTAVE 12
 #define MIN 0.5
 
-// Global handles
+// Global handle
 
 HINSTANCE hInst;
-
-HWND hWnd;
-HWND volume;
-HWND adjust;
-HWND status;
-HWND minus;
-HWND plus;
-HWND edit;
-
-BOOL trigger;
 
 // Tool ids
 
@@ -65,11 +55,16 @@ enum
      MINUS_ID,
      VOLUME_ID,
      STATUS_ID,
+     SLIDER_ID,
      REFERENCE_ID};
+
+// FFT direction
 
 enum
     {FORWARD =  1,
      REVERSE = -1};
+
+// Wave in values
 
 enum
     {SAMPLE_RATE = 11025L,
@@ -77,15 +72,21 @@ enum
      BLOCK_ALIGN = 2,
      CHANNELS = 1};
 
+// Audio processing values
+
 enum
     {OVERSAMPLE = 4,
      SAMPLES = 4096,
      STEP = (SAMPLES / OVERSAMPLE)};
 
+// Tuner reference values
+
 enum
     {A5_REFNCE = 440,
      A5_OFFSET = 60,
      C8_OFFSET = 99};
+
+// Slider values
 
 enum
     {MAX_VOL  = 100,
@@ -95,17 +96,50 @@ enum
      MAX_REF  = 4500,
      REF_REF  = 4400,
      MIN_REF  = 4300,
-     STEP_REF = 10};
+     STEP_REF = 10,
+
+     MAX_METER = 200,
+     REF_METER = 100,
+     MIN_METER = 0};
+
+// Timer values
 
 enum
     {STROBE_DELAY = 100,
      TIMER_DELAY = 10 * 1000};
+
+// Window size
 
 enum
     {WIDTH  = 320,
      HEIGHT = 406};
 
 // Global data
+
+typedef struct
+{
+    double re;
+    double im;
+} COMPLEX, *COMPLEXP;
+
+typedef struct
+{
+    HWND hwnd;
+} TOOL, *TOOLP;
+
+TOOL window;
+TOOL status;
+TOOL edit;
+
+typedef struct
+{
+    HWND hwnd;
+    TOOLINFO info;
+} TOOLTIP, *TOOLTIPP;
+
+TOOLTIP tooltip;
+
+TOOL volume;
 
 typedef struct
 {
@@ -120,6 +154,8 @@ typedef struct
 {
     HWND hwnd;
     UINT length;
+    BOOL zoom;
+    UINT k;
     double *data;
 } SPECTRUM, *SPECTRUMP;
 
@@ -137,10 +173,19 @@ typedef struct
 
 DISPLAY display;
 
+TOOL adjust;
+
+struct
+{
+    TOOL plus;
+    TOOL minus;
+} button;
+
 typedef struct
 {
     HWND hwnd;
     double c;
+    TOOL slider;
 } METER, *METERP;
 
 METER meter;
@@ -149,7 +194,7 @@ typedef struct
 {
     HWND hwnd;
     double c;
-    BOOL flag;
+    BOOL enable;
     HANDLE timer;
 } STROBE, STROBEP;
 
@@ -163,6 +208,7 @@ typedef struct
     HWAVEIN hwi;
     HANDLE timer;
     HANDLE thread;
+    BOOL trigger;
     double reference;
 } AUDIO, *AUDIOP;
 
@@ -194,15 +240,18 @@ BOOL DrawMeter(HDC, RECT);
 BOOL DrawMinus(HDC, RECT, UINT);
 BOOL DrawPlus(HDC, RECT, UINT);
 BOOL PlusClicked(WPARAM, LPARAM);
-BOOL ScopeClicked(WPARAM, LPARAM);
+BOOL DisplayClicked(WPARAM, LPARAM);
+BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL MinusClicked(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 DWORD WINAPI AudioThread(LPVOID);
+VOID WaveInData(WPARAM, LPARAM);
+VOID UpdateMeter(METERP);
 VOID CALLBACK StrobeCallback(PVOID, BOOL);
 VOID CALLBACK TimerCallback(PVOID, BOOL);
-VOID complexToComplex(int, int, double[], double[]);
+VOID complexToComplex(int, int, COMPLEXP);
 
 // Application entry point.
 
@@ -228,7 +277,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
     // Create the main window.
 
-    hWnd =
+    window.hwnd =
 	CreateWindow(WCLASS, "Tuner",
 		     WS_OVERLAPPED | WS_MINIMIZEBOX |
 		     WS_SYSMENU,
@@ -239,14 +288,14 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // If the main window cannot be created, terminate
     // the application.
 
-    if (!hWnd)
+    if (!window.hwnd)
 	return FALSE;
 
     // Show the window and send a WM_PAINT message to the window
     // procedure.
 
-    ShowWindow(hWnd, nCmdShow);
-    UpdateWindow(hWnd);
+    ShowWindow(window.hwnd, nCmdShow);
+    UpdateWindow(window.hwnd);
 
     // Process messages
 
@@ -329,7 +378,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Create volume slider
 
-	volume =
+	volume.hwnd =
 	    CreateWindow(TRACKBAR_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 TBS_VERT | TBS_NOTICKS,
@@ -338,8 +387,33 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Set the slider range
 
-	SendMessage(volume, TBM_SETRANGE, TRUE, MAKELONG(MIN_VOL, MAX_VOL));
-	SendMessage(volume, TBM_SETPAGESIZE, 0, STEP_VOL);
+	SendMessage(volume.hwnd, TBM_SETRANGE, TRUE,
+		    MAKELONG(MIN_VOL, MAX_VOL));
+	SendMessage(volume.hwnd, TBM_SETPAGESIZE, 0, STEP_VOL);
+
+	// Create tooltip
+
+	tooltip.hwnd =
+	    CreateWindow(TOOLTIPS_CLASS, NULL,
+			 WS_POPUP | TTS_ALWAYSTIP,
+			 CW_USEDEFAULT, CW_USEDEFAULT,
+			 CW_USEDEFAULT, CW_USEDEFAULT,
+			 hWnd, NULL, hInst, NULL);
+
+	SetWindowPos(tooltip.hwnd, HWND_TOPMOST, 0, 0, 0, 0,
+		     SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+
+	// Add volume to tooltip
+
+	tooltip.info.cbSize = sizeof(tooltip.info);
+	tooltip.info.hwnd = hWnd;
+	tooltip.info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+
+	tooltip.info.uId = (UINT_PTR)volume.hwnd;
+	tooltip.info.lpszText = "Microphone volume";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
 
 	// Create scope display
 
@@ -350,6 +424,14 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			 40, 8, width - 48, 32, hWnd,
 			 (HMENU)SCOPE_ID, hInst, NULL);
 
+	// Add scope to tooltip
+
+	tooltip.info.uId = (UINT_PTR)scope.hwnd;
+	tooltip.info.lpszText = "Scope";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create spectrum display
 
 	spectrum.hwnd =
@@ -358,6 +440,14 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			 SS_NOTIFY | SS_OWNERDRAW,
 			 40, 48, width - 48, 32, hWnd,
 			 (HMENU)SPECTRUM_ID, hInst, NULL);
+
+	// Add spectrum to tooltip
+
+	tooltip.info.uId = (UINT_PTR)spectrum.hwnd;
+	tooltip.info.lpszText = "Spectrum, click to zoom";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
 
 	// Create display
 
@@ -368,36 +458,69 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			 8, 88, width - 16, 108, hWnd,
 			 (HMENU)DISPLAY_ID, hInst, NULL);
 
+	// Add display to tooltip
+
+	tooltip.info.uId = (UINT_PTR)display.hwnd;
+	tooltip.info.lpszText = "Display";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create minus button
 
-	minus =
+	button.minus.hwnd =
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_OWNERDRAW,
 			 8, 206, 16, 16, hWnd,
 			 (HMENU)MINUS_ID, hInst, NULL);
 
+	// Add minus button to tooltip
+
+	tooltip.info.uId = (UINT_PTR)button.minus.hwnd;
+	tooltip.info.lpszText = "Reference frequency";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create reference slider
 
-	adjust =
+	adjust.hwnd =
 	    CreateWindow(TRACKBAR_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
-			 TBS_HORZ | TBS_NOTICKS,
-			 24, 204, width - 48, 24, hWnd,
+			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
+			 24, 202, width - 48, 24, hWnd,
 			 (HMENU)REFERENCE_ID, hInst, NULL);
 
-	SendMessage(adjust, TBM_SETRANGE, TRUE, MAKELONG(MIN_REF, MAX_REF));
-	SendMessage(adjust, TBM_SETPAGESIZE, 0, STEP_REF);
-	SendMessage(adjust, TBM_SETPOS, TRUE, REF_REF);
+	SendMessage(adjust.hwnd, TBM_SETRANGE, TRUE,
+		    MAKELONG(MIN_REF, MAX_REF));
+	SendMessage(adjust.hwnd, TBM_SETPAGESIZE, 0, STEP_REF);
+	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, REF_REF);
+
+	// Add adjust to tooltip
+
+	tooltip.info.uId = (UINT_PTR)adjust.hwnd;
+	tooltip.info.lpszText = "Reference frequency";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
 
 	// Create plus button
 
-	minus =
+	button.plus.hwnd =
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_OWNERDRAW,
 			 width - 24, 206, 16, 16, hWnd,
 			 (HMENU)PLUS_ID, hInst, NULL);
+
+	// Add plus button to tooltip
+
+	tooltip.info.uId = (UINT_PTR)button.plus.hwnd;
+	tooltip.info.lpszText = "Reference frequency";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
 
 	// Create strobe
 
@@ -408,6 +531,16 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			 8, 236, width - 16, 44, hWnd,
 			 (HMENU)STROBE_ID, hInst, NULL);
 
+	strobe.enable = TRUE;
+
+	// Create tooltip for strobe
+
+	tooltip.info.uId = (UINT_PTR)strobe.hwnd;
+	tooltip.info.lpszText = "Strobe, click to disable/enable";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create meter
 
 	meter.hwnd =
@@ -417,9 +550,38 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			 8, 288, width - 16, 56, hWnd,
 			 (HMENU)METER_ID, hInst, NULL);
 
+	// Add meter to tooltip
+
+	tooltip.info.uId = (UINT_PTR)meter.hwnd;
+	tooltip.info.lpszText = "Cents";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
+	// Create meter slider
+
+	meter.slider.hwnd =
+	    CreateWindow(TRACKBAR_CLASS, NULL,
+			 WS_VISIBLE | WS_CHILD |
+			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
+			 12, 310, width - 23, 26, hWnd,
+			 (HMENU)SLIDER_ID, hInst, NULL);
+
+	SendMessage(meter.slider.hwnd, TBM_SETRANGE, TRUE,
+		    MAKELONG(MIN_METER, MAX_METER));
+	SendMessage(meter.slider.hwnd, TBM_SETPOS, TRUE, REF_METER);
+
+	// Add slider to tooltip
+
+	tooltip.info.uId = (UINT_PTR)meter.slider.hwnd;
+	tooltip.info.lpszText = "Cents";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create status bar
 
-	status =
+	status.hwnd =
 	    CreateWindow(STATUSCLASSNAME,
 			 "\tCalibrating sample rate and correction factor",
 			 WS_VISIBLE | WS_CHILD,
@@ -428,16 +590,16 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Create edit popup window
 
-	edit =
+	edit.hwnd =
 	    CreateWindow(WC_EDIT, "Tuner Log",
 			 WS_VISIBLE | WS_POPUP |
 			 WS_CAPTION | WS_VSCROLL |
 			 ES_MULTILINE | ES_READONLY,
 			 rWnd.right + 10, rWnd.top,
-			 WIDTH * 2 + border, HEIGHT, hWnd,
+			 WIDTH * 3 / 2 + border, HEIGHT, hWnd,
 			 (HMENU)NULL, hInst, NULL);
 
-	SetWindowText(edit, "");
+	SetWindowText(edit.hwnd, "");
 
 	// Start audio thread
 
@@ -451,8 +613,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			      WT_EXECUTEDEFAULT);
 	break;
 
-    // Colour static text, defeat DefWindowProc() by capturing
-    // this message.
+    // Colour static text
 
     case WM_CTLCOLORSTATIC:
 	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
@@ -516,14 +677,22 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    MinusClicked(wParam, lParam);
 	    break;
 
-	case SCOPE_ID:
-	    ScopeClicked(wParam, lParam);
+	case DISPLAY_ID:
+	    DisplayClicked(wParam, lParam);
+	    break;
+
+	case SPECTRUM_ID:
+	    SpectrumClicked(wParam, lParam);
 	    break;
 
 	case STROBE_ID:
 	    StrobeClicked(wParam, lParam);
 	    break;
 	}
+
+	// Set the focus back to the window
+
+	SetFocus(hWnd);
 	break;
 
         // Process other messages.
@@ -587,21 +756,32 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 
 VOID CALLBACK StrobeCallback(PVOID lpParameter, BOOL TimerFired)
 {
+    InvalidateRgn(strobe.hwnd, NULL, TRUE);
+    UpdateMeter(&meter);
+
     // HWND strobe = *(HWND *)lpParameter;
-
-    if (!strobe.flag)
-	InvalidateRgn(strobe.hwnd, NULL, TRUE);
-
-    InvalidateRgn(meter.hwnd, NULL, TRUE);
 
     // RECT rect;
     // HDC hdc;
 
-    // GetClientRect(strobe.hwnd, &rect);
-    // hdc = GetDC(strobe.hwnd);
+    // GetClientRect(strobe, &rect);
+    // hdc = GetDC(strobe);
 
     // DrawStrobe(hdc, rect);
-    // ReleaseDC(strobe.hwnd, hdc);
+    // ReleaseDC(strobe, hdc);
+}
+
+// Update meter
+
+VOID UpdateMeter(METERP meter)
+{
+    static float mc;
+
+    mc = ((mc * 7.0) + meter->c) / 8.0;
+
+    int value = round(mc * MAX_METER) + REF_METER;
+
+    SendMessage(meter->slider.hwnd, TBM_SETPOS, TRUE, value);
 }
 
 // Draw scope
@@ -638,7 +818,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetCurrentObject(hbdc, OBJ_BRUSH));
+    FillRect(hbdc, &brct, GetStockObject(BLACK_BRUSH));
 
     // Dark green graticute
 
@@ -662,23 +842,22 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     if (scope.data != NULL)
     {
-
 	// Initialise sync
 
-	int max = 0;
+	int maxdx = 0;
 	int dx = 0;
 	int n = 0;
 
-	for (int i = 1; i < STEP; i++)
+	for (int i = 1; i < width; i++)
 	{
 	    dx = scope.data[i] - scope.data[i - 1];
-	    if (max > dx)
+	    if (maxdx > dx)
 	    {
-		max = dx;
+		maxdx = dx;
 		n = i;
 	    }
 
-	    if (max < 0 && dx > 0)
+	    if (maxdx < 0 && dx > 0)
 		break;
 	}
 
@@ -690,13 +869,23 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
 	SetViewportOrgEx(hbdc, 0, height / 2, NULL);
 
-	// Draw the trace
+	static int max;
 
-	int yscale = 57344 / height;
+	if (max < 4096)
+	    max = 4096;
+
+	int yscale = max / (height / 2);
+
+	max = 0;
+
+	// Draw the trace
 
 	MoveToEx(hbdc, 0, 0, NULL);
 	for (int i = 0; i < width; i++)
 	{
+	    if (max < abs(scope.data[n + i]))
+		max =  abs(scope.data[n+i]);
+
 	    int y = scope.data[n + i] / yscale;
 	    LineTo(hbdc, i, y);
 	}
@@ -748,7 +937,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetCurrentObject(hbdc, OBJ_BRUSH));
+    FillRect(hbdc, &brct, GetStockObject(BLACK_BRUSH));
 
     // Dark green graticule
 
@@ -772,7 +961,6 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     if (spectrum.data != NULL)
     {
-
 	// Green pen for spectrum trace
 
 	SetDCPenColor(hbdc, RGB(0, 255, 0));
@@ -781,10 +969,17 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	SetViewportOrgEx(hbdc, 0, height - 1, NULL);
 
+	static float max;
+
+	if (max < 1.0)
+	    max = 1.0;
+
 	// Calculate the scaling
 
-	float xscale = (SAMPLES / 3) / width;
-	float yscale = height / 8.0;
+	float xscale = (float)spectrum.length / width;
+	float yscale = (float)height / max;
+
+	max = 0.0;
 
 	// Draw the spectrum
 
@@ -792,18 +987,41 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	{
 	    float value = 0.0;
 
-	    for (int j = 0; j < xscale; j++)
+	    if (spectrum.zoom)
 	    {
-		int x = i * xscale + j;
+	    	if (spectrum.k + i - (width / 2) >= 0 &&
+	    	    spectrum.k + i - (width / 2) < spectrum.length)
+	    	{
+	    	    value = spectrum.data[spectrum.k + i - (width / 2)];
 
-		if (value < spectrum.data[x])
-		    value = spectrum.data[x];
+	    	    if (max < value)
+	    		max = value;
+
+	    	    int y = value * yscale;
+
+	    	    MoveToEx(hbdc, i, 0, NULL);
+	    	    LineTo(hbdc, i, -y);
+	    	}
 	    }
 
-	    int y = -value * yscale;
+	    else
+	    {
+	    	for (int j = 0; j < xscale; j++)
+	    	{
+	    	    int x = i * xscale + j;
 
-	    MoveToEx(hbdc, i, 0, NULL);
-	    LineTo(hbdc, i, y);
+	    	    if (value < spectrum.data[x])
+	    		value = spectrum.data[x];
+	    	}
+
+	    	if (max < value)
+	    	    max = value;
+
+	    	int y = value * yscale;
+
+	    	MoveToEx(hbdc, i, 0, NULL);
+	    	LineTo(hbdc, i, -y);
+	    }
 	}
     }
 
@@ -823,6 +1041,10 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 BOOL DrawDisplay(HDC hdc, RECT rect)
 {
+    enum
+    {LARGE_HEIGHT  = 42,
+     MEDIUM_HEIGHT = 28};
+
     static char *notes[] =
 	{"A", "Bb", "B", "C", "C#", "D",
 	 "Eb", "E", "F", "F#", "G", "Ab"};
@@ -840,47 +1062,60 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
 
+    static HFONT large;
+    static HFONT medium;
+
+    if (large == NULL)
+    {
+	lf.lfHeight = LARGE_HEIGHT;
+	large = CreateFontIndirect(&lf);
+
+	lf.lfHeight = MEDIUM_HEIGHT;
+	medium = CreateFontIndirect(&lf);
+    }
+
     // Draw nice etched edge
 
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
 
+    // Move the viewport origin
+
+    SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
+
     // Client coordinates
 
-    int x = rect.left;
-    int y = rect.top;
+    int y = 0;
     int width = rect.right - rect.left;
 
     static char s[64];
 
     // Select font
 
-    lf.lfHeight = 42;
-    DeleteObject(SelectObject(hdc, CreateFontIndirect(&lf)));
+    SelectObject(hdc, large);
 
-    sprintf(s, "%4s%d ", notes[display.n % LENGTH(notes)], display.n / 12); 
-    TextOut(hdc, x + 8, y, s, strlen(s));
+    sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)], display.n / 12); 
+    TextOut(hdc, 8, y, s, strlen(s));
 
-    sprintf(s, "%+6.2lf¢ ", display.c * 100.0);
+    sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
     TextOut(hdc, width / 2, y, s, strlen(s));
 
-    y += lf.lfHeight;
+    y += LARGE_HEIGHT;
 
-    lf.lfHeight = 28;
-    DeleteObject(SelectObject(hdc, CreateFontIndirect(&lf)));
+    SelectObject(hdc, medium);
 
-    sprintf(s, "%9.2lfHz ", display.ff);
-    TextOut(hdc, x + 8, y, s, strlen(s));
+    sprintf(s, "%9.2lfHz  ", display.ff);
+    TextOut(hdc, 8, y, s, strlen(s));
 
-    sprintf(s, "%9.2lfHz ", display.f);
+    sprintf(s, "%9.2lfHz  ", display.f);
     TextOut(hdc, width / 2, y, s, strlen(s));
 
-    y += lf.lfHeight;
+    y += MEDIUM_HEIGHT;
 
-    sprintf(s, "%9.2lfHz ", (audio.reference == 0)?
+    sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
 	    A5_REFNCE: audio.reference);
-    TextOut(hdc, x + 8, y, s, strlen(s));
+    TextOut(hdc, 8, y, s, strlen(s));
 
-    sprintf(s, "%+8.2lfHz ", display.e);
+    sprintf(s, "%+8.2lfHz  ", display.e);
     TextOut(hdc, width / 2, y, s, strlen(s));
 
     return TRUE;
@@ -890,9 +1125,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 BOOL DrawMeter(HDC hdc, RECT rect)
 {
-    static HBITMAP bitmap;
-    static float mc = 0.0;
-    static HDC hbdc;
+    static HFONT font;
 
     // Plain vanilla font
 
@@ -916,36 +1149,20 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    // Create bitmap
-
-    if (bitmap == NULL)
-    {
-	bitmap = CreateCompatibleBitmap(hdc, width, height);
-
-	// Create DC
-
-	hbdc = CreateCompatibleDC(hdc);
-	SelectObject(hbdc, bitmap);
-	SelectObject(hbdc, GetStockObject(DC_BRUSH));
-	SelectObject(hbdc, GetStockObject(DC_PEN));
-    }
-
-    // Erase background
-
-    RECT brct =
-	{0, 0, width, height};
-    // SetDCBrushColor(hbdc, GetSysColor(COLOR_WINDOW));
-    FillRect(hbdc, &brct, GetCurrentObject(hbdc, OBJ_BRUSH));
-
     // Move origin
 
-    SetViewportOrgEx(hbdc, width / 2, 0, NULL);
+    SetViewportOrgEx(hdc, rect.left + width / 2, rect.top, NULL);
 
     // Select font
 
-    lf.lfHeight = 16;
-    DeleteObject(SelectObject(hbdc, CreateFontIndirect(&lf)));
-    SetTextAlign(hbdc, TA_CENTER);
+    if (font == NULL)
+    {
+	lf.lfHeight = 16;
+	font = CreateFontIndirect(&lf);
+    }
+
+    SelectObject(hdc, font);
+    SetTextAlign(hdc, TA_CENTER);
 
     // Draw the meter scale
 
@@ -955,58 +1172,26 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	char s[16];
 
 	sprintf(s, "%d", i * 10);
-	TextOut(hbdc, x + 1, -2, s, strlen(s));
-	TextOut(hbdc, -x + 1, -2, s, strlen(s));
+	TextOut(hdc, x + 1, 0, s, strlen(s));
+	TextOut(hdc, -x + 1, 0, s, strlen(s));
 
-	MoveToEx(hbdc, x, 14, NULL);
-	LineTo(hbdc, x, 20);
-	MoveToEx(hbdc, -x, 14, NULL);
-	LineTo(hbdc, -x, 20);
+	MoveToEx(hdc, x, 14, NULL);
+	LineTo(hdc, x, 20);
+	MoveToEx(hdc, -x, 14, NULL);
+	LineTo(hdc, -x, 20);
 
 	for (int j = 1; j < 5; j++)
 	{
 	    if (i < 5)
 	    {
-		MoveToEx(hbdc, x + j * width / 55, 16, NULL);
-		LineTo(hbdc, x + j * width / 55, 20);
+		MoveToEx(hdc, x + j * width / 55, 16, NULL);
+		LineTo(hdc, x + j * width / 55, 20);
 	    }
 
-	    MoveToEx(hbdc, -x + j * width / 55, 16, NULL);
-	    LineTo(hbdc, -x + j * width / 55, 20);
+	    MoveToEx(hdc, -x + j * width / 55, 16, NULL);
+	    LineTo(hdc, -x + j * width / 55, 20);
 	}
     }
-
-    // Draw the  b, # and ¢ characters
-
-    TextOut(hbdc, -width / 11 * 5, 20, "b", 1);
-    TextOut(hbdc, width / 11 * 5, 20, "#", 1);
-    TextOut(hbdc, 1, 34, "¢", 1);
-
-    // Calculate the pointer position
-
-    mc = (7.0 * mc + display.c) / 8.0;
-    int x = ((width * 10) / 11) * mc;
-
-    // Move the origin
-
-    SetViewportOrgEx(hbdc, width / 2 + x, 22, NULL);
-
-    // Draw the pointer
-
-    static POINT points[5] =
-	{{0, 0}, {2, 2}, {2, 12},
-	 {-2, 12}, {-2, 2}};
-    // SetDCBrushColor(hbdc, RGB(0, 0, 0));
-    Polygon(hbdc, points, LENGTH(points));
-
-    // Move the origin back
-
-    SetViewportOrgEx(hbdc, 0, 0, NULL);
-
-    // Copy the bitmap
-
-    BitBlt(hdc, rect.left, rect.top, width, height,
-	   hbdc, 0, 0, SRCCOPY);
 
     return TRUE;
 }
@@ -1043,28 +1228,31 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	{0, 0, width, height};
     FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
-    mc = ((7.0 * mc) + strobe.c) / 8.0;
-    mx += mc * 50.0;
+    if (strobe.enable)
+    {
+	mc = ((7.0 * mc) + strobe.c) / 8.0;
+	mx += mc * 50.0;
 
-    if (mx > 160.0)
-	mx = 0.0;
+	if (mx > 160.0)
+	    mx = 0.0;
 
-    if (mx < 0.0)
-	mx = 160.0;
+	if (mx < 0.0)
+	    mx = 160.0;
 
-    int rx = round(mx - 160.0);
+	int rx = round(mx - 160.0);
 
-    for (int x = rx % 20; x < width; x += 20)
-	Rectangle(hbdc, x, 0, x + 10, 10);
+	for (int x = rx % 20; x < width; x += 20)
+	    Rectangle(hbdc, x, 0, x + 10, 10);
 
-    for (int x = rx % 40; x < width; x += 40)
-	Rectangle(hbdc, x, 10, x + 20, 20);
+	for (int x = rx % 40; x < width; x += 40)
+	    Rectangle(hbdc, x, 10, x + 20, 20);
 
-    for (int x = rx % 80; x < width; x += 80)
-	Rectangle(hbdc, x, 20, x + 40, 30);
+	for (int x = rx % 80; x < width; x += 80)
+	    Rectangle(hbdc, x, 20, x + 40, 30);
 
-    for (int x = rx % 160; x < width; x += 160)
-	Rectangle(hbdc, x, 30, x + 80, 40);
+	for (int x = rx % 160; x < width; x += 160)
+	    Rectangle(hbdc, x, 30, x + 80, 40);
+    }
 
     BitBlt(hdc, rect.left, rect.top, width, height, hbdc,
 	   0, 0, SRCCOPY);
@@ -1118,8 +1306,7 @@ BOOL PlusClicked(WPARAM wParam, LPARAM lParam)
     switch(HIWORD(wParam))
     {
     case BN_CLICKED:
-    case BN_DBLCLK:
-	SendMessage(adjust, TBM_SETPOS, TRUE, ++value);
+	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, ++value);
 	audio.reference = value / 10.0;
 	InvalidateRgn(display.hwnd, NULL, TRUE);
 	break;
@@ -1143,8 +1330,7 @@ BOOL MinusClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-    case BN_DBLCLK:
-	SendMessage(adjust, TBM_SETPOS, TRUE, --value);
+	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, --value);
 	audio.reference = value / 10.0;
 	InvalidateRgn(display.hwnd, NULL, TRUE);
 	break;
@@ -1156,15 +1342,33 @@ BOOL MinusClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-// Scope clicked
+// Display clicked
 
-BOOL ScopeClicked(WPARAM wParam, LPARAM lParam)
+BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
 {
 
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	trigger = TRUE;
+	audio.trigger = TRUE;
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Spectrum clicked
+
+BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
+{
+
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	spectrum.zoom = !spectrum.zoom;
 	break;
 
     default:
@@ -1182,7 +1386,7 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	strobe.flag = !strobe.flag;
+	strobe.enable = !strobe.enable;
 	break;
 
     default:
@@ -1215,7 +1419,7 @@ BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    int value = SendMessage(volume, TBM_GETPOS, 0, 0);
+    int value = SendMessage(volume.hwnd, TBM_GETPOS, 0, 0);
 
     mixer.pmxcdu->dwValue = ((mixer.pmxc->Bounds.dwMaximum -
 			      mixer.pmxc->Bounds.dwMinimum) *
@@ -1250,7 +1454,7 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    int value = SendMessage(adjust, TBM_GETPOS, 0, 0);
+    int value = SendMessage(adjust.hwnd, TBM_GETPOS, 0, 0);
     audio.reference = value / 10.0;
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
@@ -1288,7 +1492,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	char text[64];
 
 	waveInGetErrorText(mmr, text, sizeof(text));
-	MessageBox(hWnd, text, "WaveInOpen", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, text, "WaveInOpen", MB_OK | MB_ICONERROR);
 	return mmr;
     }
 
@@ -1317,7 +1521,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    EnableWindow(volume, FALSE);
+	    EnableWindow(volume.hwnd, FALSE);
 	    break;
 	}
 
@@ -1330,7 +1534,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    EnableWindow(volume, FALSE);
+	    EnableWindow(volume.hwnd, FALSE);
 	    break;
 	}
 
@@ -1349,7 +1553,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    EnableWindow(volume, FALSE);
+	    EnableWindow(volume.hwnd, FALSE);
 	    break;
 	}
 
@@ -1369,7 +1573,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    EnableWindow(volume, FALSE);
+	    EnableWindow(volume.hwnd, FALSE);
 	    break;
 	}
 
@@ -1382,7 +1586,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 			       (mxc.Bounds.dwMaximum -
 				mxc.Bounds.dwMinimum));
 
-	SendMessage(volume, TBM_SETPOS, TRUE, value);
+	SendMessage(volume.hwnd, TBM_SETPOS, TRUE, value);
 
     } while (FALSE);
 
@@ -1412,7 +1616,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    char text[64];
 
 	    waveInGetErrorText(mmr, text, sizeof(text));
-	    MessageBox(hWnd, text, "WaveInPrepareHeader", MB_OK | MB_ICONERROR);
+	    MessageBox(window.hwnd, text, "WaveInPrepareHeader",
+		       MB_OK | MB_ICONERROR);
 	    return mmr;
 	}
 
@@ -1424,7 +1629,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    char text[64];
 
 	    waveInGetErrorText(mmr, text, sizeof(text));
-	    MessageBox(hWnd, text, "WaveInAddBuffer", MB_OK | MB_ICONERROR);
+	    MessageBox(window.hwnd, text, "WaveInAddBuffer",
+		       MB_OK | MB_ICONERROR);
 	    return mmr;
 	}
     }
@@ -1437,7 +1643,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	char text[64];
 
 	waveInGetErrorText(mmr, text, sizeof(text));
-	MessageBox(hWnd, text, "WaveInStart", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, text, "WaveInStart", MB_OK | MB_ICONERROR);
 	return mmr;
     }
 
@@ -1452,32 +1658,9 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 			  &audio.hwi, TIMER_DELAY, TIMER_DELAY,
 			  WT_EXECUTEDEFAULT);
 
-    // Create buffers for processing the audio data
-
-    static short buffer[SAMPLES];
-
-    static double xr[SAMPLES];
-    static double xi[SAMPLES];
-
-    static double xa[SAMPLES / 4];
-    static double xm[SAMPLES / 4];
-    static double xd[SAMPLES / 4];
-    static double xp[SAMPLES / 4];
-    static double xf[SAMPLES / 4];
-
-    static int step = SAMPLES / OVERSAMPLE;
-    static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
-    static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
+    // Set up reference value;
 
     audio.reference = A5_REFNCE;
-
-    // initialise data structs
-
-    scope.data = buffer;
-    scope.length = LENGTH(buffer);
-
-    spectrum.data = xa;
-    spectrum.length = LENGTH(xa);
 
     // Create a message loop for processing thread messages
 
@@ -1501,168 +1684,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    // Audio input data
 
 	case MM_WIM_DATA:
-	    memmove(buffer + step, buffer, (SAMPLES - step) * sizeof(short));
-	    memmove(buffer, ((WAVEHDR *)msg.lParam)->lpData,
-		    step * sizeof(short));
-
-	    waveInAddBuffer(audio.hwi, (WAVEHDR *)msg.lParam, sizeof(WAVEHDR));
-
-	    // Copy data to FFT input arrays
-
-	    for (int i = 0; i < LENGTH(buffer); i++)
-	    {
-	    	double window =
-	    	    0.5 - 0.5 * cos(2.0 * M_PI *
-	    			    i / SAMPLES);
-
-	    	xr[i] = (double)buffer[i] / 32768.0 * window;
-		xi[i] = 0.0;
-	    }
-
-	    // do FFT
-
-	    complexToComplex(FORWARD, SAMPLES, xr, xi);
-
-	    // do frequency calculation
-
-	    for (int i = 0; i < LENGTH(xa); i++)
-	    {
-	    	double real = xr[i];
-	    	double imag = xi[i];
-
-	    	xa[i] = sqrt((real * real) + (imag * imag));
-
-		// xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
-
-		// if (xm[i] > xa[i])
-		//     xm[i] = xa[i];
-
-		// xd[i] = xa[i] - xm[i];
-
-		// if (xm[i] > xa[i])
-		//     xm[i] = xa[i];
-
-		// xd[i] = xa[i] - xm[i];
-
-	    	double p = atan2(imag, real);
-	    	double dp = xp[i] - p;
-	    	xp[i] = p;
-
-		dp -= (double)i * expect;
-
-	    	int qpd = dp / M_PI;
-
-	    	if (qpd >= 0)
-	    	    qpd += qpd & 1;
-
-	    	else
-	    	    qpd -= qpd & 1;
-
-	    	dp -=  M_PI * (double)qpd;
-
-	    	double df = OVERSAMPLE * dp / (2.0 * M_PI);
-
-	    	xf[i] = i * fps + df * fps;
-	    }
-
-	    double max = 0.0;
-	    double f = 0.0;
-	    int k = 0;
-
-	    for (int i = 0; i < LENGTH(xa); i++)
-	    {
-	    	if (max < xa[i])
-	    	{
-	    	    max = xa[i];
-	    	    f = xf[i];
-		    k = i;
-	    	}
-
-		// if ((max > MIN) && (xd[i] < MIN))
-		//     break;
-	    }
-
-	    BOOL found = FALSE;
-	    double ff = 0.0;
-	    double e = 0.0;
-	    double c = 0.0;
-	    int n = 0;
-
-	    if (max > MIN)
-	    {
-		double cf =
-		    -12.0 * (log(audio.reference / f) / log(2.0));
-
-		n = round(cf) + A5_OFFSET;
-
-		if (n < 0)
-		    n = 0;
-
-		if (n > C8_OFFSET)
-		    n = C8_OFFSET;
-
-		ff = audio.reference * pow(2.0, (n - A5_OFFSET) / 12.0);
-
-		c = -12.0 * (log(ff / f) / log(2.0));
-
-		e = f - ff;
-
-		if (abs(c) < 0.5)
-		    found = TRUE;
-	    }
-
-	    if (found)
-	    {
-		// Update scope window
-
-		InvalidateRgn(scope.hwnd, NULL, TRUE);
-
-		// Update spectrum window
-
-		InvalidateRgn(spectrum.hwnd, NULL, TRUE);
-
-		// Update the display struct
-
-		display.f = f;
-		display.ff = ff;
-		display.c = c;
-		display.e = e;
-		display.n = n;
-
-		// Update display
-
-		InvalidateRgn(display.hwnd, NULL, TRUE);
-
-		// Update meter
-
-		meter.c = c;
-		// InvalidateRgn(meter.hwnd, NULL, TRUE);
-
-		// Update strobe
-
-		strobe.c = c;
-
-		// Update log
-
-		static char text[128];
-
-		if (trigger)
-		{
-		    for (int i = k - 5; i < k + 6; i++)
-		    {
-			sprintf(text, "%d, %lf, %lf, %lf, %lf\r\n",
-				i, fps * i, xf[i], xp[i], xa[i]);
-			SendMessage(edit, EM_REPLACESEL, FALSE, (LPARAM)text);
-		    }
-
-		    trigger = FALSE;
-		}
-
-		// Update strobe
-
-		// InvalidateRgn(strobe.hwnd, NULL, TRUE);
-	    }
-
+	    WaveInData(msg.wParam, msg.lParam);
 	    break;
 
 	    // Audio input closed
@@ -1673,6 +1695,211 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
     }
 
     return msg.wParam;
+}
+
+void WaveInData(WPARAM wParam, LPARAM lParam)
+{
+    // Create buffers for processing the audio data
+
+    static short buffer[SAMPLES];
+
+    static COMPLEX x[SAMPLES];
+
+    static double xa[STEP];
+    static double xm[STEP];
+    static double xd[STEP];
+    static double xp[STEP];
+    static double xf[STEP];
+
+    static short *data = buffer + SAMPLES - STEP;
+
+    static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
+    static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
+
+    // initialise data structs
+
+    if (scope.data == NULL)
+    {
+	scope.data = data;
+	scope.length = SAMPLES;
+
+	spectrum.data = xa;
+	spectrum.length = STEP;
+    }
+
+    // Copy the input data
+
+    memmove(buffer, buffer + STEP, (SAMPLES - STEP) * sizeof(short));
+    memmove(buffer + (SAMPLES - STEP), ((WAVEHDR *)lParam)->lpData,
+	    STEP * sizeof(short));
+
+    // Give the buffer back
+
+    waveInAddBuffer(audio.hwi, (WAVEHDR *)lParam, sizeof(WAVEHDR));
+
+    static double dmax;
+
+    if (dmax < 4096.0)
+	dmax = 4096.0;
+
+    double scale = dmax;
+    dmax = 0.0;
+
+    // Copy data to FFT input arrays
+
+    for (int i = 0; i < LENGTH(buffer); i++)
+    {
+	if (dmax < abs(buffer[i]))
+	    dmax = abs(buffer[i]);
+
+	double window =
+	    0.5 - 0.5 * cos(2.0 * M_PI *
+			    i / SAMPLES);
+
+	x[i].re = (double)buffer[i] / scale * window;
+	x[i].im = 0.0;
+    }
+
+    // do FFT
+
+    complexToComplex(FORWARD, SAMPLES, x);
+
+    // do frequency calculation
+
+    for (int i = 0; i < LENGTH(xa); i++)
+    {
+	double real = x[i].re;
+	double imag = x[i].im;
+
+	xa[i] = sqrt((real * real) + (imag * imag));
+
+	// xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
+
+	// if (xm[i] > xa[i])
+	//     xm[i] = xa[i];
+
+	// xd[i] = xa[i] - xm[i];
+
+	// if (xm[i] > xa[i])
+	//     xm[i] = xa[i];
+
+	// xd[i] = xa[i] - xm[i];
+
+	double p = atan2(imag, real);
+	double dp = xp[i] - p;
+	xp[i] = p;
+
+	dp -= (double)i * expect;
+
+	int qpd = dp / M_PI;
+
+	if (qpd >= 0)
+	    qpd += qpd & 1;
+
+	else
+	    qpd -= qpd & 1;
+
+	dp -=  M_PI * (double)qpd;
+
+	double df = OVERSAMPLE * dp / (2.0 * M_PI);
+
+	xf[i] = i * fps + df * fps;
+    }
+
+    double max = 0.0;
+    double f = 0.0;
+    int k = 0;
+
+    for (int i = 0; i < LENGTH(xa); i++)
+    {
+	if (max < xa[i])
+	{
+	    max = xa[i];
+	    f = xf[i];
+	    k = i;
+	}
+
+	// if ((max > MIN) && (xd[i] < MIN))
+	//     break;
+    }
+
+    BOOL found = FALSE;
+    double ff = 0.0;
+    double e = 0.0;
+    double c = 0.0;
+    int n = 0;
+
+    if (max > MIN)
+    {
+	double cf =
+	    -12.0 * (log(audio.reference / f) / log(2.0));
+
+	n = round(cf) + A5_OFFSET;
+
+	if (n < 0)
+	    n = 0;
+
+	if (n > C8_OFFSET)
+	    n = C8_OFFSET;
+
+	ff = audio.reference * pow(2.0, (n - A5_OFFSET) / 12.0);
+
+	c = -12.0 * (log(ff / f) / log(2.0));
+
+	e = f - ff;
+
+	if (abs(c) < 0.5)
+	    found = TRUE;
+    }
+
+    if (found)
+    {
+	// Update scope window
+
+	InvalidateRgn(scope.hwnd, NULL, TRUE);
+
+	// Update spectrum window
+
+	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
+
+	// Update the display struct
+
+	display.f = f;
+	display.ff = ff;
+	display.c = c;
+	display.e = e;
+	display.n = n;
+
+	spectrum.k = k;
+
+	// Update display
+
+	InvalidateRgn(display.hwnd, NULL, TRUE);
+
+	// Update meter
+
+	meter.c = c;
+
+	// Update strobe
+
+	strobe.c = c;
+
+	// Update log
+
+	static char text[128];
+
+	if (audio.trigger)
+	{
+	    for (int i = k - 2; i < k + 3; i++)
+	    {
+		sprintf(text, "%d, %lf, %lf, %lf, %lf\r\n",
+			i, fps * i, xf[i], xp[i], xa[i]);
+		SendMessage(edit.hwnd, EM_REPLACESEL, FALSE, (LPARAM)text);
+	    }
+
+	    audio.trigger = FALSE;
+	}
+    }
 }
 
 // Timer callback
@@ -1705,20 +1932,23 @@ VOID CALLBACK TimerCallback(PVOID lpParameter, BOOL TimerFired)
 
     static char text[64];
 
-    sprintf(text, "%ld, %lf, %ld, %lf, %lf, %lf\r\n",
-	    count, elapsed, mmt.u.sample, rate, sample, correction);
-    SendMessage(edit, EM_REPLACESEL, FALSE, (LPARAM)text);
+    // if (count <= 120)
+    // {
+    // 	sprintf(text, "%ld, %lf, %ld, %lf, %lf, %lf\r\n",
+    // 		count, elapsed, mmt.u.sample, rate, sample, correction);
+    // 	SendMessage(edit.hwnd, EM_REPLACESEL, FALSE, (LPARAM)text);
+    // }
 
-    if (count >= 30)
-    {
-	sprintf(text, " %9.3lf\t\t%9.7lf ", sample, correction);
-	SendMessage(status, SB_SETTEXT, 0, (LPARAM)text);
-    }
+    // if (count >= 30)
+    // {
+    // 	sprintf(text, " %11.5lf\t\t%11.9lf ", sample, correction);
+    // 	SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)text);
+    // }
 }
 
 // FFT
 
-void complexToComplex(int sign, int n, double ar[], double ai[])
+void complexToComplex(int sign, int n, COMPLEXP a)
 {
     double scale = sqrt(1.0 / n);
 
@@ -1726,14 +1956,14 @@ void complexToComplex(int sign, int n, double ar[], double ai[])
     {
 	if (j >= i)
 	{
-	    double tr = ar[j] * scale;
-	    double ti = ai[j] * scale;
+	    double tr = a[j].re * scale;
+	    double ti = a[j].im * scale;
 
-	    ar[j] = ar[i] * scale;
-	    ai[j] = ai[i] * scale;
+	    a[j].re = a[i].re * scale;
+	    a[j].im = a[i].im * scale;
 
-	    ar[i] = tr;
-	    ai[i] = ti;
+	    a[i].re = tr;
+	    a[i].im = ti;
 	}
 
 	int m = n / 2;
@@ -1758,12 +1988,12 @@ void complexToComplex(int sign, int n, double ar[], double ai[])
 	    for (int i = m; i < n; i += istep)
 	    {
 		int j = i + mmax;
-		double tr = wr * ar[j] - wi * ai[j];
-		double ti = wr * ai[j] + wi * ar[j];
-		ar[j] = ar[i] - tr;
-		ai[j] = ai[i] - ti;
-		ar[i] += tr;
-		ai[i] += ti;
+		double tr = wr * a[j].re - wi * a[j].im;
+		double ti = wr * a[j].im + wi * a[j].re;
+		a[j].re = a[i].re - tr;
+		a[j].im = a[i].im - ti;
+		a[i].re += tr;
+		a[i].im += ti;
 	    }
 	}
     }
