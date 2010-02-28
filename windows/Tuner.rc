@@ -2,5 +2,3 @@
 #include "windows.h"
 
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "Tuner.manifest"
-
-chequers BITMAP "chequers.bmp"
