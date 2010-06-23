@@ -1,0 +1,9 @@
+#summary Signal Generator
+
+= Signal Generator =
+
+http://ctuner.googlecode.com/files/SigGen.png
+
+Signal Generator written in Java for use with tuner.
+
+Needs Java installed from http://www.java.com/en.
