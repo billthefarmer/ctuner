@@ -1,4 +1,5 @@
 #summary Signal Generator
+#labels Featured
 
 = Signal Generator =
 
