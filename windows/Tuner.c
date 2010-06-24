@@ -991,7 +991,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Create filter tickbox
 
 	filter.hwnd =
-	    CreateWindow(WC_BUTTON, "Filter:",
+	    CreateWindow(WC_BUTTON, "Audio filter:",
 			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
 			 BS_CHECKBOX,
 			 20, 54, 124, 24,
@@ -1267,6 +1267,16 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
 
 	RegCloseKey(hkey);
     }
+
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
 }
 
 // Edit change
@@ -1325,8 +1335,9 @@ BOOL SaveCorrection(WPARAM wParam, LPARAM lParam)
     DWORD value;
     int size = sizeof(value);
 
-    error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\CTuner", 0,
-			 KEY_WRITE, &hkey);
+    error = RegCreateKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\CTuner", 0,
+			   NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE,
+			   NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
@@ -1336,6 +1347,16 @@ BOOL SaveCorrection(WPARAM wParam, LPARAM lParam)
 		      (LPBYTE)&value, sizeof(value));
 
 	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 }
 
@@ -1934,6 +1955,16 @@ BOOL PlusClicked(WPARAM wParam, LPARAM lParam)
 	RegCloseKey(hkey);
     }
 
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
+
     return TRUE;
 }
 
@@ -1972,6 +2003,16 @@ BOOL MinusClicked(WPARAM wParam, LPARAM lParam)
 	RegCloseKey(hkey);
     }
 
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
+
     return TRUE;
 }
 
@@ -1983,7 +2024,7 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	// audio.trigger = TRUE;
+	// Not used
 	break;
 
     default:
@@ -2025,6 +2066,16 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
 	RegCloseKey(hkey);
     }
 
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
+
     return TRUE;
 }
 
@@ -2059,6 +2110,16 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 		      (LPBYTE)&strobe.enable, sizeof(strobe.enable));
 
 	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
     return TRUE;
@@ -2139,6 +2200,16 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 		      (LPBYTE)&value, sizeof(value));
 
 	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
     return TRUE;
