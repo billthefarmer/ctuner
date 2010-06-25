@@ -38,7 +38,7 @@
 #define PCLASS "PopupClass"
 
 #define OCTAVE 12
-#define MIN 0.5
+#define MIN   0.5
 
 // Global handle
 
@@ -1003,7 +1003,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add clickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)filter.hwnd;
-	tooltip.info.lpszText = "Filter, "
+	tooltip.info.lpszText = "Audio filter, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1380,7 +1380,7 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
 		   0, hWnd, NULL);
 }
 
-// Strobe callback
+// Display callback
 
 VOID CALLBACK DisplayCallback(PVOID lpParameter, BOOL TimerFired)
 {
@@ -2226,14 +2226,6 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	 SAMPLE_RATE, SAMPLE_RATE * BLOCK_ALIGN,
 	 BLOCK_ALIGN, BITS_PER_SAMPLE, 0};
 
-    // wf.wFormatTag = WAVE_FORMAT_PCM;
-    // wf.nChannels = CHANNELS;
-    // wf.nSamplesPerSec = SAMPLE_RATE;
-    // wf.nAvgBytesPerSec = SAMPLE_RATE * BLOCK_ALIGN;
-    // wf.nBlockAlign = BLOCK_ALIGN;
-    // wf.wBitsPerSample = BITS_PER_SAMPLE;
-    // wf.cbSize = 0;
-
     MMRESULT mmr;
 
     // Open a waveform audio input device
@@ -2355,13 +2347,6 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
     for (int i = 0; i < LENGTH(hdrs); i++)
     {
-	// hdrs[i].lpData = data[i];
-	// hdrs[i].dwBufferLength = sizeof(data[i];
-	// hdrs[i].dwBytesRecorded = 0;
-	// hdrs[i].dwUser = 0;
-	// hdrs[i].dwFlags = 0;
-	// hdrs[i].dwLoops = 0;
-
 	// Prepare a waveform audio input header
 
 	mmr = waveInPrepareHeader(audio.hwi, &hdrs[i], sizeof(WAVEHDR));
@@ -2392,7 +2377,6 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
     // Start the waveform audio input
 
     mmr = waveInStart(audio.hwi);
-
     if (mmr != MMSYSERR_NOERROR)
     {
 	static char s[64];
@@ -2402,12 +2386,16 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	return mmr;
     }
 
-    // Set up reference value;
+    // Set up reference value
 
     if (audio.reference == 0)
 	audio.reference = A5_REFNCE;
 
+    // Set up correction value
+
     audio.correction = 1.0;
+
+    // Check for a stored value
 
     HKEY hkey;
     LONG error;
@@ -2452,6 +2440,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    // Audio input opened
 
 	case MM_WIM_OPEN:
+	    // Not used
 	    break;
 
 	    // Audio input data
@@ -2463,6 +2452,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    // Audio input closed
 
 	case MM_WIM_CLOSE:
+	    // Not used
 	    break;
 	}
     }
@@ -2505,7 +2495,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	static double xv[2];
 	static double yv[2];
 
-	// Butterworth filter
+	// Butterworth filter, 3dB/octave
 
 	xv[0] = xv[1];
 	xv[1] = (double)data[i] /
@@ -2514,6 +2504,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	yv[0] = yv[1];
 	yv[1] = (xv[0] + xv[1]) +
 	    (0.9338478249 * yv[0]);
+
+	// Choose filtered/unfiltered data
 
 	buffer[SAMPLES - STEP + i] =
 	    audio.filter? yv[1]: (double)data[i];
@@ -2628,6 +2620,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     double e = 0.0;
     double c = 0.0;
     int n = 0;
+
+    // Do the note and cents calculations
 
     if (max > MIN)
     {
