@@ -890,9 +890,8 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 {
     if (options.hwnd == NULL)
     {
-	WNDCLASS pc = 
-	    {CS_HREDRAW | CS_VREDRAW,
-	     PopupProc,
+	WNDCLASS wc = 
+	    {CS_HREDRAW | CS_VREDRAW, PopupProc,
 	     0, 0, hInst,
 	     LoadIcon(NULL, IDI_WINLOGO),
 	     LoadCursor(NULL, IDC_ARROW),
@@ -901,7 +900,7 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 
 	// Register the window class.
 
-	RegisterClass(&pc);
+	RegisterClass(&wc);
 
 	RECT rWnd;
 
@@ -2275,8 +2274,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	mxl.dwComponentType = MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE;
 
-	mixerGetLineInfo((HMIXEROBJ)mixer.hmx, &mxl,
-			 MIXER_GETLINEINFOF_COMPONENTTYPE);
+	mmr = mixerGetLineInfo((HMIXEROBJ)mixer.hmx, &mxl,
+			       MIXER_GETLINEINFOF_COMPONENTTYPE);
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
