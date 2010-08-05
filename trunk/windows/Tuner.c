@@ -63,6 +63,7 @@ enum
      EDIT_ID,
      SAVE_ID,
      DONE_ID,
+     LOCK_ID,
      FILTER_ID,
      UPDOWN_ID,
      ENABLE_ID,
@@ -170,6 +171,7 @@ typedef struct
 {
     HWND hwnd;
     HANDLE timer;
+    BOOL lock;
     double f;
     double fr;
     double c;
@@ -185,6 +187,7 @@ TOOL group;
 TOOL zoom;
 TOOL text;
 TOOL edit;
+TOOL lock;
 TOOL filter;
 TOOL updown;
 TOOL enable;
@@ -264,11 +267,14 @@ BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL MinusClicked(WPARAM, LPARAM);
+BOOL LockClicked(WPARAM, LPARAM);
 BOOL PlusClicked(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditChange(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
+BOOL CharPressed(WPARAM, LPARAM);
+BOOL CopyDisplay(WPARAM, LPARAM);
 BOOL ChangeCorrection(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 BOOL SaveCorrection(WPARAM, LPARAM);
@@ -552,7 +558,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add display to tooltip
 
 	tooltip.info.uId = (UINT_PTR)display.hwnd;
-	tooltip.info.lpszText = "Display";
+	tooltip.info.lpszText = "Display, click to lock";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -704,7 +710,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	audio.thread = CreateThread(NULL, 0, AudioThread, hWnd, 0, &audio.id);
 
-	// Start strobe timer
+	// Start display timer
 
 	CreateTimerQueueTimer(&display.timer, NULL,
 			      (WAITORTIMERCALLBACK)DisplayCallback,
@@ -803,6 +809,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Set the focus back to the window
 
 	SetFocus(hWnd);
+	break;
+
+    case WM_CHAR:
+	CharPressed(wParam, lParam);
 	break;
 
         // Process other messages.
@@ -1008,6 +1018,27 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
+	// Create lock tickbox
+
+	lock.hwnd =
+	    CreateWindow(WC_BUTTON, "Lock display:",
+			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+			 BS_CHECKBOX,
+			 width / 2 + 10, 54, 124, 24,
+			 hWnd, (HMENU)LOCK_ID, hInst, NULL);
+
+	SendMessage(lock.hwnd, BM_SETCHECK,
+		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+
+	// Add clickbox to tooltip
+
+	tooltip.info.uId = (UINT_PTR)lock.hwnd;
+	tooltip.info.lpszText = "Lock display, "
+	    "click to change";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create group box
 
 	group.hwnd =
@@ -1177,6 +1208,16 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
+	    // Filter control
+
+	case LOCK_ID:
+	    LockClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
 	    // Updown control
 
 	case EDIT_ID:
@@ -1278,6 +1319,28 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     }
 }
 
+// Lock clicked
+
+BOOL LockClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	display.lock = !display.lock;
+
+	SendMessage(lock.hwnd, BM_SETCHECK,
+		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+
+	InvalidateRgn(display.hwnd, NULL, TRUE);
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 // Edit change
 
 BOOL EditChange(WPARAM wParam, LPARAM lParam)
@@ -1301,7 +1364,6 @@ BOOL EditChange(WPARAM wParam, LPARAM lParam)
 	SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)s);
     	break;
     }
-
 }
 
 // Change correction
@@ -1377,6 +1439,58 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
 		   0, hWnd, NULL);
+}
+
+// Char pressed
+
+BOOL CharPressed(WPARAM w, LPARAM l)
+{
+    switch (w)
+    {
+    case 'C':
+    case 'c':
+    case 0x3:
+	CopyDisplay(w, l);
+	break;
+    }
+}
+
+// CopyDisplay
+
+BOOL CopyDisplay(WPARAM w, LPARAM l)
+{
+    static char s[64];
+
+    static char *notes[] =
+	{"A", "Bb", "B", "C", "C#", "D",
+	 "Eb", "E", "F", "F#", "G", "Ab"};
+
+    if (!OpenClipboard(window.hwnd))
+	return FALSE;
+
+    EmptyClipboard(); 
+
+    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+	    notes[display.n % LENGTH(notes)], display.n / 12,
+	    display.c * 100.0, display.fr, display.f, display.e);
+
+    HGLOBAL mem =
+	GlobalAlloc(GMEM_MOVEABLE, (strlen(s) + 1) * sizeof(TCHAR));
+
+    if (mem == NULL)
+    {
+	CloseClipboard();
+	return FALSE;
+    }
+
+    LPTSTR text = GlobalLock(mem);
+    memcpy(text, s, (strlen(s) + 1) * sizeof(TCHAR));
+
+    GlobalUnlock(text);
+    SetClipboardData(CF_TEXT, mem);
+    CloseClipboard(); 
+ 
+    return TRUE; 
 }
 
 // Display callback
@@ -1500,7 +1614,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	for (int i = 0; i < width; i++)
 	{
 	    if (max < abs(scope.data[n + i]))
-		max =  abs(scope.data[n+i]);
+		max = abs(scope.data[n + i]);
 
 	    int y = scope.data[n + i] / yscale;
 	    LineTo(hbdc, i, y);
@@ -1604,7 +1718,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	{
 	    float zoom = ((float)width / (spectrum.r - spectrum.x)) / 2.0;
 
-	    for (int i = 0; i < (float)width / zoom; i++)
+	    for (int i = 0; i < ((float)width / zoom) + 1; i++)
 	    {
 		int n = spectrum.r + i - (width / (zoom * 2.0));
 
@@ -1690,6 +1804,10 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static HFONT large;
     static HFONT medium;
 
+    static char s[64];
+
+    // Create fonts
+
     if (large == NULL)
     {
 	lf.lfHeight = LARGE_HEIGHT;
@@ -1703,6 +1821,11 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
 
+    // Calculate dimensions
+
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+
     // Move the viewport origin
 
     SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
@@ -1710,35 +1833,55 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     // Client coordinates
 
     int y = 0;
-    int width = rect.right - rect.left;
 
-    static char s[64];
 
-    // Select font
+    // Select large font
 
     SelectObject(hdc, large);
 
+    // Select text colour
+
+    if (display.lock)
+	SetTextColor(hdc, RGB(64, 128, 128));
+
+    else
+	SetTextColor(hdc, RGB(0, 0, 0));
+
+    // Display note
+
     sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)], display.n / 12); 
     TextOut(hdc, 8, y, s, strlen(s));
+
+    // Display cents
 
     sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
     TextOut(hdc, width / 2, y, s, strlen(s));
 
     y += LARGE_HEIGHT;
 
+    // Select medium font
+
     SelectObject(hdc, medium);
+
+    // Display reference frequency
 
     sprintf(s, "%9.2lfHz  ", display.fr);
     TextOut(hdc, 8, y, s, strlen(s));
+
+    // Display actual frequency
 
     sprintf(s, "%9.2lfHz  ", display.f);
     TextOut(hdc, width / 2, y, s, strlen(s));
 
     y += MEDIUM_HEIGHT;
 
+    // Display reference
+
     sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
 	    A5_REFNCE: audio.reference);
     TextOut(hdc, 8, y, s, strlen(s));
+
+    // Display frequency difference
 
     sprintf(s, "%+8.2lfHz  ", display.e);
     TextOut(hdc, width / 2, y, s, strlen(s));
@@ -2023,12 +2166,18 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	// Not used
+	display.lock = !display.lock;
 	break;
 
     default:
 	return FALSE;
     }
+
+    if (lock.hwnd != NULL)
+	SendMessage(lock.hwnd, BM_SETCHECK,
+		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+
+    InvalidateRgn(display.hwnd, NULL, TRUE);
 
     return TRUE;
 }
@@ -2652,39 +2801,49 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    found = TRUE;
     }
 
-    // Update scope window
+    // If display not locked
 
-    scope.data = data;
-    InvalidateRgn(scope.hwnd, NULL, TRUE);
+    if (!display.lock)
+    {
+	// Update scope window
 
-    // Update spectrum window
+	scope.data = data;
+	InvalidateRgn(scope.hwnd, NULL, TRUE);
 
-    InvalidateRgn(spectrum.hwnd, NULL, TRUE);
+	// Update spectrum window
+
+	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
+    }
 
     if (found)
     {
-	// Update the display struct
+	// If display not locked
 
-	display.f = f;
-	display.fr = fr;
-	display.c = c;
-	display.e = e;
-	display.n = n;
+	if (!display.lock)
+	{
+	    // Update the display struct
 
-	spectrum.r = fr / fps * audio.correction;
-	spectrum.x = fx / fps * audio.correction;
+	    display.f = f;
+	    display.fr = fr;
+	    display.c = c;
+	    display.e = e;
+	    display.n = n;
+
+	    // Update meter
+
+	    meter.c = c;
+
+	    // Update strobe
+
+	    strobe.c = c;
+	}
 
 	// Update display
 
 	InvalidateRgn(display.hwnd, NULL, TRUE);
 
-	// Update meter
-
-	meter.c = c;
-
-	// Update strobe
-
-	strobe.c = c;
+	spectrum.r = fr / fps * audio.correction;
+	spectrum.x = fx / fps * audio.correction;
     }
 }
 

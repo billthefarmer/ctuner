@@ -18,24 +18,27 @@ around the current note.
 
 The numeric display shows the note, deviation in cents, correct
 frequency, actual frequency, reference and frequency deviation. The
-slider below and the + and - buttons allow the reference to be
-adjusted. The strobe display below shifts left or right according to
-whether the input note is flat or sharp. It may be turned off by
-clicking on the pane. The meter below shows the deviation in
-cents. The Options button pops up the Options window, the Quit button
-quits the application. The status bar shows the sample rate and the
-correction.
+display may be locked by clicking on the pane. The display values may
+be copied to the clipboard for pasting into another application by
+typing Ctrl-C. The slider below and the + and - buttons allow the
+reference to be adjusted. The strobe display below shifts left or
+right according to whether the input note is flat or sharp. It may be
+turned off by clicking on the pane. The meter below shows the
+deviation in cents. The Options button pops up the Options window, the
+Quit button quits the application. The status bar shows the sample
+rate and the correction.
 
 Options
 =======
 
 The zoom and strobe tick boxes may be used to turn the zoom and strobe
-display off and on. The Filter tick box controls a 3dB/octave audio
-filter on the input. This is intended to make it easier to tune low
-notes by reducing the level of harmonics.
+display off and on. The audio filter tick box controls a 3dB/octave
+audio filter on the input. This is intended to make it easier to tune
+low notes by reducing the level of harmonics. The display lock tick
+box may be used to lock the display.
 
 Some audio input devices appear to have inaccurate clocks. Out of
-three laptops I have tested, two were up to 7% out. The correction
+three laptops I have tested, two were up to 0.7% out. The correction
 facility allows a correction factor to be entered. The value will not
 be remembered until the save button is clicked. A known standard may
 be used to set this value. For example, my netbook has a correction
