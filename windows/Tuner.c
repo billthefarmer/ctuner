@@ -267,8 +267,11 @@ BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL MinusClicked(WPARAM, LPARAM);
+BOOL MinusPressed(WPARAM, LPARAM);
+BOOL ScopeClicked(WPARAM, LPARAM);
 BOOL LockClicked(WPARAM, LPARAM);
 BOOL PlusClicked(WPARAM, LPARAM);
+BOOL PlusPressed(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditChange(WPARAM, LPARAM);
@@ -718,7 +721,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			      WT_EXECUTEDEFAULT);
 	break;
 
-    // Colour static text
+	// Colour static text
 
     case WM_CTLCOLORSTATIC:
     	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
@@ -783,6 +786,10 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	case MINUS_ID:
 	    MinusClicked(wParam, lParam);
+	    break;
+
+	case SCOPE_ID:
+	    ScopeClicked(wParam, lParam);
 	    break;
 
 	case DISPLAY_ID:
@@ -1150,7 +1157,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	break;
 
-    // Colour static text
+	// Colour static text
 
     case WM_CTLCOLORSTATIC:
     	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
@@ -1208,7 +1215,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
-	    // Filter control
+	    // Lock control
 
 	case LOCK_ID:
 	    LockClicked(wParam, lParam);
@@ -1451,6 +1458,39 @@ BOOL CharPressed(WPARAM w, LPARAM l)
     case 'c':
     case 0x3:
 	CopyDisplay(w, l);
+	break;
+
+    case 'F':
+    case 'f':
+	FilterClicked(w, l);
+	break;
+
+    case 'L':
+    case 'l':
+	LockClicked(w, l);
+	break;
+
+    case 'O':
+    case 'o':
+	DisplayOptions(w, l);
+	break;
+
+    case 'S':
+    case 's':
+	EnableClicked(w, l);
+	break;
+
+    case 'Z':
+    case 'z':
+	ZoomClicked(w, l);
+	break;
+
+    case '+':
+	PlusPressed(w, l);
+	break;
+
+    case '-':
+	MinusPressed(w, l);
 	break;
     }
 }
@@ -1746,13 +1786,18 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    {
 		float value = 0.0;
 
-	    	for (int j = 0; j < xscale; j++)
-	    	{
-	    	    int n = x * xscale + j;
+		// Don't show DC component
 
-	    	    if (value < spectrum.data[n])
-	    		value = spectrum.data[n];
-	    	}
+		if (x > 0)
+		{
+		    for (int j = 0; j < xscale; j++)
+		    {
+			int n = x * xscale + j;
+
+			if (value < spectrum.data[n])
+			    value = spectrum.data[n];
+		    }
+		}
 
 	    	if (max < value)
 	    	    max = value;
@@ -2066,22 +2111,29 @@ BOOL DrawPlus(HDC hdc, RECT rect, UINT state)
 
 BOOL PlusClicked(WPARAM wParam, LPARAM lParam)
 {
-    if (audio.reference == 0)
-	return FALSE;
-
-    int value = audio.reference * 10;
-
     switch(HIWORD(wParam))
     {
     case BN_CLICKED:
-	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, ++value);
-	audio.reference = value / 10.0;
-	InvalidateRgn(display.hwnd, NULL, TRUE);
+	PlusPressed(wParam, lParam);
 	break;
 
     default:
 	return FALSE;
     }
+}
+
+// Plus pressed
+
+BOOL PlusPressed(WPARAM wParam, LPARAM lParam)
+{
+    if (audio.reference == 0)
+	return FALSE;
+
+    int value = audio.reference * 10;
+
+    SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, ++value);
+    audio.reference = value / 10.0;
+    InvalidateRgn(display.hwnd, NULL, TRUE);
 
     HKEY hkey;
     LONG error;
@@ -2114,22 +2166,27 @@ BOOL PlusClicked(WPARAM wParam, LPARAM lParam)
 
 BOOL MinusClicked(WPARAM wParam, LPARAM lParam)
 {
-    if (audio.reference == 0)
-	return FALSE;
-
-    int value = audio.reference * 10;
-
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, --value);
-	audio.reference = value / 10.0;
-	InvalidateRgn(display.hwnd, NULL, TRUE);
+	MinusPressed(wParam, lParam);
 	break;
 
     default:
 	return FALSE;
     }
+}
+
+BOOL MinusPressed(WPARAM wParam, LPARAM lParam)
+{
+    if (audio.reference == 0)
+	return FALSE;
+
+    int value = audio.reference * 10;
+
+    SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, --value);
+    audio.reference = value / 10.0;
+    InvalidateRgn(display.hwnd, NULL, TRUE);
 
     HKEY hkey;
     LONG error;
@@ -2178,6 +2235,23 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
 		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
+
+    return TRUE;
+}
+
+// Scope clicked
+
+BOOL ScopeClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	FilterClicked(wParam, lParam);
+	break;
+
+    default:
+	return FALSE;
+    }
 
     return TRUE;
 }

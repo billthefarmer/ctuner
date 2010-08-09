@@ -13,20 +13,20 @@ Play your instrument into your microphone and observe the display. The
 slider at the top left adjusts the microphone input level, the
 oscilloscope display at the top shows the input waveform. The display
 below shows the spectrum of the input. It may be zoomed in and out by
-clicking on the pane. When zoomed in the display shows about ±50 cents
-around the current note.
+clicking on the pane, or by pressing the 'Z' key. When zoomed in the
+display shows about ±50 cents around the current note.
 
 The numeric display shows the note, deviation in cents, correct
 frequency, actual frequency, reference and frequency deviation. The
-display may be locked by clicking on the pane. The display values may
-be copied to the clipboard for pasting into another application by
-typing Ctrl-C. The slider below and the + and - buttons allow the
-reference to be adjusted. The strobe display below shifts left or
-right according to whether the input note is flat or sharp. It may be
-turned off by clicking on the pane. The meter below shows the
-deviation in cents. The Options button pops up the Options window, the
-Quit button quits the application. The status bar shows the sample
-rate and the correction.
+display may be locked by clicking on the pane, or by pressing the 'L'
+key. The display values may be copied to the clipboard for pasting
+into another application by typing Ctrl-C. The slider below and the +
+and - buttons allow the reference to be adjusted. The strobe display
+below shifts left or right according to whether the input note is flat
+or sharp. It may be turned off by clicking on the pane, or by pressing
+the 'S' key. The meter below shows the deviation in cents. The Options
+button pops up the Options window, the Quit button quits the
+application. The status bar shows the sample rate and the correction.
 
 Options
 =======
