@@ -1,0 +1,14 @@
+#summary Mac version progress.
+#labels Featured
+
+= Introduction =
+
+A mac version is in development. Slow going so far...
+
+http://ctuner.googlecode.com/files/Tuner-mac.png
+
+= Progress =
+
+  * The basic layout and graphics are done.
+
+  * The audio capture system is working after a fashion.
