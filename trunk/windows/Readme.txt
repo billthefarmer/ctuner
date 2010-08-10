@@ -24,9 +24,14 @@ into another application by typing Ctrl-C. The slider below and the +
 and - buttons allow the reference to be adjusted. The strobe display
 below shifts left or right according to whether the input note is flat
 or sharp. It may be turned off by clicking on the pane, or by pressing
-the 'S' key. The meter below shows the deviation in cents. The Options
-button pops up the Options window, the Quit button quits the
-application. The status bar shows the sample rate and the correction.
+the 'S' key. The meter below shows the deviation in cents. The whole
+display may be resized by pressing the 'R' key. The Options button
+pops up the Options window, the Quit button quits the application. The
+status bar shows the sample rate and the correction.
+
+Clicking the right mouse button in a blank area of the tuner window
+pops up a context menu which may be used to change all the options
+above and to pop up the Options window and quit the application.
 
 Options
 =======

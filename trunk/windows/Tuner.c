@@ -50,6 +50,7 @@ enum
     {SCOPE_ID = 101,
      SPECTRUM_ID,
      DISPLAY_ID,
+     RESIZE_ID,
      STROBE_ID,
      METER_ID,
      PLUS_ID,
@@ -131,9 +132,18 @@ typedef struct
 typedef struct
 {
     HWND hwnd;
+    BOOL zoom;
+    RECT rwnd;
+    RECT rclt;
+} WINDOW, *WINDOWP;
+
+WINDOW window;
+
+typedef struct
+{
+    HWND hwnd;
 } TOOL, *TOOLP;
 
-TOOL window;
 TOOL status;
 
 typedef struct
@@ -188,6 +198,7 @@ TOOL zoom;
 TOOL text;
 TOOL edit;
 TOOL lock;
+TOOL resize;
 TOOL filter;
 TOOL updown;
 TOOL enable;
@@ -249,8 +260,10 @@ MIXER mixer;
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK PopupProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK ResizeProc(HWND, LPARAM);
 BOOL RegisterMainClass(HINSTANCE);
 VOID GetStatus(VOID);
+BOOL ResizeWindow(WPARAM, LPARAM);
 BOOL DrawItem(WPARAM, LPARAM);
 BOOL DrawStrobe(HDC, RECT);
 BOOL DrawScope(HDC, RECT);
@@ -266,6 +279,7 @@ BOOL DisplayClicked(WPARAM, LPARAM);
 BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
+BOOL ResizeClicked(WPARAM, LPARAM);
 BOOL MinusClicked(WPARAM, LPARAM);
 BOOL MinusPressed(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
@@ -442,23 +456,18 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 			     WPARAM wParam,
 			     LPARAM lParam)
 {
-    // Window dimensions
-
-    RECT rWnd;
-    RECT rClt;
-
     switch (uMsg)
     {
     case WM_CREATE:
 
 	// Get the window and client dimensions
 
-	GetWindowRect(hWnd, &rWnd);
-	GetClientRect(hWnd, &rClt);
+	GetWindowRect(hWnd, &window.rwnd);
+	GetClientRect(hWnd, &window.rclt);
 
 	// Calculate desired window width and height
 
-	int border = (rWnd.right - rWnd.left) - rClt.right;
+	int border = (window.rwnd.right - window.rwnd.left) - window.rclt.right;
 	int width  = WIDTH + border;
 	int height = HEIGHT;
 
@@ -470,11 +479,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Get client dimensions
 
-	GetWindowRect(hWnd, &rWnd);
-	GetClientRect(hWnd, &rClt);
+	GetWindowRect(hWnd, &window.rwnd);
+	GetClientRect(hWnd, &window.rclt);
 
-	width = rClt.right - rClt.left;
-	height = rClt.bottom - rClt.top;
+	width = window.rclt.right - window.rclt.left;
+	height = window.rclt.bottom - window.rclt.top;
 
 	// Create volume slider
 
@@ -804,6 +813,50 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    StrobeClicked(wParam, lParam);
 	    break;
 
+	case ZOOM_ID:
+	    ZoomClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
+	    // Enable control
+
+	case ENABLE_ID:
+	    EnableClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
+	    // Filter control
+
+	case FILTER_ID:
+	    FilterClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
+	    // Lock control
+
+	case LOCK_ID:
+	    LockClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
+	    // Resize control
+
+	case RESIZE_ID:
+	    ResizeClicked(wParam, lParam);
+	    break;
+
 	case OPTIONS_ID:
 	    DisplayOptions(wParam, lParam);
 	    break;
@@ -838,6 +891,72 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
     return 0;
 }
 
+// Resize window
+
+BOOL ResizeWindow(WPARAM wParam, LPARAM lParam)
+{
+    int width, height;
+
+    GetWindowRect(window.hwnd, &window.rwnd);
+
+    int border = (window.rwnd.right - window.rwnd.left) - window.rclt.right;
+
+    if (window.zoom)
+    {
+	// Calculate desired window width and height
+
+	width  = WIDTH * 2 + border;
+	height = HEIGHT * 2 - 50;
+    }
+
+    else
+    {
+	// Calculate desired window width and height
+
+	width  = WIDTH + border;
+	height = HEIGHT;
+    }
+
+    // Set new dimensions
+
+    SetWindowPos(window.hwnd, NULL, 0, 0,
+		 width, height, SWP_NOMOVE | SWP_NOZORDER);
+
+    // Get client dimensions
+
+    GetClientRect(window.hwnd, &window.rclt);
+
+    EnumChildWindows(window.hwnd, ResizeProc, window.zoom);
+}
+
+// Resize procedure
+
+BOOL CALLBACK ResizeProc(HWND hwnd, LPARAM lParam)
+{
+    union
+    {
+	RECT r;
+	POINT p[2];
+    } rect;
+
+    GetWindowRect(hwnd, &rect.r);
+    ScreenToClient(window.hwnd, &rect.p[0]);
+    ScreenToClient(window.hwnd, &rect.p[1]);
+
+    int width = rect.r.right - rect.r.left;
+    int height = rect.r.bottom - rect.r.top;
+
+    if (lParam)
+	MoveWindow(hwnd, rect.r.left * 2, rect.r.top * 2,
+		     width * 2, height * 2, TRUE);
+
+    else
+	MoveWindow(hwnd, rect.r.left / 2, rect.r.top / 2,
+		     width / 2, height / 2, TRUE);
+
+    return TRUE;
+}
+
 // Draw item
 
 BOOL DrawItem(WPARAM wParam, LPARAM lParam)
@@ -846,6 +965,19 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
     UINT state = lpdi->itemState;
     RECT rect = lpdi->rcItem;
     HDC hdc = lpdi->hDC;
+
+    SetGraphicsMode(hdc, GM_ADVANCED);
+
+    if (window.zoom)
+    {
+	XFORM xform =
+	    {2.0, 0.0, 0.0, 2.0, 0, 0};
+
+	SetWorldTransform(hdc, &xform);
+
+	rect.right /= 2;
+	rect.bottom /= 2;
+    }
 
     switch (wParam)
     {
@@ -886,12 +1018,22 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
     HMENU menu;
     POINT point;
 
-    point.x = points.x;
-    point.y = points.y;
-
+    POINTSTOPOINT(point, points);
     ClientToScreen(hWnd, &point);
 
     menu = CreatePopupMenu();
+
+    AppendMenu(menu, spectrum.zoom? MF_STRING | MF_CHECKED:
+	       MF_STRING, ZOOM_ID, "Zoom spectrum");
+    AppendMenu(menu, strobe.enable? MF_STRING | MF_CHECKED:
+	       MF_STRING, ENABLE_ID, "Display strobe");
+    AppendMenu(menu, audio.filter? MF_STRING | MF_CHECKED:
+	       MF_STRING, FILTER_ID, "Audio filter");
+    AppendMenu(menu, display.lock? MF_STRING | MF_CHECKED:
+	       MF_STRING, LOCK_ID, "Lock display");
+    AppendMenu(menu, window.zoom? MF_STRING | MF_CHECKED:
+	       MF_STRING, RESIZE_ID, "Resize display");
+    AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, OPTIONS_ID, "Options...");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, QUIT_ID, "Quit");
@@ -928,7 +1070,7 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 			 WS_VISIBLE | WS_POPUP |
 			 WS_CAPTION,
 			 rWnd.right + 10, rWnd.top,
-			 WIDTH, HEIGHT - 110, window.hwnd,
+			 WIDTH, HEIGHT - 134, window.hwnd,
 			 (HMENU)NULL, hInst, NULL);
     }
 
@@ -959,7 +1101,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 2, width - 20, 88,
+			 10, 2, width - 20, 122,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create zoom tickbox
@@ -1046,13 +1188,34 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
+	// Create resize tickbox
+
+	resize.hwnd =
+	    CreateWindow(WC_BUTTON, "Resize display:",
+			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+			 BS_CHECKBOX,
+			 20, 88, 124, 24,
+			 hWnd, (HMENU)RESIZE_ID, hInst, NULL);
+
+	SendMessage(resize.hwnd, BM_SETCHECK,
+		    window.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+
+	// Add clickbox to tooltip
+
+	tooltip.info.uId = (UINT_PTR)resize.hwnd;
+	tooltip.info.lpszText = "Resize display, "
+	    "click to change";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create group box
 
 	group.hwnd =
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 92, width - 20, 124,
+			 10, 126, width - 20, 124,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create text
@@ -1061,7 +1224,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, "Correction:",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 114, 76, 20,
+			 20, 148, 76, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create edit control
@@ -1072,7 +1235,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_EDIT, s,
 			 WS_VISIBLE | WS_CHILD |
 			 WS_BORDER,
-			 100, 112, 82, 20, hWnd,
+			 100, 146, 82, 20, hWnd,
 			 (HMENU)EDIT_ID, hInst, NULL);
 
 	// Add edit to tooltip
@@ -1111,7 +1274,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Save",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 109, 85, 26,
+			 209, 143, 85, 26,
 			 hWnd, (HMENU)SAVE_ID, hInst, NULL);
 
 	// Create text
@@ -1122,7 +1285,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			 "is significantly inaccurate.",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 142, width - 40, 40,
+			 20, 176, width - 40, 40,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create text
@@ -1134,17 +1297,8 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, s,
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 184, 152, 20,
+			 20, 218, 152, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
-
-	// Create group box
-
-	group.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 BS_GROUPBOX,
-			 10, 218, width - 20, 54,
-			 hWnd, NULL, hInst, NULL);
 
 	// Create done button
 
@@ -1152,7 +1306,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Done",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 236, 85, 26,
+			 209, 213, 85, 26,
 			 hWnd, (HMENU)DONE_ID, hInst, NULL);
 
 	break;
@@ -1160,8 +1314,8 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Colour static text
 
     case WM_CTLCOLORSTATIC:
-    	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
-    	break;
+	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+	break;
 
 	// Updown control
 
@@ -1219,6 +1373,16 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	case LOCK_ID:
 	    LockClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
+	    // Resize control
+
+	case RESIZE_ID:
+	    ResizeClicked(wParam, lParam);
 
 	    // Set the focus back to the window
 
@@ -1348,6 +1512,28 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+// Resize clicked
+
+BOOL ResizeClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	window.zoom = !window.zoom;
+
+	SendMessage(resize.hwnd, BM_SETCHECK,
+		    window.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+
+	ResizeWindow(wParam, lParam);
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 // Edit change
 
 BOOL EditChange(WPARAM wParam, LPARAM lParam)
@@ -1357,8 +1543,8 @@ BOOL EditChange(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case EN_KILLFOCUS:
-    	SendMessage(edit.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
-    	audio.correction = atof(s);
+	SendMessage(edit.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
+	audio.correction = atof(s);
 
 	SendMessage(updown.hwnd, UDM_SETPOS32, 0, audio.correction * 100000);
 
@@ -1369,7 +1555,7 @@ BOOL EditChange(WPARAM wParam, LPARAM lParam)
 	sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 		(double)SAMPLE_RATE / audio.correction, audio.correction);
 	SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)s);
-    	break;
+	break;
     }
 }
 
@@ -1435,9 +1621,7 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
     HMENU menu;
     POINT point;
 
-    point.x = points.x;
-    point.y = points.y;
-
+    POINTSTOPOINT(point, points);
     ClientToScreen(hWnd, &point);
 
     menu = CreatePopupMenu();
@@ -1473,6 +1657,11 @@ BOOL CharPressed(WPARAM w, LPARAM l)
     case 'O':
     case 'o':
 	DisplayOptions(w, l);
+	break;
+
+    case 'R':
+    case 'r':
+	ResizeClicked(w, l);
 	break;
 
     case 'S':
@@ -1524,7 +1713,7 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
     }
 
     LPTSTR text = GlobalLock(mem);
-    memcpy(text, s, (strlen(s) + 1) * sizeof(TCHAR));
+    strcpy(text, s);
 
     GlobalUnlock(text);
     SetClipboardData(CF_TEXT, mem);
@@ -1825,6 +2014,9 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 BOOL DrawDisplay(HDC hdc, RECT rect)
 {
+    static HBITMAP bitmap;
+    static HDC hbdc;
+
     enum
     {LARGE_HEIGHT  = 42,
      MEDIUM_HEIGHT = 28};
@@ -1871,52 +2063,65 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    // Move the viewport origin
+    // Create bitmap
 
-    SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
+    if (bitmap == NULL)
+    {
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
+
+	// Create DC
+
+	hbdc = CreateCompatibleDC(hdc);
+	SelectObject(hbdc, bitmap);
+    }
+
+    // Erase background
+
+    RECT brct =
+	{0, 0, width, height};
+    FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
     // Client coordinates
 
     int y = 0;
 
-
     // Select large font
 
-    SelectObject(hdc, large);
+    SelectObject(hbdc, large);
 
     // Select text colour
 
     if (display.lock)
-	SetTextColor(hdc, RGB(64, 128, 128));
+	SetTextColor(hbdc, RGB(64, 128, 128));
 
     else
-	SetTextColor(hdc, RGB(0, 0, 0));
+	SetTextColor(hbdc, RGB(0, 0, 0));
 
     // Display note
 
     sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)], display.n / 12); 
-    TextOut(hdc, 8, y, s, strlen(s));
+    TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display cents
 
     sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
-    TextOut(hdc, width / 2, y, s, strlen(s));
+    TextOut(hbdc, width / 2, y, s, strlen(s));
 
     y += LARGE_HEIGHT;
 
     // Select medium font
 
-    SelectObject(hdc, medium);
+    SelectObject(hbdc, medium);
 
     // Display reference frequency
 
     sprintf(s, "%9.2lfHz  ", display.fr);
-    TextOut(hdc, 8, y, s, strlen(s));
+    TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display actual frequency
 
     sprintf(s, "%9.2lfHz  ", display.f);
-    TextOut(hdc, width / 2, y, s, strlen(s));
+    TextOut(hbdc, width / 2, y, s, strlen(s));
 
     y += MEDIUM_HEIGHT;
 
@@ -1924,12 +2129,17 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
 	    A5_REFNCE: audio.reference);
-    TextOut(hdc, 8, y, s, strlen(s));
+    TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display frequency difference
 
     sprintf(s, "%+8.2lfHz  ", display.e);
-    TextOut(hdc, width / 2, y, s, strlen(s));
+    TextOut(hbdc, width / 2, y, s, strlen(s));
+
+    // Copy the bitmap
+
+    BitBlt(hdc, rect.left, rect.top, width, height,
+	   hbdc, 0, 0, SRCCOPY);
 
     return TRUE;
 }
@@ -1938,7 +2148,9 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 BOOL DrawMeter(HDC hdc, RECT rect)
 {
+    static HBITMAP bitmap;
     static HFONT font;
+    static HDC hbdc;
 
     // Plain vanilla font
 
@@ -1957,15 +2169,6 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
 
-    // Calculate bitmap dimensions
-
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-
-    // Move origin
-
-    SetViewportOrgEx(hdc, rect.left + width / 2, rect.top, NULL);
-
     // Select font
 
     if (font == NULL)
@@ -1974,8 +2177,35 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	font = CreateFontIndirect(&lf);
     }
 
-    SelectObject(hdc, font);
-    SetTextAlign(hdc, TA_CENTER);
+    // Calculate bitmap dimensions
+
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+
+    // Create bitmap
+
+    if (bitmap == NULL)
+    {
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
+
+	// Create DC
+
+	hbdc = CreateCompatibleDC(hdc);
+	SelectObject(hbdc, bitmap);
+
+	SelectObject(hbdc, font);
+	SetTextAlign(hbdc, TA_CENTER);
+    }
+
+    // Erase background
+
+    RECT brct =
+	{0, 0, width, height};
+    FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
+
+    // Move origin
+
+    SetViewportOrgEx(hbdc, width / 2, 0, NULL);
 
     // Draw the meter scale
 
@@ -1985,26 +2215,35 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	static char s[16];
 
 	sprintf(s, "%d", i * 10);
-	TextOut(hdc, x + 1, 0, s, strlen(s));
-	TextOut(hdc, -x + 1, 0, s, strlen(s));
+	TextOut(hbdc, x + 1, 0, s, strlen(s));
+	TextOut(hbdc, -x + 1, 0, s, strlen(s));
 
-	MoveToEx(hdc, x, 14, NULL);
-	LineTo(hdc, x, 20);
-	MoveToEx(hdc, -x, 14, NULL);
-	LineTo(hdc, -x, 20);
+	MoveToEx(hbdc, x, 14, NULL);
+	LineTo(hbdc, x, 20);
+	MoveToEx(hbdc, -x, 14, NULL);
+	LineTo(hbdc, -x, 20);
 
 	for (int j = 1; j < 5; j++)
 	{
 	    if (i < 5)
 	    {
-		MoveToEx(hdc, x + j * width / 55, 16, NULL);
-		LineTo(hdc, x + j * width / 55, 20);
+		MoveToEx(hbdc, x + j * width / 55, 16, NULL);
+		LineTo(hbdc, x + j * width / 55, 20);
 	    }
 
-	    MoveToEx(hdc, -x + j * width / 55, 16, NULL);
-	    LineTo(hdc, -x + j * width / 55, 20);
+	    MoveToEx(hbdc, -x + j * width / 55, 16, NULL);
+	    LineTo(hbdc, -x + j * width / 55, 20);
 	}
     }
+
+    // Move origin back
+
+    SetViewportOrgEx(hbdc, 0, 0, NULL);
+
+    // Copy the bitmap
+
+    BitBlt(hdc, rect.left, rect.top, width, height,
+	   hbdc, 0, 0, SRCCOPY);
 
     return TRUE;
 }
@@ -2085,6 +2324,9 @@ BOOL DrawMinus(HDC hdc, RECT rect, UINT state)
     else
 	DrawEdge(hdc, &rect , EDGE_RAISED, BF_ADJUST | BF_RECT);
 
+    SelectObject(hdc, GetStockObject(BLACK_PEN));
+    SelectObject(hdc, GetStockObject(BLACK_BRUSH));
+
     Rectangle(hdc, rect.left + 2, (rect.bottom - rect.top) / 2 + rect.top - 1,
 	      rect.right - 2, (rect.bottom - rect.top) / 2 + rect.top + 1);
 }
@@ -2100,6 +2342,9 @@ BOOL DrawPlus(HDC hdc, RECT rect, UINT state)
 
     else
 	DrawEdge(hdc, &rect , EDGE_RAISED, BF_ADJUST | BF_RECT);
+
+    SelectObject(hdc, GetStockObject(BLACK_PEN));
+    SelectObject(hdc, GetStockObject(BLACK_BRUSH));
 
     Rectangle(hdc, rect.left + 2, (rect.bottom - rect.top) / 2 + rect.top - 1,
 	      rect.right - 2, (rect.bottom - rect.top) / 2 + rect.top + 1);
