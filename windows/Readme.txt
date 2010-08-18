@@ -25,9 +25,10 @@ and - buttons allow the reference to be adjusted. The strobe display
 below shifts left or right according to whether the input note is flat
 or sharp. It may be turned off by clicking on the pane, or by pressing
 the 'S' key. The meter below shows the deviation in cents. The whole
-display may be resized by pressing the 'R' key. The Options button
-pops up the Options window, the Quit button quits the application. The
-status bar shows the sample rate and the correction.
+display may be resized by pressing the 'R' key. Multiple tuning values
+may be displayed in the strobe pane by pressing the 'T' key. The
+Options button pops up the Options window, the Quit button quits the
+application. The status bar shows the sample rate and the correction.
 
 Clicking the right mouse button in a blank area of the tuner window
 pops up a context menu which may be used to change all the options
@@ -40,7 +41,9 @@ The zoom and strobe tick boxes may be used to turn the zoom and strobe
 display off and on. The audio filter tick box controls a 3dB/octave
 audio filter on the input. This is intended to make it easier to tune
 low notes by reducing the level of harmonics. The display lock tick
-box may be used to lock the display.
+box may be used to lock the display. The resize tick box may be used
+to resize the display. The tremolo tick box may be used to display
+multiple tuning values.
 
 Some audio input devices appear to have inaccurate clocks. Out of
 three laptops I have tested, two were up to 0.7% out. The correction

@@ -68,6 +68,7 @@ enum
      FILTER_ID,
      UPDOWN_ID,
      ENABLE_ID,
+     TREMOLO_ID,
      OPTIONS_ID,
      REFERENCE_ID};
 
@@ -82,8 +83,9 @@ enum
 // Audio processing values
 
 enum
-    {OVERSAMPLE = 8,
-     SAMPLES = 8192,
+    {MAXIMA = 8,
+     OVERSAMPLE = 16,
+     SAMPLES = 16384,
      RANGE = SAMPLES / 4,
      STEP = SAMPLES / OVERSAMPLE};
 
@@ -170,9 +172,12 @@ typedef struct
     HWND hwnd;
     UINT length;
     BOOL zoom;
+    float f;
     float r;
-    float x;
+    float x[2];
+    int count;
     double *data;
+    float *values;
 } SPECTRUM, *SPECTRUMP;
 
 SPECTRUM spectrum;
@@ -181,18 +186,21 @@ typedef struct
 {
     HWND hwnd;
     HANDLE timer;
+    BOOL tremolo;
     BOOL lock;
     double f;
     double fr;
     double c;
-    double e;
     int n;
+    int count;
+    double *maxima;
 } DISPLAY, *DISPLAYP;
 
 DISPLAY display;
 
 TOOL adjust;
 TOOL options;
+TOOL tremolo;
 TOOL group;
 TOOL zoom;
 TOOL text;
@@ -287,6 +295,7 @@ BOOL LockClicked(WPARAM, LPARAM);
 BOOL PlusClicked(WPARAM, LPARAM);
 BOOL PlusPressed(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
+BOOL TremoloClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditChange(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
@@ -536,7 +545,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add scope to tooltip
 
 	tooltip.info.uId = (UINT_PTR)scope.hwnd;
-	tooltip.info.lpszText = "Scope";
+	tooltip.info.lpszText = "Scope, click to filter audio";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -693,7 +702,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Create options button
 
 	button.options.hwnd =
-	    CreateWindow(WC_BUTTON, "Options",
+	    CreateWindow(WC_BUTTON, "Options...",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
 			 7, 336, 85, 26,
@@ -857,9 +866,17 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    ResizeClicked(wParam, lParam);
 	    break;
 
+	case TREMOLO_ID:
+	    TremoloClicked(wParam, lParam);
+	    break;
+
+	    // Options
+
 	case OPTIONS_ID:
 	    DisplayOptions(wParam, lParam);
 	    break;
+
+	    // Quit
 
 	case QUIT_ID:
 	    PostQuitMessage(0);
@@ -1033,6 +1050,8 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 	       MF_STRING, LOCK_ID, "Lock display");
     AppendMenu(menu, window.zoom? MF_STRING | MF_CHECKED:
 	       MF_STRING, RESIZE_ID, "Resize display");
+    AppendMenu(menu, display.tremolo? MF_STRING | MF_CHECKED:
+	       MF_STRING, RESIZE_ID, "Display tremolo");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, OPTIONS_ID, "Options...");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
@@ -1116,7 +1135,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(zoom.hwnd, BM_SETCHECK,
 		    spectrum.zoom? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add clickbox to tooltip
+	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)zoom.hwnd;
 	tooltip.info.lpszText = "Zoom spectrum, "
@@ -1137,7 +1156,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(enable.hwnd, BM_SETCHECK,
 		    strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add clickbox to tooltip
+	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)enable.hwnd;
 	tooltip.info.lpszText = "Display strobe, "
@@ -1158,7 +1177,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(filter.hwnd, BM_SETCHECK,
 		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add clickbox to tooltip
+	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)filter.hwnd;
 	tooltip.info.lpszText = "Audio filter, "
@@ -1179,7 +1198,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(lock.hwnd, BM_SETCHECK,
 		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add clickbox to tooltip
+	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)lock.hwnd;
 	tooltip.info.lpszText = "Lock display, "
@@ -1200,10 +1219,31 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(resize.hwnd, BM_SETCHECK,
 		    window.zoom? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add clickbox to tooltip
+	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)resize.hwnd;
 	tooltip.info.lpszText = "Resize display, "
+	    "click to change";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
+	// Create tremolo tickbox
+
+	tremolo.hwnd =
+	    CreateWindow(WC_BUTTON, "Display tremolo:",
+			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+			 BS_CHECKBOX,
+			 width / 2 + 10, 88, 124, 24,
+			 hWnd, (HMENU)TREMOLO_ID, hInst, NULL);
+
+	SendMessage(tremolo.hwnd, BM_SETCHECK,
+		    display.tremolo? BST_CHECKED: BST_UNCHECKED, 0);
+
+	// Add tickbox to tooltip
+
+	tooltip.info.uId = (UINT_PTR)tremolo.hwnd;
+	tooltip.info.lpszText = "Display tremolo, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1389,6 +1429,16 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
+	    // Tremolo control
+
+	case TREMOLO_ID:
+	    TremoloClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
 	    // Updown control
 
 	case EDIT_ID:
@@ -1534,6 +1584,27 @@ BOOL ResizeClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+// Tremolo clicked
+
+BOOL TremoloClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	display.tremolo = !display.tremolo;
+
+	SendMessage(tremolo.hwnd, BM_SETCHECK,
+		    display.tremolo? BST_CHECKED: BST_UNCHECKED, 0);
+	InvalidateRgn(display.hwnd, NULL, TRUE);
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 // Edit change
 
 BOOL EditChange(WPARAM wParam, LPARAM lParam)
@@ -1669,6 +1740,11 @@ BOOL CharPressed(WPARAM w, LPARAM l)
 	EnableClicked(w, l);
 	break;
 
+    case 'T':
+    case 't':
+	TremoloClicked(w, l);
+	break;
+
     case 'Z':
     case 'z':
 	ZoomClicked(w, l);
@@ -1699,12 +1775,7 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 
     EmptyClipboard(); 
 
-    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
-	    notes[display.n % LENGTH(notes)], display.n / 12,
-	    display.c * 100.0, display.fr, display.f, display.e);
-
-    HGLOBAL mem =
-	GlobalAlloc(GMEM_MOVEABLE, (strlen(s) + 1) * sizeof(TCHAR));
+    HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, 1024);
 
     if (mem == NULL)
     {
@@ -1713,7 +1784,58 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
     }
 
     LPTSTR text = GlobalLock(mem);
-    strcpy(text, s);
+
+    if (display.tremolo)
+    {
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i];
+
+	    double cf =
+		-12.0 * (log(audio.reference / f) / log(2.0));
+
+	    // Reference freq
+
+	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    int n = round(cf) + A5_OFFSET;
+
+	    if (n < 0)
+		n = 0;
+
+	    // Don't go higher than E7
+
+	    if (n > E7_OFFSET)
+		n = E7_OFFSET;
+
+	    double c = -12.0 * (log(fr / f) / log(2.0));
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+		    notes[n % LENGTH(notes)], n / 12,
+		    c * 100.0, fr, f, f - fr);
+
+	    if (i == 0)
+		strcpy(text, s);
+
+	    else
+		strcat(text, s);
+	}
+    }
+
+    else
+    {
+	sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+		notes[display.n % LENGTH(notes)], display.n / 12,
+		display.c * 100.0, display.fr, display.f,
+		display.f - display.fr);
+
+	strcpy(text, s);
+    }
 
     GlobalUnlock(text);
     SetClipboardData(CF_TEXT, mem);
@@ -1799,60 +1921,74 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     // Don't attempt the trace until there's a buffer
 
-    if (scope.data != NULL)
+    if (scope.data == NULL)
+	return TRUE;
+
+    // Initialise sync
+
+    int maxdx = 0;
+    int dx = 0;
+    int n = 0;
+
+    for (int i = 1; i < width; i++)
     {
-	// Initialise sync
-
-	int maxdx = 0;
-	int dx = 0;
-	int n = 0;
-
-	for (int i = 1; i < width; i++)
+	dx = scope.data[i] - scope.data[i - 1];
+	if (maxdx > dx)
 	{
-	    dx = scope.data[i] - scope.data[i - 1];
-	    if (maxdx > dx)
-	    {
-		maxdx = dx;
-		n = i;
-	    }
-
-	    if (maxdx < 0 && dx > 0)
-		break;
+	    maxdx = dx;
+	    n = i;
 	}
 
-	// Green pen for scope trace
+	if (maxdx < 0 && dx > 0)
+	    break;
+    }
 
-	SetDCPenColor(hbdc, RGB(0, 255, 0));
+    // Green pen for scope trace
 
-	// Move the origin
+    SetDCPenColor(hbdc, RGB(0, 255, 0));
 
-	SetViewportOrgEx(hbdc, 0, height / 2, NULL);
+    // Move the origin
 
-	static int max;
+    SetViewportOrgEx(hbdc, 0, height / 2, NULL);
 
-	if (max < 4096)
-	    max = 4096;
+    static int max;
 
-	int yscale = max / (height / 2);
+    if (max < 4096)
+	max = 4096;
 
-	max = 0;
+    int yscale = max / (height / 2);
 
-	// Draw the trace
+    max = 0;
 
-	MoveToEx(hbdc, 0, 0, NULL);
-	for (int i = 0; i < width; i++)
-	{
-	    if (max < abs(scope.data[n + i]))
-		max = abs(scope.data[n + i]);
+    // Draw the trace
 
-	    int y = scope.data[n + i] / yscale;
-	    LineTo(hbdc, i, y);
-	}
+    MoveToEx(hbdc, 0, 0, NULL);
+    for (int i = 0; i < width; i++)
+    {
+	if (max < abs(scope.data[n + i]))
+	    max = abs(scope.data[n + i]);
+
+	int y = scope.data[n + i] / yscale;
+	LineTo(hbdc, i, y);
     }
 
     // Move the origin back
 
     SetViewportOrgEx(hbdc, 0, 0, NULL);
+
+    // Show F if filtered
+
+    if (audio.filter)
+    {
+	MoveToEx(hbdc, 0, height - 7, NULL);
+	LineTo(hbdc, 0, height);
+
+	MoveToEx(hbdc, 0, height - 7, NULL);
+	LineTo(hbdc, 4, height - 7);
+
+	MoveToEx(hbdc, 0, height - 4, NULL);
+	LineTo(hbdc, 3, height - 4);
+    }
 
     // Copy the bitmap
 
@@ -1918,89 +2054,124 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     // Don't attempt the trace until there's a buffer
 
-    if (spectrum.data != NULL)
+    if (spectrum.data == NULL)
+	return TRUE;
+
+    // Green pen for spectrum trace
+
+    SetDCPenColor(hbdc, RGB(0, 255, 0));
+
+    // Move the origin
+
+    SetViewportOrgEx(hbdc, 0, height - 1, NULL);
+
+    static float max;
+
+    if (max < 1.0)
+	max = 1.0;
+
+    // Calculate the scaling
+
+    float yscale = (float)height / max;
+
+    max = 0.0;
+
+    // Draw the spectrum
+
+    MoveToEx(hbdc, 0, 0, NULL);
+    if (spectrum.zoom)
     {
-	// Green pen for spectrum trace
+	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
-	SetDCPenColor(hbdc, RGB(0, 255, 0));
-
-	// Move the origin
-
-	SetViewportOrgEx(hbdc, 0, height - 1, NULL);
-
-	static float max;
-
-	if (max < 1.0)
-	    max = 1.0;
-
-	// Calculate the scaling
-
-	float xscale = (float)spectrum.length / (float)width;
-	float yscale = (float)height / max;
-
-	max = 0.0;
-
-	// Draw the spectrum
-
-	MoveToEx(hbdc, 0, 0, NULL);
-	if (spectrum.zoom)
+	for (int i = 0; i < ((float)width / xscale) + 1; i++)
 	{
-	    float zoom = ((float)width / (spectrum.r - spectrum.x)) / 2.0;
+	    int n = spectrum.r + i - (width / (xscale * 2.0));
 
-	    for (int i = 0; i < ((float)width / zoom) + 1; i++)
+	    if (n >= 0 && n < spectrum.length)
 	    {
-		int n = spectrum.r + i - (width / (zoom * 2.0));
+		float value = spectrum.data[n];
 
-	    	if (n >= 0 && n < spectrum.length)
-	    	{
-	    	    float value = spectrum.data[n];
+		if (max < value)
+		    max = value;
 
-	    	    if (max < value)
-	    		max = value;
+		int y = -value * yscale;
+		int x = i * xscale;
 
-	    	    int y = -value * yscale;
-		    int x = i * zoom;
-
-	    	    LineTo(hbdc, x, y);
-	    	}
+		LineTo(hbdc, x, y);
 	    }
-
-	    MoveToEx(hbdc, width / 2, 0, NULL);
-	    LineTo(hbdc, width / 2, -height);
 	}
 
-	else
+	MoveToEx(hbdc, width / 2, 0, NULL);
+	LineTo(hbdc, width / 2, -height);
+
+	// Yellow pen for frequency trace
+
+	SetDCPenColor(hbdc, RGB(255, 255, 0));
+
+	int x = (spectrum.f - spectrum.x[0]) * xscale;
+	MoveToEx(hbdc, x, 0, NULL);
+	LineTo(hbdc, x, -height);
+
+	for (int i = 0; i < spectrum.count; i++)
 	{
-	    for (int x = 0; x < width; x++)
+	    if (spectrum.values[i] > spectrum.x[0] &&
+		spectrum.values[i] < spectrum.x[1])
 	    {
-		float value = 0.0;
-
-		// Don't show DC component
-
-		if (x > 0)
-		{
-		    for (int j = 0; j < xscale; j++)
-		    {
-			int n = x * xscale + j;
-
-			if (value < spectrum.data[n])
-			    value = spectrum.data[n];
-		    }
-		}
-
-	    	if (max < value)
-	    	    max = value;
-
-	    	int y = -value * yscale;
-
-	    	LineTo(hbdc, x, y);
+		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+		MoveToEx(hbdc, x, 0, NULL);
+		LineTo(hbdc, x, -height);
 	    }
+	}
+    }
+
+    else
+    {
+	float xscale = (float)spectrum.length / (float)width;
+
+	for (int x = 0; x < width; x++)
+	{
+	    float value = 0.0;
+
+	    // Don't show DC component
+
+	    if (x > 0)
+	    {
+		for (int j = 0; j < xscale; j++)
+		{
+		    int n = x * xscale + j;
+
+		    if (value < spectrum.data[n])
+			value = spectrum.data[n];
+		}
+	    }
+
+	    if (max < value)
+		max = value;
+
+	    int y = -value * yscale;
+
+	    LineTo(hbdc, x, y);
 	}
     }
 
     // Move the origin back
 
     SetViewportOrgEx(hbdc, 0, 0, NULL);
+
+    // Show T if tremolo
+
+    if (display.tremolo)
+    {	
+	// Green pen for text
+
+	SetDCPenColor(hbdc, RGB(0, 255, 0));
+
+	MoveToEx(hbdc, 0, height - 7, NULL);
+	LineTo(hbdc, 5, height - 7);
+
+	MoveToEx(hbdc, 2, height - 7, NULL);
+	LineTo(hbdc, 2, height);
+    }
 
     // Copy the bitmap
 
@@ -2015,6 +2186,8 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 BOOL DrawDisplay(HDC hdc, RECT rect)
 {
     static HBITMAP bitmap;
+    static HFONT medium;
+    static HFONT large;
     static HDC hbdc;
 
     enum
@@ -2037,9 +2210,6 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
-
-    static HFONT large;
-    static HFONT medium;
 
     static char s[64];
 
@@ -2081,14 +2251,6 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	{0, 0, width, height};
     FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
-    // Client coordinates
-
-    int y = 0;
-
-    // Select large font
-
-    SelectObject(hbdc, large);
-
     // Select text colour
 
     if (display.lock)
@@ -2097,17 +2259,26 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     else
 	SetTextColor(hbdc, RGB(0, 0, 0));
 
+    // Select large font
+
+    SelectObject(hbdc, large);
+
+    // Display coordinates
+
+    int y = 0;
+
     // Display note
 
-    sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)], display.n / 12); 
+    sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
+	    display.n / 12); 
     TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display cents
 
-    sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
+    sprintf(s, "%+6.2lf¢", display.c * 100.0);
     TextOut(hbdc, width / 2, y, s, strlen(s));
 
-    y += LARGE_HEIGHT;
+    y = LARGE_HEIGHT;
 
     // Select medium font
 
@@ -2115,25 +2286,25 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     // Display reference frequency
 
-    sprintf(s, "%9.2lfHz  ", display.fr);
+    sprintf(s, "%9.2lfHz", display.fr);
     TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display actual frequency
 
-    sprintf(s, "%9.2lfHz  ", display.f);
+    sprintf(s, "%9.2lfHz", display.f);
     TextOut(hbdc, width / 2, y, s, strlen(s));
 
     y += MEDIUM_HEIGHT;
 
     // Display reference
 
-    sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
+    sprintf(s, "%9.2lfHz", (audio.reference == 0)?
 	    A5_REFNCE: audio.reference);
     TextOut(hbdc, 8, y, s, strlen(s));
 
     // Display frequency difference
 
-    sprintf(s, "%+8.2lfHz  ", display.e);
+    sprintf(s, "%+8.2lfHz", display.f - display.fr);
     TextOut(hbdc, width / 2, y, s, strlen(s));
 
     // Copy the bitmap
@@ -2256,10 +2427,39 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     static float mx = 0.0;
 
     static HDC hbdc;
+    static HFONT font;
+
+    static char *notes[] =
+	{"A", "Bb", "B", "C", "C#", "D",
+	 "Eb", "E", "F", "F#", "G", "Ab"};
+
+    enum
+    {FONT_HEIGHT = 12};
+
+    // Bold font
+
+    static LOGFONT lf =
+	{0, 0, 0, 0,
+	 FW_BOLD,
+	 FALSE, FALSE, FALSE,
+	 DEFAULT_CHARSET,
+	 OUT_DEFAULT_PRECIS,
+	 CLIP_DEFAULT_PRECIS,
+	 DEFAULT_QUALITY,
+	 DEFAULT_PITCH | FF_DONTCARE,
+	 ""};
 
     // Draw nice etched edge
 
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
+
+    // Select font
+
+    if (font == NULL)
+    {
+	lf.lfHeight = FONT_HEIGHT;
+	font = CreateFontIndirect(&lf);
+    }
 
     // Calculate dimensions
 
@@ -2280,7 +2480,73 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	{0, 0, width, height};
     FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
-    if (strobe.enable)
+    if (display.tremolo)
+    {
+	static char s[64];
+
+	// Select font
+
+	SelectObject(hbdc, font);
+
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i];
+
+	    double cf =
+		-12.0 * (log(audio.reference / f) / log(2.0));
+
+	    // Reference freq
+
+	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    int n = round(cf) + A5_OFFSET;
+
+	    if (n < 0)
+		n = 0;
+
+	    // Don't go higher than E7
+
+	    if (n > E7_OFFSET)
+		n = E7_OFFSET;
+
+	    double c = -12.0 * (log(fr / f) / log(2.0));
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    // Display note
+
+	    sprintf(s, "%4s%d", notes[n % LENGTH(notes)], n / 12);
+	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display cents
+
+	    sprintf(s, "%+7.2lf¢", c * 100.0);
+	    TextOut(hbdc, width / 5, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display reference
+
+	    sprintf(s, "%8.2lfHz", fr);
+	    TextOut(hbdc, width * 2/ 5, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display frequency
+
+	    sprintf(s, "%8.2lfHz", f);
+	    TextOut(hbdc, width * 3 / 5, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display difference
+
+	    sprintf(s, "%+7.2lfHz", f - fr);
+	    TextOut(hbdc, width * 4 / 5, i * FONT_HEIGHT, s, strlen(s));
+
+	    if (i == 2)
+		break;
+	}
+    }
+
+    else if (strobe.enable)
     {
 	mc = ((7.0 * mc) + strobe.c) / 8.0;
 	mx += mc * 50.0;
@@ -2938,17 +3204,26 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     static double xp[RANGE];
     static double xf[RANGE];
 
+    static double dxa[RANGE];
+    static double dxf[RANGE];
+
+    static double maxima[MAXIMA];
+    static float values[MAXIMA];
+
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
 
     // initialise data structs
 
-    if (spectrum.data == NULL)
+    if (scope.data == NULL)
     {
 	scope.length = STEP;
 
 	spectrum.data = xa;
 	spectrum.length = RANGE;
+
+	spectrum.values = values;
+	display.maxima = maxima;
     }
 
     // Copy the input data
@@ -2957,12 +3232,12 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     short *data = (short *)((WAVEHDR *)lParam)->lpData;
 
+    // Butterworth filter, 3dB/octave
+
     for (int i = 0; i < STEP; i++)
     {
 	static double xv[2];
 	static double yv[2];
-
-	// Butterworth filter, 3dB/octave
 
 	xv[0] = xv[1];
 	xv[1] = (double)data[i] /
@@ -3000,8 +3275,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     {
 	// Find the magnitude
 
-	if (dmax < abs(buffer[i]))
-	    dmax = abs(buffer[i]);
+	if (dmax < fabs(buffer[i]))
+	    dmax = fabs(buffer[i]);
 
 	// Calculate the window
 
@@ -3020,7 +3295,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     // Process FFT output
 
-    for (int i = 0; i < LENGTH(xa); i++)
+    for (int i = 1; i < LENGTH(xa); i++)
     {
 	double real = x[i].r;
 	double imag = x[i].i;
@@ -3061,32 +3336,45 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	double df = OVERSAMPLE * dp / (2.0 * M_PI);
 
 	xf[i] = (i * fps + df * fps) / audio.correction;
+
+	// Calculate differences
+
+	dxa[i] = xa[i] - xa[i - 1];
+	dxf[i] = xf[i] - xf[i - 1];
     }
 
     // Maximum FFT output
 
     double max = 0.0;
     double f = 0.0;
-    int k = 0;
+    int count = 0;
 
     // Find maximum
 
-    for (int i = 3; i < LENGTH(xa) - 3; i++)
+    for (int i = 1; i < LENGTH(xa) - 1; i++)
     {
 	if (xa[i] > max)
 	{
 	    max = xa[i];
 	    f = xf[i];
-	    k = i;
 	}
+
+	if (xa[i] > MIN && xa[i] > (max / 2) &&
+	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
+	    maxima[count++] = xf[i];
+
+	if (count == LENGTH(maxima))
+	    break;
     }
 
-    BOOL found = FALSE;
     double fr = 0.0;
-    double fx = 0.0;
-    double e = 0.0;
-    double c = 0.0;
+    double fx0 = 0.0;
+    double fx1 = 0.0;
+
     int n = 0;
+
+    BOOL found = FALSE;
+    double c = 0.0;
 
     // Do the note and cents calculations
 
@@ -3095,21 +3383,39 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	double cf =
 	    -12.0 * (log(audio.reference / f) / log(2.0));
 
+	// Reference freq
+
+	fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	// Lower and upper freq
+
+	fx0 = audio.reference * pow(2.0, (round(cf) - 0.5) / 12.0);
+	fx1 = audio.reference * pow(2.0, (round(cf) + 0.5) / 12.0);
+
 	n = round(cf) + A5_OFFSET;
 
 	if (n < 0)
 	    n = 0;
 
+	// Don't go higher than E7
+
 	if (n > E7_OFFSET)
 	    n = E7_OFFSET;
 
-	fr = audio.reference * pow(2.0, (n - A5_OFFSET) / 12.0);
+	// Find nearest
 
-	fx = audio.reference * pow(2.0, ((n - A5_OFFSET) - 0.5) / 12.0);
+	double df = 1000.0;
+
+	for (int i = 0; i < count; i++)
+	{
+	    if (fabs(maxima[i] - fr) < df)
+	    {
+		df = fabs(maxima[i] - fr);
+		f = maxima[i];
+	    }
+	}
 
 	c = -12.0 * (log(fr / f) / log(2.0));
-
-	e = f - fr;
 
 	// Ignore silly values
 
@@ -3131,6 +3437,10 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Update spectrum window
 
+	for (int i = 0; i < count; i++)
+	    values[i] = maxima[i] / fps * audio.correction;
+
+	spectrum.count = count;
 	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
     }
 
@@ -3145,8 +3455,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    display.f = f;
 	    display.fr = fr;
 	    display.c = c;
-	    display.e = e;
 	    display.n = n;
+	    display.count = count;
 
 	    // Update meter
 
@@ -3161,8 +3471,10 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	InvalidateRgn(display.hwnd, NULL, TRUE);
 
+	spectrum.f = f  / fps * audio.correction;
 	spectrum.r = fr / fps * audio.correction;
-	spectrum.x = fx / fps * audio.correction;
+	spectrum.x[0] = fx0 / fps * audio.correction;
+	spectrum.x[1] = fx1 / fps * audio.correction;
     }
 }
 
