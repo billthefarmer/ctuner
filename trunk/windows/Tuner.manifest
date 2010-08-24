@@ -2,12 +2,6 @@
 <assembly
    xmlns="urn:schemas-microsoft-com:asm.v1"
    manifestVersion="1.0">
-  <assemblyIdentity
-     version="1.0.0.0"
-     processorArchitecture="X86"
-     name="Tuner"
-     type="win32" />
-  <description>Tuner</description>
   <dependency>
     <dependentAssembly>
       <assemblyIdentity
