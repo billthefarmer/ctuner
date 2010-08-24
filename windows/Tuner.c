@@ -86,15 +86,14 @@ enum
     {MAXIMA = 8,
      OVERSAMPLE = 16,
      SAMPLES = 16384,
-     RANGE = SAMPLES / 4,
+     RANGE = SAMPLES / 4 + SAMPLES / OVERSAMPLE,
      STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
 
 enum
     {A5_REFNCE = 440,
-     A5_OFFSET = 60,
-     E7_OFFSET = 91};
+     A5_OFFSET = 60};
 
 // Slider values
 
@@ -121,7 +120,7 @@ enum
 
 enum
     {WIDTH  = 320,
-     HEIGHT = 420};
+     HEIGHT = 396};
 
 // Global data
 
@@ -220,6 +219,12 @@ struct
     TOOL done;
     TOOL quit;
 } button;
+
+struct
+{
+    TOOL reference;
+    TOOL sample;
+} legend;
 
 typedef struct
 {
@@ -378,16 +383,15 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 // Register class
 
-BOOL RegisterMainClass(HINSTANCE hint)
+BOOL RegisterMainClass(HINSTANCE hInst)
 {
     // Fill in the window class structure with parameters
     // that describe the main window.
 
     WNDCLASS wc = 
 	{CS_HREDRAW | CS_VREDRAW,
-	 MainWndProc,
-	 0, 0, hInst,
-	 LoadIcon(NULL, IDI_WINLOGO),
+	 MainWndProc, 0, 0, hInst,
+	 LoadIcon(hInst, "Tuner"),
 	 LoadCursor(NULL, IDC_ARROW),
 	 GetSysColorBrush(COLOR_WINDOW),
 	 NULL, WCLASS};
@@ -584,73 +588,13 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
-	// Create minus button
-
-	button.minus.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 BS_OWNERDRAW,
-			 8, 200, 16, 16, hWnd,
-			 (HMENU)MINUS_ID, hInst, NULL);
-
-	// Add minus button to tooltip
-
-	tooltip.info.uId = (UINT_PTR)button.minus.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
-	    "click to decrease";
-
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
-
-	// Create reference slider
-
-	adjust.hwnd =
-	    CreateWindow(TRACKBAR_CLASS, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
-			 24, 196, width - 48, 24, hWnd,
-			 (HMENU)REFERENCE_ID, hInst, NULL);
-
-	SendMessage(adjust.hwnd, TBM_SETRANGE, TRUE,
-		    MAKELONG(MIN_REF, MAX_REF));
-	SendMessage(adjust.hwnd, TBM_SETPAGESIZE, 0, STEP_REF);
-	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, (audio.reference == 0)?
-		    REF_REF: audio.reference * 10);
-
-	// Add adjust to tooltip
-
-	tooltip.info.uId = (UINT_PTR)adjust.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
-	    "click to change";
-
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
-
-	// Create plus button
-
-	button.plus.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 BS_OWNERDRAW,
-			 width - 24, 200, 16, 16, hWnd,
-			 (HMENU)PLUS_ID, hInst, NULL);
-
-	// Add plus button to tooltip
-
-	tooltip.info.uId = (UINT_PTR)button.plus.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
-	    "click to increase";
-
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
-
 	// Create strobe
 
 	strobe.hwnd =
 	    CreateWindow(WC_STATIC, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 SS_NOTIFY | SS_OWNERDRAW,
-			 8, 226, width - 16, 44, hWnd,
+			 8, 198, width - 16, 44, hWnd,
 			 (HMENU)STROBE_ID, hInst, NULL);
 
 	// Create tooltip for strobe
@@ -667,7 +611,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 SS_NOTIFY | SS_OWNERDRAW,
-			 8, 278, width - 16, 52, hWnd,
+			 8, 250, width - 16, 52, hWnd,
 			 (HMENU)METER_ID, hInst, NULL);
 
 	// Add meter to tooltip
@@ -684,7 +628,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    CreateWindow(TRACKBAR_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
-			 12, 300, width - 23, 26, hWnd,
+			 12, 272, width - 23, 26, hWnd,
 			 (HMENU)SLIDER_ID, hInst, NULL);
 
 	SendMessage(meter.slider.hwnd, TBM_SETRANGE, TRUE,
@@ -705,7 +649,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Options...",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 7, 336, 85, 26,
+			 7, 310, 85, 26,
 			 hWnd, (HMENU)OPTIONS_ID, hInst, NULL);
 
 	// Create quit button
@@ -714,7 +658,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Quit",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 226, 336, 85, 26,
+			 226, 310, 85, 26,
 			 hWnd, (HMENU)QUIT_ID, hInst, NULL);
 
 	// Create status bar
@@ -772,16 +716,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	SetFocus(hWnd);
 	break;
 
-	// Reference
-
-    case WM_HSCROLL:
-	ChangeReference(wParam, lParam);
-
-	// Set the focus back to the window
-
-	SetFocus(hWnd);
-	break;
-
 	// Set the focus back to the window by clicking
 
     case WM_LBUTTONDOWN:
@@ -798,14 +732,6 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
     case WM_COMMAND:
 	switch (LOWORD(wParam))
 	{
-	case PLUS_ID:
-	    PlusClicked(wParam, lParam);
-	    break;
-
-	case MINUS_ID:
-	    MinusClicked(wParam, lParam);
-	    break;
-
 	case SCOPE_ID:
 	    ScopeClicked(wParam, lParam);
 	    break;
@@ -887,6 +813,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	SetFocus(hWnd);
 	break;
+
+	// Char pressed
 
     case WM_CHAR:
 	CharPressed(wParam, lParam);
@@ -985,15 +913,24 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 
     SetGraphicsMode(hdc, GM_ADVANCED);
 
-    if (window.zoom)
+    switch (wParam)
     {
-	XFORM xform =
-	    {2.0, 0.0, 0.0, 2.0, 0, 0};
+    case PLUS_ID:
+    case MINUS_ID:
+	break;
 
-	SetWorldTransform(hdc, &xform);
+    default:
+	if (window.zoom)
+	{
+	    XFORM xform =
+		{2.0, 0.0, 0.0, 2.0, 0, 0};
 
-	rect.right /= 2;
-	rect.bottom /= 2;
+	    SetWorldTransform(hdc, &xform);
+
+	    rect.right /= 2;
+	    rect.bottom /= 2;
+	}
+	break;
     }
 
     switch (wParam)
@@ -1089,7 +1026,7 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 			 WS_VISIBLE | WS_POPUP |
 			 WS_CAPTION,
 			 rWnd.right + 10, rWnd.top,
-			 WIDTH, HEIGHT - 134, window.hwnd,
+			 WIDTH, 340, window.hwnd,
 			 (HMENU)NULL, hInst, NULL);
     }
 
@@ -1120,7 +1057,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 2, width - 20, 122,
+			 10, 2, width - 20, 148,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create zoom tickbox
@@ -1249,13 +1186,84 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
+	// Create text
+
+	sprintf(s, "Reference:  %6.2lfHz", audio.reference);
+
+	legend.reference.hwnd =
+	    CreateWindow(WC_STATIC, s,
+			 WS_VISIBLE | WS_CHILD |
+			 SS_LEFT,
+			 20, 124, width - 40, 20,
+			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
+
+	// Create minus button
+
+	button.minus.hwnd =
+	    CreateWindow(WC_BUTTON, NULL,
+			 WS_VISIBLE | WS_CHILD |
+			 BS_OWNERDRAW,
+			 10, 160, 16, 16, hWnd,
+			 (HMENU)MINUS_ID, hInst, NULL);
+
+	// Add minus button to tooltip
+
+	tooltip.info.uId = (UINT_PTR)button.minus.hwnd;
+	tooltip.info.lpszText = "Reference frequency, "
+	    "click to decrease";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
+	// Create reference slider
+
+	adjust.hwnd =
+	    CreateWindow(TRACKBAR_CLASS, NULL,
+			 WS_VISIBLE | WS_CHILD |
+			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
+			 26, 156, width - 52, 24, hWnd,
+			 (HMENU)REFERENCE_ID, hInst, NULL);
+
+	SendMessage(adjust.hwnd, TBM_SETRANGE, TRUE,
+		    MAKELONG(MIN_REF, MAX_REF));
+	SendMessage(adjust.hwnd, TBM_SETPAGESIZE, 0, STEP_REF);
+	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, (audio.reference == 0)?
+		    REF_REF: audio.reference * 10);
+
+	// Add adjust to tooltip
+
+	tooltip.info.uId = (UINT_PTR)adjust.hwnd;
+	tooltip.info.lpszText = "Reference frequency, "
+	    "click to change";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
+	// Create plus button
+
+	button.plus.hwnd =
+	    CreateWindow(WC_BUTTON, NULL,
+			 WS_VISIBLE | WS_CHILD |
+			 BS_OWNERDRAW,
+			 width - 26, 160, 16, 16, hWnd,
+			 (HMENU)PLUS_ID, hInst, NULL);
+
+	// Add plus button to tooltip
+
+	tooltip.info.uId = (UINT_PTR)button.plus.hwnd;
+	tooltip.info.lpszText = "Reference frequency, "
+	    "click to increase";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
 	// Create group box
 
 	group.hwnd =
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 126, width - 20, 124,
+			 10, 180, width - 20, 124,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create text
@@ -1264,7 +1272,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, "Correction:",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 148, 76, 20,
+			 20, 202, 76, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create edit control
@@ -1275,7 +1283,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_EDIT, s,
 			 WS_VISIBLE | WS_CHILD |
 			 WS_BORDER,
-			 100, 146, 82, 20, hWnd,
+			 100, 200, 82, 20, hWnd,
 			 (HMENU)EDIT_ID, hInst, NULL);
 
 	// Add edit to tooltip
@@ -1314,7 +1322,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Save",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 143, 85, 26,
+			 209, 197, 85, 26,
 			 hWnd, (HMENU)SAVE_ID, hInst, NULL);
 
 	// Create text
@@ -1325,7 +1333,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			 "is significantly inaccurate.",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 176, width - 40, 40,
+			 20, 230, width - 40, 40,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create text
@@ -1333,11 +1341,11 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	sprintf(s, "Sample rate:  %6.1lf",
 		(double)SAMPLE_RATE / audio.correction);
 
-	text.hwnd =
+	legend.sample.hwnd =
 	    CreateWindow(WC_STATIC, s,
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 218, 152, 20,
+			 20, 272, 152, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create done button
@@ -1346,7 +1354,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Done",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 213, 85, 26,
+			 209, 267, 85, 26,
 			 hWnd, (HMENU)DONE_ID, hInst, NULL);
 
 	break;
@@ -1357,10 +1365,26 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
 	break;
 
+	// Draw item
+
+    case WM_DRAWITEM:
+	return DrawItem(wParam, lParam);
+	break;
+
 	// Updown control
 
     case WM_VSCROLL:
 	ChangeCorrection(wParam, lParam);
+	break;
+
+	// Reference
+
+    case WM_HSCROLL:
+	ChangeReference(wParam, lParam);
+
+	// Set the focus back to the window
+
+	SetFocus(hWnd);
 	break;
 
 	// Set the focus back to the window by clicking
@@ -1439,6 +1463,18 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
+	    // Plus button
+
+	case PLUS_ID:
+	    PlusClicked(wParam, lParam);
+	    break;
+
+	    // Minus button
+
+	case MINUS_ID:
+	    MinusClicked(wParam, lParam);
+	    break;
+
 	    // Updown control
 
 	case EDIT_ID:
@@ -1465,6 +1501,12 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 	}
+	break;
+
+	// Char pressed
+
+    case WM_CHAR:
+	CharPressed(wParam, lParam);
 	break;
 
 	// Everything else
@@ -1621,7 +1663,7 @@ BOOL EditChange(WPARAM wParam, LPARAM lParam)
 
 	sprintf(s, "Sample rate:  %6.1lf",
 		(double)SAMPLE_RATE / audio.correction);
-	SendMessage(text.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+	SendMessage(legend.sample.hwnd, WM_SETTEXT, 0, (LPARAM)s);
 
 	sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 		(double)SAMPLE_RATE / audio.correction, audio.correction);
@@ -1644,7 +1686,7 @@ BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
 
     sprintf(s, "Sample rate:  %6.1lf",
 	    (double)SAMPLE_RATE / audio.correction);
-    SendMessage(text.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+    SendMessage(legend.sample.hwnd, WM_SETTEXT, 0, (LPARAM)s);
 
     sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 	    (double)SAMPLE_RATE / audio.correction, audio.correction);
@@ -1803,11 +1845,6 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 	    if (n < 0)
 		n = 0;
 
-	    // Don't go higher than E7
-
-	    if (n > E7_OFFSET)
-		n = E7_OFFSET;
-
 	    double c = -12.0 * (log(fr / f) / log(2.0));
 
 	    // Ignore silly values
@@ -1881,17 +1918,13 @@ BOOL DrawScope(HDC hdc, RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    // Create bitmap
+    // Create DC
 
-    if (bitmap == NULL)
+    if (hbdc == NULL)
     {
-	bitmap = CreateCompatibleBitmap(hdc, width, height);
-
-	// Create DC
-
 	hbdc = CreateCompatibleDC(hdc);
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(hbdc, bitmap);
-	SelectObject(hbdc, GetStockObject(BLACK_BRUSH));
 	SelectObject(hbdc, GetStockObject(DC_PEN));
     }
 
@@ -1922,7 +1955,14 @@ BOOL DrawScope(HDC hdc, RECT rect)
     // Don't attempt the trace until there's a buffer
 
     if (scope.data == NULL)
+    {
+	// Copy the bitmap
+
+	BitBlt(hdc, rect.left, rect.top, width, height,
+	       hbdc, 0, 0, SRCCOPY);
+
 	return TRUE;
+    }
 
     // Initialise sync
 
@@ -2014,17 +2054,13 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    // Create bitmap
+    // Create DC
 
-    if (bitmap == NULL)
+    if (hbdc == NULL)
     {
-	bitmap = CreateCompatibleBitmap(hdc, width, height);
-
-	// Create DC
-
 	hbdc = CreateCompatibleDC(hdc);
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(hbdc, bitmap);
-	SelectObject(hbdc, GetStockObject(BLACK_BRUSH));
 	SelectObject(hbdc, GetStockObject(DC_PEN));
     }
 
@@ -2055,7 +2091,14 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     // Don't attempt the trace until there's a buffer
 
     if (spectrum.data == NULL)
+    {
+	// Copy the bitmap
+
+	BitBlt(hdc, rect.left, rect.top, width, height,
+	       hbdc, 0, 0, SRCCOPY);
+
 	return TRUE;
+    }
 
     // Green pen for spectrum trace
 
@@ -2188,10 +2231,12 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static HBITMAP bitmap;
     static HFONT medium;
     static HFONT large;
+    static HFONT font;
     static HDC hbdc;
 
     enum
-    {LARGE_HEIGHT  = 42,
+    {FONT_HEIGHT   = 16,
+     LARGE_HEIGHT  = 42,
      MEDIUM_HEIGHT = 28};
 
     static char *notes[] =
@@ -2215,8 +2260,11 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     // Create fonts
 
-    if (large == NULL)
+    if (font == NULL)
     {
+	lf.lfHeight = FONT_HEIGHT;
+	font = CreateFontIndirect(&lf);
+
 	lf.lfHeight = LARGE_HEIGHT;
 	large = CreateFontIndirect(&lf);
 
@@ -2259,53 +2307,115 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     else
 	SetTextColor(hbdc, RGB(0, 0, 0));
 
-    // Select large font
+    if (display.tremolo)
+    {
+	// Select font
 
-    SelectObject(hbdc, large);
+	SelectObject(hbdc, font);
 
-    // Display coordinates
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i];
 
-    int y = 0;
+	    double cf =
+		-12.0 * (log(audio.reference / f) / log(2.0));
 
-    // Display note
+	    // Reference freq
 
-    sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
-	    display.n / 12); 
-    TextOut(hbdc, 8, y, s, strlen(s));
+	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
-    // Display cents
+	    int n = round(cf) + A5_OFFSET;
 
-    sprintf(s, "%+6.2lf¢", display.c * 100.0);
-    TextOut(hbdc, width / 2, y, s, strlen(s));
+	    if (n < 0)
+		n = 0;
 
-    y = LARGE_HEIGHT;
+	    double c = -12.0 * (log(fr / f) / log(2.0));
 
-    // Select medium font
+	    // Ignore silly values
 
-    SelectObject(hbdc, medium);
+	    if (!isfinite(c))
+		continue;
 
-    // Display reference frequency
+	    // Display note
 
-    sprintf(s, "%9.2lfHz", display.fr);
-    TextOut(hbdc, 8, y, s, strlen(s));
+	    sprintf(s, "%4s%d", notes[n % LENGTH(notes)], n / 12);
+	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
 
-    // Display actual frequency
+	    // Display cents
 
-    sprintf(s, "%9.2lfHz", display.f);
-    TextOut(hbdc, width / 2, y, s, strlen(s));
+	    sprintf(s, "%+7.2lf¢", c * 100.0);
+	    TextOut(hbdc, 36, i * FONT_HEIGHT, s, strlen(s));
 
-    y += MEDIUM_HEIGHT;
+	    // Display reference
 
-    // Display reference
+	    sprintf(s, "%8.2lfHz", fr);
+	    TextOut(hbdc, 90, i * FONT_HEIGHT, s, strlen(s));
 
-    sprintf(s, "%9.2lfHz", (audio.reference == 0)?
-	    A5_REFNCE: audio.reference);
-    TextOut(hbdc, 8, y, s, strlen(s));
+	    // Display frequency
 
-    // Display frequency difference
+	    sprintf(s, "%8.2lfHz", f);
+	    TextOut(hbdc, 162, i * FONT_HEIGHT, s, strlen(s));
 
-    sprintf(s, "%+8.2lfHz", display.f - display.fr);
-    TextOut(hbdc, width / 2, y, s, strlen(s));
+	    // Display difference
+
+	    sprintf(s, "%+7.2lfHz", f - fr);
+	    TextOut(hbdc, 234, i * FONT_HEIGHT, s, strlen(s));
+
+	    if (i == 5)
+		break;
+	}
+    }
+
+    else
+    {
+	// Select large font
+
+	SelectObject(hbdc, large);
+
+	// Display coordinates
+
+	int y = 0;
+
+	// Display note
+
+	sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
+		display.n / 12); 
+	TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Display cents
+
+	sprintf(s, "%+6.2lf¢", display.c * 100.0);
+	TextOut(hbdc, width / 2, y, s, strlen(s));
+
+	y = LARGE_HEIGHT;
+
+	// Select medium font
+
+	SelectObject(hbdc, medium);
+
+	// Display reference frequency
+
+	sprintf(s, "%9.2lfHz", display.fr);
+	TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Display actual frequency
+
+	sprintf(s, "%9.2lfHz", display.f);
+	TextOut(hbdc, width / 2, y, s, strlen(s));
+
+	y += MEDIUM_HEIGHT;
+
+	// Display reference
+
+	sprintf(s, "%9.2lfHz", (audio.reference == 0)?
+		A5_REFNCE: audio.reference);
+	TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Display frequency difference
+
+	sprintf(s, "%+8.2lfHz", display.f - display.fr);
+	TextOut(hbdc, width / 2, y, s, strlen(s));
+    }
 
     // Copy the bitmap
 
@@ -2427,49 +2537,23 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     static float mx = 0.0;
 
     static HDC hbdc;
-    static HFONT font;
-
-    static char *notes[] =
-	{"A", "Bb", "B", "C", "C#", "D",
-	 "Eb", "E", "F", "F#", "G", "Ab"};
-
-    enum
-    {FONT_HEIGHT = 12};
-
-    // Bold font
-
-    static LOGFONT lf =
-	{0, 0, 0, 0,
-	 FW_BOLD,
-	 FALSE, FALSE, FALSE,
-	 DEFAULT_CHARSET,
-	 OUT_DEFAULT_PRECIS,
-	 CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY,
-	 DEFAULT_PITCH | FF_DONTCARE,
-	 ""};
+    static HBITMAP bitmap;
 
     // Draw nice etched edge
 
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
-
-    // Select font
-
-    if (font == NULL)
-    {
-	lf.lfHeight = FONT_HEIGHT;
-	font = CreateFontIndirect(&lf);
-    }
 
     // Calculate dimensions
 
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
+    // Create DC
+
     if (hbdc == NULL)
     {
 	hbdc = CreateCompatibleDC(hdc);
-	HBITMAP bitmap = CreateCompatibleBitmap(hdc, width, height);
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(hbdc, bitmap);
 	SelectObject(hbdc, GetStockObject(BLACK_BRUSH));
     }
@@ -2480,96 +2564,30 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	{0, 0, width, height};
     FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
-    if (display.tremolo)
+    if (strobe.enable)
     {
-	static char s[64];
+    	mc = ((7.0 * mc) + strobe.c) / 8.0;
+    	mx += mc * 50.0;
 
-	// Select font
+    	if (mx > 160.0)
+    	    mx = 0.0;
 
-	SelectObject(hbdc, font);
+    	if (mx < 0.0)
+    	    mx = 160.0;
 
-	for (int i = 0; i < display.count; i++)
-	{
-	    double f = display.maxima[i];
+    	int rx = round(mx - 160.0);
 
-	    double cf =
-		-12.0 * (log(audio.reference / f) / log(2.0));
+    	for (int x = rx % 20; x < width; x += 20)
+    	    Rectangle(hbdc, x, 0, x + 10, 10);
 
-	    // Reference freq
+    	for (int x = rx % 40; x < width; x += 40)
+    	    Rectangle(hbdc, x, 10, x + 20, 20);
 
-	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+    	for (int x = rx % 80; x < width; x += 80)
+    	    Rectangle(hbdc, x, 20, x + 40, 30);
 
-	    int n = round(cf) + A5_OFFSET;
-
-	    if (n < 0)
-		n = 0;
-
-	    // Don't go higher than E7
-
-	    if (n > E7_OFFSET)
-		n = E7_OFFSET;
-
-	    double c = -12.0 * (log(fr / f) / log(2.0));
-
-	    // Ignore silly values
-
-	    if (!isfinite(c))
-		continue;
-
-	    // Display note
-
-	    sprintf(s, "%4s%d", notes[n % LENGTH(notes)], n / 12);
-	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
-
-	    // Display cents
-
-	    sprintf(s, "%+7.2lf¢", c * 100.0);
-	    TextOut(hbdc, width / 5, i * FONT_HEIGHT, s, strlen(s));
-
-	    // Display reference
-
-	    sprintf(s, "%8.2lfHz", fr);
-	    TextOut(hbdc, width * 2/ 5, i * FONT_HEIGHT, s, strlen(s));
-
-	    // Display frequency
-
-	    sprintf(s, "%8.2lfHz", f);
-	    TextOut(hbdc, width * 3 / 5, i * FONT_HEIGHT, s, strlen(s));
-
-	    // Display difference
-
-	    sprintf(s, "%+7.2lfHz", f - fr);
-	    TextOut(hbdc, width * 4 / 5, i * FONT_HEIGHT, s, strlen(s));
-
-	    if (i == 2)
-		break;
-	}
-    }
-
-    else if (strobe.enable)
-    {
-	mc = ((7.0 * mc) + strobe.c) / 8.0;
-	mx += mc * 50.0;
-
-	if (mx > 160.0)
-	    mx = 0.0;
-
-	if (mx < 0.0)
-	    mx = 160.0;
-
-	int rx = round(mx - 160.0);
-
-	for (int x = rx % 20; x < width; x += 20)
-	    Rectangle(hbdc, x, 0, x + 10, 10);
-
-	for (int x = rx % 40; x < width; x += 40)
-	    Rectangle(hbdc, x, 10, x + 20, 20);
-
-	for (int x = rx % 80; x < width; x += 80)
-	    Rectangle(hbdc, x, 20, x + 40, 30);
-
-	for (int x = rx % 160; x < width; x += 160)
-	    Rectangle(hbdc, x, 30, x + 80, 40);
+    	for (int x = rx % 160; x < width; x += 160)
+    	    Rectangle(hbdc, x, 30, x + 80, 40);
     }
 
     BitBlt(hdc, rect.left, rect.top, width, height, hbdc,
@@ -2646,6 +2664,11 @@ BOOL PlusPressed(WPARAM wParam, LPARAM lParam)
     audio.reference = value / 10.0;
     InvalidateRgn(display.hwnd, NULL, TRUE);
 
+    static char s[64];
+
+    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
+    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+
     HKEY hkey;
     LONG error;
 
@@ -2698,6 +2721,11 @@ BOOL MinusPressed(WPARAM wParam, LPARAM lParam)
     SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, --value);
     audio.reference = value / 10.0;
     InvalidateRgn(display.hwnd, NULL, TRUE);
+
+    static char s[64];
+
+    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
+    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
 
     HKEY hkey;
     LONG error;
@@ -2920,6 +2948,11 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
     audio.reference = value / 10.0;
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
+
+    static char s[64];
+
+    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
+    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
 
     HKEY hkey;
     LONG error;
@@ -3301,16 +3334,16 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	double imag = x[i].i;
 
 	xa[i] = sqrt((real * real) + (imag * imag));
-
+#ifdef NOISE
 	// Do noise cancellation
 
-	// xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
+	xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
 
-	// if (xm[i] > xa[i])
-	//     xm[i] = xa[i];
+	if (xm[i] > xa[i])
+	    xm[i] = xa[i];
 
-	// xd[i] = xa[i] - xm[i];
-
+	xd[i] = xa[i] - xm[i];
+#endif
 	// Do frequency calculation
 
 	double p = atan2(imag, real);
@@ -3331,13 +3364,16 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	dp -=  M_PI * (double)qpd;
 
-	// Calculter frequency difference
+	// Calculate frequency difference
 
 	double df = OVERSAMPLE * dp / (2.0 * M_PI);
 
+	// Calculate actual frequency from slot frequency plus
+	// frequency difference and correction value
+
 	xf[i] = (i * fps + df * fps) / audio.correction;
 
-	// Calculate differences
+	// Calculate differences for finding maxima
 
 	dxa[i] = xa[i] - xa[i - 1];
 	dxf[i] = xf[i] - xf[i - 1];
@@ -3349,7 +3385,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     double f = 0.0;
     int count = 0;
 
-    // Find maximum
+    // Find maximum value, and list of maxima
 
     for (int i = 1; i < LENGTH(xa) - 1; i++)
     {
@@ -3359,7 +3395,10 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    f = xf[i];
 	}
 
-	if (xa[i] > MIN && xa[i] > (max / 2) &&
+	// If display not locked, find maxima and add to list
+
+	if (!display.lock &&
+	    xa[i] > MIN && xa[i] > (max / 2) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	    maxima[count++] = xf[i];
 
@@ -3367,11 +3406,17 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    break;
     }
 
+    // Reference note frequency and lower and upper limits
+
     double fr = 0.0;
     double fx0 = 0.0;
     double fx1 = 0.0;
 
+    // Note number
+
     int n = 0;
+
+    // Found flag and cents value
 
     BOOL found = FALSE;
     double c = 0.0;
@@ -3380,10 +3425,12 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     if (max > MIN)
     {
+	// Cents relative to reference
+
 	double cf =
 	    -12.0 * (log(audio.reference / f) / log(2.0));
 
-	// Reference freq
+	// Reference note
 
 	fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
@@ -3392,17 +3439,14 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	fx0 = audio.reference * pow(2.0, (round(cf) - 0.5) / 12.0);
 	fx1 = audio.reference * pow(2.0, (round(cf) + 0.5) / 12.0);
 
+	// Note number
+
 	n = round(cf) + A5_OFFSET;
 
 	if (n < 0)
 	    n = 0;
 
-	// Don't go higher than E7
-
-	if (n > E7_OFFSET)
-	    n = E7_OFFSET;
-
-	// Find nearest
+	// Find nearest maximum to reference note
 
 	double df = 1000.0;
 
@@ -3415,12 +3459,16 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    }
 	}
 
+	// Cents relative to reference note
+
 	c = -12.0 * (log(fr / f) / log(2.0));
 
 	// Ignore silly values
 
 	if (!isfinite(c))
 	    return;
+
+	// Ignore if not within 50 cents of reference note
 
 	if (fabs(c) < 0.5)
 	    found = TRUE;
@@ -3478,7 +3526,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     }
 }
 
-// FFT
+// Real to complex FFT, ignores imaginary values in input array
 
 void fftr(complex a[], int n)
 {

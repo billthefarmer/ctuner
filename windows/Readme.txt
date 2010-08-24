@@ -20,10 +20,9 @@ The numeric display shows the note, deviation in cents, correct
 frequency, actual frequency, reference and frequency deviation. The
 display may be locked by clicking on the pane, or by pressing the 'L'
 key. The display values may be copied to the clipboard for pasting
-into another application by typing Ctrl-C. The slider below and the +
-and - buttons allow the reference to be adjusted. The strobe display
-below shifts left or right according to whether the input note is flat
-or sharp. It may be turned off by clicking on the pane, or by pressing
+into another application by typing Ctrl-C. The strobe display below
+shifts left or right according to whether the input note is flat or
+sharp. It may be turned off by clicking on the pane, or by pressing
 the 'S' key. The meter below shows the deviation in cents. The whole
 display may be resized by pressing the 'R' key. Multiple tuning values
 may be displayed in the strobe pane by pressing the 'T' key. The
@@ -43,7 +42,8 @@ audio filter on the input. This is intended to make it easier to tune
 low notes by reducing the level of harmonics. The display lock tick
 box may be used to lock the display. The resize tick box may be used
 to resize the display. The tremolo tick box may be used to display
-multiple tuning values.
+multiple tuning values. The slider below and the + and - buttons allow
+the reference to be adjusted.
 
 Some audio input devices appear to have inaccurate clocks. Out of
 three laptops I have tested, two were up to 0.7% out. The correction
