@@ -2,7 +2,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Tuner"
-!define PRODUCT_VERSION "0.9"
+!define PRODUCT_VERSION "0.95"
 !define PRODUCT_PUBLISHER "Bill Farmer"
 !define PRODUCT_WEB_SITE "http://ctuner.googlecode.com"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Tuner.exe"
@@ -48,7 +48,7 @@ var ICONS_GROUP
 ; MUI end ------
 
 Name "${PRODUCT_NAME}"
-OutFile "SetupTuner.exe"
+OutFile "SetupTuner-${PRODUCT_VERSION}.exe"
 InstallDir "$PROGRAMFILES\CTuner"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -112,11 +112,13 @@ Section Uninstall
 
   SetShellVarContext all
   Delete "$SMPROGRAMS\$ICONS_GROUP\Uninstall.lnk"
-  Delete "$SMPROGRAMS\$ICONS_GROUP\Tuner on Google Code.lnk"
+  Delete "$SMPROGRAMS\$ICONS_GROUP\CTuner on Google Code.lnk"
   Delete "$SMPROGRAMS\$ICONS_GROUP\Tuner.lnk"
 
   RMDir "$SMPROGRAMS\$ICONS_GROUP"
   RMDir "$INSTDIR"
+
+  DeleteRegKey HKCU "SOFTWARE\CTuner"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
