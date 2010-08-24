@@ -41,7 +41,7 @@ display off and on. The audio filter tick box controls a 3dB/octave
 audio filter on the input. This is intended to make it easier to tune
 low notes by reducing the level of harmonics. The display lock tick
 box may be used to lock the display. The resize tick box may be used
-to resize the display. The tremolo tick box may be used to display
+to resize the display. The multiple tick box may be used to display
 multiple tuning values. The slider below and the + and - buttons allow
 the reference to be adjusted.
 
@@ -71,6 +71,7 @@ Makefile		- Build file
 Readme.txt		- This file
 Tuner.c			- Source file
 Tuner.exe		- Application
+Tuner.ico		- Icon file
 Tuner.manifest		- Manifest file
 Tuner.nsi		- NSIS installer script
 Tuner.rc		- Resource file

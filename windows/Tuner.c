@@ -68,7 +68,7 @@ enum
      FILTER_ID,
      UPDOWN_ID,
      ENABLE_ID,
-     TREMOLO_ID,
+     MULTIPLE_ID,
      OPTIONS_ID,
      REFERENCE_ID};
 
@@ -86,7 +86,7 @@ enum
     {MAXIMA = 8,
      OVERSAMPLE = 16,
      SAMPLES = 16384,
-     RANGE = SAMPLES / 4 + SAMPLES / OVERSAMPLE,
+     RANGE = SAMPLES * 5 / 8,
      STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
@@ -185,7 +185,7 @@ typedef struct
 {
     HWND hwnd;
     HANDLE timer;
-    BOOL tremolo;
+    BOOL multiple;
     BOOL lock;
     double f;
     double fr;
@@ -199,7 +199,7 @@ DISPLAY display;
 
 TOOL adjust;
 TOOL options;
-TOOL tremolo;
+TOOL multiple;
 TOOL group;
 TOOL zoom;
 TOOL text;
@@ -300,7 +300,7 @@ BOOL LockClicked(WPARAM, LPARAM);
 BOOL PlusClicked(WPARAM, LPARAM);
 BOOL PlusPressed(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
-BOOL TremoloClicked(WPARAM, LPARAM);
+BOOL MultipleClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditChange(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
@@ -792,8 +792,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    ResizeClicked(wParam, lParam);
 	    break;
 
-	case TREMOLO_ID:
-	    TremoloClicked(wParam, lParam);
+	case MULTIPLE_ID:
+	    MultipleClicked(wParam, lParam);
 	    break;
 
 	    // Options
@@ -987,8 +987,8 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 	       MF_STRING, LOCK_ID, "Lock display");
     AppendMenu(menu, window.zoom? MF_STRING | MF_CHECKED:
 	       MF_STRING, RESIZE_ID, "Resize display");
-    AppendMenu(menu, display.tremolo? MF_STRING | MF_CHECKED:
-	       MF_STRING, RESIZE_ID, "Display tremolo");
+    AppendMenu(menu, display.multiple? MF_STRING | MF_CHECKED:
+	       MF_STRING, RESIZE_ID, "Multiple notes");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, OPTIONS_ID, "Options...");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
@@ -1165,22 +1165,22 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
-	// Create tremolo tickbox
+	// Create multiple tickbox
 
-	tremolo.hwnd =
-	    CreateWindow(WC_BUTTON, "Display tremolo:",
+	multiple.hwnd =
+	    CreateWindow(WC_BUTTON, "Multiple notes:",
 			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
 			 BS_CHECKBOX,
 			 width / 2 + 10, 88, 124, 24,
-			 hWnd, (HMENU)TREMOLO_ID, hInst, NULL);
+			 hWnd, (HMENU)MULTIPLE_ID, hInst, NULL);
 
-	SendMessage(tremolo.hwnd, BM_SETCHECK,
-		    display.tremolo? BST_CHECKED: BST_UNCHECKED, 0);
+	SendMessage(multiple.hwnd, BM_SETCHECK,
+		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
 
 	// Add tickbox to tooltip
 
-	tooltip.info.uId = (UINT_PTR)tremolo.hwnd;
-	tooltip.info.lpszText = "Display tremolo, "
+	tooltip.info.uId = (UINT_PTR)multiple.hwnd;
+	tooltip.info.lpszText = "Display multiple notes, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1453,10 +1453,10 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
-	    // Tremolo control
+	    // Multiple control
 
-	case TREMOLO_ID:
-	    TremoloClicked(wParam, lParam);
+	case MULTIPLE_ID:
+	    MultipleClicked(wParam, lParam);
 
 	    // Set the focus back to the window
 
@@ -1626,17 +1626,17 @@ BOOL ResizeClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-// Tremolo clicked
+// Multiple clicked
 
-BOOL TremoloClicked(WPARAM wParam, LPARAM lParam)
+BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
 {
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	display.tremolo = !display.tremolo;
+	display.multiple = !display.multiple;
 
-	SendMessage(tremolo.hwnd, BM_SETCHECK,
-		    display.tremolo? BST_CHECKED: BST_UNCHECKED, 0);
+	SendMessage(multiple.hwnd, BM_SETCHECK,
+		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
 	InvalidateRgn(display.hwnd, NULL, TRUE);
 	break;
 
@@ -1782,9 +1782,11 @@ BOOL CharPressed(WPARAM w, LPARAM l)
 	EnableClicked(w, l);
 	break;
 
+    case 'M':
+    case 'm':
     case 'T':
     case 't':
-	TremoloClicked(w, l);
+	MultipleClicked(w, l);
 	break;
 
     case 'Z':
@@ -1827,7 +1829,7 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 
     LPTSTR text = GlobalLock(mem);
 
-    if (display.tremolo)
+    if (display.multiple)
     {
 	for (int i = 0; i < display.count; i++)
 	{
@@ -2201,9 +2203,9 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     SetViewportOrgEx(hbdc, 0, 0, NULL);
 
-    // Show T if tremolo
+    // Show T if multiple
 
-    if (display.tremolo)
+    if (display.multiple)
     {	
 	// Green pen for text
 
@@ -2307,11 +2309,40 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     else
 	SetTextColor(hbdc, RGB(0, 0, 0));
 
-    if (display.tremolo)
+    if (display.multiple)
     {
 	// Select font
 
 	SelectObject(hbdc, font);
+
+	if (display.count == 0)
+	{
+	    // Display note
+
+	    sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
+		    display.n / 12);
+	    TextOut(hbdc, 0, 0, s, strlen(s));
+
+	    // Display cents
+
+	    sprintf(s, "%+7.2lf¢", display.c * 100.0);
+	    TextOut(hbdc, 36, 0, s, strlen(s));
+
+	    // Display reference
+
+	    sprintf(s, "%8.2lfHz", display.fr);
+	    TextOut(hbdc, 90, 0, s, strlen(s));
+
+	    // Display frequency
+
+	    sprintf(s, "%8.2lfHz", display.f);
+	    TextOut(hbdc, 162, 0, s, strlen(s));
+
+	    // Display difference
+
+	    sprintf(s, "%+7.2lfHz", display.f - display.fr);
+	    TextOut(hbdc, 234, 0, s, strlen(s));
+	}
 
 	for (int i = 0; i < display.count; i++)
 	{
