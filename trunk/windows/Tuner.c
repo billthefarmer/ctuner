@@ -50,11 +50,8 @@ enum
     {SCOPE_ID = 101,
      SPECTRUM_ID,
      DISPLAY_ID,
-     RESIZE_ID,
      STROBE_ID,
      METER_ID,
-     PLUS_ID,
-     MINUS_ID,
      VOLUME_ID,
      STATUS_ID,
      SLIDER_ID,
@@ -65,6 +62,9 @@ enum
      SAVE_ID,
      DONE_ID,
      LOCK_ID,
+     PLUS_ID,
+     MINUS_ID,
+     RESIZE_ID,
      FILTER_ID,
      UPDOWN_ID,
      ENABLE_ID,
@@ -988,7 +988,7 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
     AppendMenu(menu, window.zoom? MF_STRING | MF_CHECKED:
 	       MF_STRING, RESIZE_ID, "Resize display");
     AppendMenu(menu, display.multiple? MF_STRING | MF_CHECKED:
-	       MF_STRING, RESIZE_ID, "Multiple notes");
+	       MF_STRING, MULTIPLE_ID, "Multiple notes");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, OPTIONS_ID, "Options...");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
@@ -2128,7 +2128,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     {
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
-	for (int i = 0; i < ((float)width / xscale) + 1; i++)
+	for (int i = 0; i < round((float)width / xscale) + 1; i++)
 	{
 	    int n = spectrum.r + i - (width / (xscale * 2.0));
 
@@ -3300,16 +3300,17 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     for (int i = 0; i < STEP; i++)
     {
+	static double G = 3.023332184e+01;
+	static double K = 0.9338478249;
+
 	static double xv[2];
 	static double yv[2];
 
 	xv[0] = xv[1];
-	xv[1] = (double)data[i] /
-	    3.023332184e+01;
+	xv[1] = (double)data[i] / G;
 
 	yv[0] = yv[1];
-	yv[1] = (xv[0] + xv[1]) +
-	    (0.9338478249 * yv[0]);
+	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
 
 	// Choose filtered/unfiltered data
 
@@ -3497,7 +3498,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Ignore silly values
 
 	if (!isfinite(c))
-	    return;
+	    c = 0.0;
 
 	// Ignore if not within 50 cents of reference note
 
@@ -3520,6 +3521,15 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    values[i] = maxima[i] / fps * audio.correction;
 
 	spectrum.count = count;
+
+	if (found)
+	{
+	    spectrum.f = f  / fps * audio.correction;
+	    spectrum.r = fr / fps * audio.correction;
+	    spectrum.x[0] = fx0 / fps * audio.correction;
+	    spectrum.x[1] = fx1 / fps * audio.correction;
+	}
+
 	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
     }
 
@@ -3549,11 +3559,6 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Update display
 
 	InvalidateRgn(display.hwnd, NULL, TRUE);
-
-	spectrum.f = f  / fps * audio.correction;
-	spectrum.r = fr / fps * audio.correction;
-	spectrum.x[0] = fx0 / fps * audio.correction;
-	spectrum.x[1] = fx1 / fps * audio.correction;
     }
 }
 
