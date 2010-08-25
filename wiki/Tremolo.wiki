@@ -1,9 +1,0 @@
-#summary Accordion tremolo version
-#labels Featured
-
-= Introduction =
-
-An enhanced Windows version has been released which features facilities for tuning multiple accordion reeds. Three sets of values may be displayed, up to eight copied to the clipboard. The main display shows the set of values closest to the current note. 
-
-http://ctuner.googlecode.com/files/Tremolo.png  http://ctuner.googlecode.com/files/TemoloOptions.png
-http://ctuner.googlecode.com/files/Calc.png
