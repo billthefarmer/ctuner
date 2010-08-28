@@ -5,7 +5,7 @@
 
 A mac version is in development. Slow going so far...
 
-http://ctuner.googlecode.com/files/Tuner-mac.png
+http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/files/Preferences.png
 
 = Progress =
 
