@@ -60,16 +60,16 @@ enum
      TEXT_ID,
      EDIT_ID,
      SAVE_ID,
-     DONE_ID,
      LOCK_ID,
      PLUS_ID,
+     CLOSE_ID,
      MINUS_ID,
      RESIZE_ID,
      FILTER_ID,
      UPDOWN_ID,
      ENABLE_ID,
-     MULTIPLE_ID,
      OPTIONS_ID,
+     MULTIPLE_ID,
      REFERENCE_ID};
 
 // Wave in values
@@ -216,7 +216,7 @@ struct
     TOOL minus;
     TOOL options;
     TOOL save;
-    TOOL done;
+    TOOL close;
     TOOL quit;
 } button;
 
@@ -1348,14 +1348,14 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			 20, 272, 152, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
-	// Create done button
+	// Create close button
 
-	button.done.hwnd =
-	    CreateWindow(WC_BUTTON, "Done",
+	button.close.hwnd =
+	    CreateWindow(WC_BUTTON, "Close",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
 			 209, 267, 85, 26,
-			 hWnd, (HMENU)DONE_ID, hInst, NULL);
+			 hWnd, (HMENU)CLOSE_ID, hInst, NULL);
 
 	break;
 
@@ -1485,7 +1485,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    // SetFocus(hWnd);
 	    break;
 
-	case DONE_ID:
+	case CLOSE_ID:
 	    ShowWindow(hWnd, FALSE);
 
 	    // Set the focus back to the window
@@ -1738,7 +1738,7 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
     ClientToScreen(hWnd, &point);
 
     menu = CreatePopupMenu();
-    AppendMenu(menu, MF_STRING, DONE_ID, "Done");
+    AppendMenu(menu, MF_STRING, CLOSE_ID, "Close");
 
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
