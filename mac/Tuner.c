@@ -52,9 +52,8 @@ enum
 // Tuner reference values
 
 enum
-    {A5_REFNCE = 440,
-     A5_OFFSET = 60,
-     E7_OFFSET = 91};
+    {kA5Reference = 440,
+     kA5Offset    = 60};
 
 // Slider values
 
@@ -63,11 +62,6 @@ enum
      kVolumeMin  = 0,
      kVolumeStep = 10,
 
-     kReferenceMax   = 4500,
-     kReferenceValue = 4400,
-     kReferenceMin   = 4300,
-     kReferenceStep  = 10,
-
      kMeterMax   = 200,
      kMeterValue = 100,
      kMeterMin   = 0};
@@ -75,10 +69,15 @@ enum
 // Arrows values
 
 enum
-    {kCorrectionMax  = 120000,
-     kCorrectionVal  = 100000,
-     kCorrectionMin  =  80000,
-     kCorrectionStep = 1};
+    {kReferenceMax   = 4500,
+     kReferenceValue = 4400,
+     kReferenceMin   = 4300,
+     kReferenceStep  = 10,
+
+     kCorrectionMax    = 110000,
+     kCorrectionValue  = 100000,
+     kCorrectionMin    = 99000,
+     kCorrectionStep   = 1};
 
 // Timer values
 
@@ -88,16 +87,15 @@ enum
 // Command IDs
 
 enum
-    {kCommandVolume    = 'volm',
-     kCommandMinus     = 'mins',
-     kCommandPlus      = 'plus',
-     kCommandReference = 'rfnc',
-     kCommandStrobe    = 'strb',
-     kCommandResize    = 'resz',
-     kCommandMultiple  = 'mult',
-     kCommandZoom      = 'zoom',
-     kCommandLock      = 'lock',
-     kCommandFilter    = 'fltr'};
+    {kCommandVolume     = 'volm',
+     kCommandCorrection = 'crtn',
+     kCommandReference  = 'rfnc',
+     kCommandStrobe     = 'strb',
+     kCommandResize     = 'resz',
+     kCommandMultiple   = 'mult',
+     kCommandZoom       = 'zoom',
+     kCommandLock       = 'lock',
+     kCommandFilter     = 'fltr'};
 
 // HIView IDs
 
@@ -168,6 +166,7 @@ typedef struct
     {
 	HIViewRef sample;
 	HIViewRef reference;
+	HIViewRef correction;
     } preferences;
 } Legend;
 
@@ -175,15 +174,23 @@ Legend legend;
 
 typedef struct
 {
-	HIViewRef zoom;
-	HIViewRef lock;
-	HIViewRef strobe;
-	HIViewRef filter;
-	HIViewRef resize;
-	HIViewRef multiple;
+    HIViewRef zoom;
+    HIViewRef lock;
+    HIViewRef strobe;
+    HIViewRef filter;
+    HIViewRef resize;
+    HIViewRef multiple;
 } Check;
 
 Check check;
+
+typedef struct
+{
+    HIViewRef reference;
+    HIViewRef correction;
+} Arrow;
+
+Arrow arrow;
 
 typedef struct
 {
@@ -205,15 +212,23 @@ OSStatus strobeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus meterDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus WindowEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus CommandEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus FocusEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
 OSStatus AudioProc(void *);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
-		   const AudioTimeStamp *, UInt32, UInt32, AudioBufferList *);
+		   const AudioTimeStamp *, UInt32, UInt32,
+		   AudioBufferList *);
 
 OSStatus DisplayPreferences(EventRef, void *);
+OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
+OSStatus ChangeReference(EventRef, HICommandExtended, UInt32);
+OSStatus ChangeCorrection(EventRef, HICommandExtended, UInt32);
 
-void LittleArrowActionProc(HIViewRef, ControlPartCode);
+void ReferenceActionProc(HIViewRef, ControlPartCode);
+void CorrectionActionProc(HIViewRef, ControlPartCode);
 
+void GetPreferences(void);
 void fftr(complex[], int);
 
 // Function main
@@ -229,7 +244,7 @@ int main(int argc, char *argv[])
 
     MenuRef menu;
 
-    // GetStatus();
+    GetPreferences();
 
     // Window bounds
 
@@ -241,9 +256,7 @@ int main(int argc, char *argv[])
 	CreateNewWindow(kDocumentWindowClass,
 			kWindowStandardFloatingAttributes |
 			kWindowStandardHandlerAttribute |
-			kWindowCompositingAttribute |
-			// kWindowResizableAttribute |
-			kWindowFrameworkScaledAttribute,
+			kWindowCompositingAttribute,
 			&bounds, &window);
 
     // Set the title
@@ -335,6 +348,10 @@ int main(int argc, char *argv[])
 
     CreateUserPaneControl(window, &bounds, 0, &scope.view);
 
+    // Set command ID
+
+    HIViewSetCommandID(scope.view, kCommandFilter);
+
     // Place in the window
 
     HIViewAddSubview(content, scope.view);
@@ -383,7 +400,7 @@ int main(int argc, char *argv[])
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandZoom);
+    HIViewSetCommandID(strobe.view, kCommandStrobe);
 
     // Place in the window
 
@@ -513,7 +530,7 @@ int main(int argc, char *argv[])
     // Create static text
 
     CreateStaticTextControl(window, &bounds,
-			    CFSTR("Correcton: 1.00000"),
+			    CFSTR("Correction: 1.00000"),
                             &style, &legend.status.correction);
 
     // Place in group box
@@ -541,6 +558,16 @@ int main(int argc, char *argv[])
 
     InstallApplicationEventHandler(NewEventHandlerUPP(CommandEventHandler),
                                    LENGTH(commandEvents), commandEvents,
+                                   window, NULL);
+    // Text events type spec
+
+    EventTypeSpec textEvents[] =
+        {{kEventClassTextInput, kEventTextInputUnicodeForKeyEvent}};
+
+    // Install event handler
+
+    InstallApplicationEventHandler(NewEventHandlerUPP(TextEventHandler),
+                                   LENGTH(textEvents), textEvents,
                                    window, NULL);
 
     // Draw events type spec
@@ -574,38 +601,59 @@ int main(int argc, char *argv[])
 			       NewEventHandlerUPP(meterDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       meter, NULL);
-
-    // Create message queue
-
-    /* status = MPCreateQueue(&audio.queue); */
-
-    /* if (status != noErr) */
-    /* { */
-    /* 	StandardAlert(kAlertCautionAlert, "\pCreateQueue", */
-    /* 		      "\perror", NULL, NULL); */
-    /* } */
-
-    // Create audio task
-
-    /* status = MPCreateTask(AudioProc, &audio, 0, audio.queue, */
-    /* 			  0, 0, 0, &audio.task); */
-
-    /* if (status != noErr) */
-    /* { */
-    /* 	StandardAlert(kAlertCautionAlert, "\pCreateTask", */
-    /* 		      "\perror", NULL, NULL); */
-    /* } */
-
     // Set up audio
-
+#ifdef AUDIO
     AudioProc(NULL);
-
+#endif
     // Run the application event loop
 
     RunApplicationEventLoop();
 
     return 0;
 }
+
+// Get preferences
+
+void GetPreferences()
+{
+    Boolean found;
+    Boolean flag;
+
+    flag = CFPreferencesGetAppBooleanValue(CFSTR("Zoom"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	spectrum.zoom = flag;
+
+    flag = CFPreferencesGetAppBooleanValue(CFSTR("Strobe"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	strobe.enable = flag;
+
+    flag = CFPreferencesGetAppBooleanValue(CFSTR("Filter"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	audio.filter = flag;
+
+    CFIndex value;
+
+    value = CFPreferencesGetAppIntegerValue(CFSTR("Correction"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	audio.correction = (double)value / 100000.0;
+
+    value = CFPreferencesGetAppIntegerValue(CFSTR("Reference"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	audio.reference = (double)value / 10.0;
+;
+
+}
+// Audio proc
 
 OSStatus AudioProc(void *data)
 {
@@ -862,18 +910,15 @@ HIRect DrawEdge(CGContextRef context, HIRect bounds)
 OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
 			       EventRef event, void *data)
 {
-    OSStatus status = noErr;
     CGContextRef context;
     HIRect bounds, inset;
 
-    status = GetEventParameter(event, kEventParamCGContextRef,
-			       typeCGContextRef, NULL,
-			       sizeof(CGContextRef), NULL,
-			       &context);
+    GetEventParameter(event, kEventParamCGContextRef,
+		      typeCGContextRef, NULL,
+		      sizeof(CGContextRef), NULL,
+		      &context);
 
-    status = HIViewGetBounds((HIViewRef)data, &bounds);
-
-    // ********** Your drawing code here **********
+    HIViewGetBounds((HIViewRef)data, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -907,7 +952,7 @@ OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
     CGContextStrokePath(context);
 
     if (scope.data == NULL)
-	return status;
+	return noErr;
 
     // Initialise sync
 
@@ -965,18 +1010,15 @@ OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
 OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 				  EventRef event, void *data)
 {
-    OSStatus status = noErr;
     CGContextRef context;
     HIRect bounds, inset;
 
-    status = GetEventParameter(event, kEventParamCGContextRef,
-			       typeCGContextRef, NULL,
-			       sizeof(CGContextRef), NULL,
-			       &context);
+    GetEventParameter(event, kEventParamCGContextRef,
+		      typeCGContextRef, NULL,
+		      sizeof(CGContextRef), NULL,
+		      &context);
 
-    status = HIViewGetBounds((HIViewRef)data, &bounds);
-
-    // ********** Your drawing code here **********
+    HIViewGetBounds((HIViewRef)data, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1009,7 +1051,7 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 
     CGContextStrokePath(context);
 
-    return status;
+    return noErr;
 }
 
 OSStatus displayDrawEventHandler(EventHandlerCallRef next,
@@ -1023,18 +1065,15 @@ OSStatus displayDrawEventHandler(EventHandlerCallRef next,
 	{"A", "Bb", "B", "C", "C#", "D",
 	 "Eb", "E", "F", "F#", "G", "Ab"};
 
-    OSStatus status = noErr;
     CGContextRef context;
     HIRect bounds, inset;
 
-    status = GetEventParameter(event, kEventParamCGContextRef,
-			       typeCGContextRef, NULL,
-			       sizeof(CGContextRef), NULL,
-			       &context);
+    GetEventParameter(event, kEventParamCGContextRef,
+		      typeCGContextRef, NULL,
+		      sizeof(CGContextRef), NULL,
+		      &context);
 
-    status = HIViewGetBounds((HIViewRef)data, &bounds);
-
-    // ********** Your drawing code here **********
+    HIViewGetBounds((HIViewRef)data, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1077,30 +1116,27 @@ OSStatus displayDrawEventHandler(EventHandlerCallRef next,
     y += kTextSizeMedium;
 
     sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
-	    A5_REFNCE: audio.reference);
+	    kA5Reference: audio.reference);
     CGContextShowTextAtPoint(context, 8, y, s, strlen(s));
 
     sprintf(s, "%+8.2lfHz  ", display.fr - display.f);
     CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
 
-    return status;
+    return noErr;
 }
 
 OSStatus strobeDrawEventHandler(EventHandlerCallRef next,
 				EventRef event, void *data)
 {
-    OSStatus status = noErr;
     CGContextRef context;
     HIRect bounds, inset;
 
-    status = GetEventParameter(event, kEventParamCGContextRef,
-			       typeCGContextRef, NULL,
-			       sizeof(CGContextRef), NULL,
-			       &context);
+    GetEventParameter(event, kEventParamCGContextRef,
+		      typeCGContextRef, NULL,
+		      sizeof(CGContextRef), NULL,
+		      &context);
 
-    status = HIViewGetBounds((HIViewRef)data, &bounds);
-
-    // ********** Your drawing code here **********
+    HIViewGetBounds((HIViewRef)data, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1140,24 +1176,21 @@ OSStatus strobeDrawEventHandler(EventHandlerCallRef next,
 	  CGContextFillRect(context, CGRectMake(x, 30, 80, 10));
     }
 
-    return status;
+    return noErr;
 }
 
 OSStatus meterDrawEventHandler(EventHandlerCallRef next,
 			       EventRef event, void *data)
 {
-    OSStatus status = noErr;
     CGContextRef context;
     HIRect bounds, inset;
 
-    status = GetEventParameter(event, kEventParamCGContextRef,
-			       typeCGContextRef, NULL,
-			       sizeof(CGContextRef), NULL,
-			       &context);
+    GetEventParameter(event, kEventParamCGContextRef,
+		      typeCGContextRef, NULL,
+		      sizeof(CGContextRef), NULL,
+		      &context);
 
-    status = HIViewGetBounds((HIViewRef)data, &bounds);
-
-    // ********** Your drawing code here **********
+    HIViewGetBounds((HIViewRef)data, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1224,10 +1257,10 @@ OSStatus meterDrawEventHandler(EventHandlerCallRef next,
 
     CGContextStrokePath(context);
 
-    return status;
+    return noErr;
 }
 
-// Window handler
+// Window event handler
 
 OSStatus WindowEventHandler(EventHandlerCallRef next,
                        EventRef event, void *data)
@@ -1253,7 +1286,11 @@ OSStatus WindowEventHandler(EventHandlerCallRef next,
 
     case kEventWindowClose:
 
-        // Quit the application, as it only has one window
+	// Flush preferences
+
+	CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
+
+        // Quit the application
 
         QuitApplicationEventLoop();
         break;
@@ -1271,7 +1308,7 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 			     void *data)
 {
     HICommandExtended command;
-    WindowRef window;
+    CFIndex number;
     UInt32 value;
 
     // Get the command
@@ -1288,10 +1325,81 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 
     switch (command.commandID)
     {
+	// Volume
+
+    case kCommandVolume:
+	ChangeVolume(event, command, value);
+	break;
+
+	// Zoom
+
+    case kCommandZoom:
+	spectrum.zoom = value;
+
+	CFPreferencesSetAppValue(CFSTR("Zoom"),
+				 value? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+	// Strobe
+
+    case kCommandStrobe:
+	strobe.enable = value;
+
+	CFPreferencesSetAppValue(CFSTR("Strobe"),
+				 value? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+	// Filter
+
+    case kCommandFilter:
+	audio.filter = value;
+
+	CFPreferencesSetAppValue(CFSTR("Filter"),
+				 value? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+	// Lock
+
+    case kCommandLock:
+	display.lock = value;
+	break;
+
+	// Multiple
+
+    case kCommandMultiple:
+	display.multiple = value;
+	break;
+
+	// Reference
+
+    case kCommandReference:
+	ChangeReference(event, command, value);
+	break;
+
+	// Correction
+
+    case kCommandCorrection:
+	ChangeCorrection(event, command, value);
+	break;
+
         // Preferences button
 
     case kHICommandPreferences:
 	DisplayPreferences(event, data);
+	break;
+
+	// Save
+
+    case kHICommandSave:
+	number = round(audio.correction * 10000.0);
+	CFPreferencesSetAppValue(CFSTR("Correction"),
+				 CFNumberCreate(kCFAllocatorDefault,
+						kCFNumberCFIndexType,
+						&number),
+				 kCFPreferencesCurrentApplication);
 	break;
 
 	// Close
@@ -1302,6 +1410,10 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 
     case kHICommandQuit:
 
+	// Flush preferences
+
+	CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
+
         // Let the default handler handle it
 
     default:
@@ -1309,22 +1421,41 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	}
 }
 
+// Change volume
+
+OSStatus ChangeVolume(EventRef event,
+		      HICommandExtended command,
+		      UInt32 value)
+{
+    return eventNotHandledErr;
+}
+
 OSStatus DisplayPreferences(EventRef event, void *data)
 {
-    WindowRef window;
+    static WindowRef window;
+
     HIViewRef content;
-    HIViewRef arrows;
     HIViewRef button;
     HIViewRef slider;
     HIViewRef group;
     HIViewRef text;
-    HIViewRef edit;
 
     WindowRef parent = (WindowRef)data;
 
+    // Check window
+
+    if (window != NULL)
+    {
+	if (IsWindowVisible(window))
+	{
+	    SelectWindow(window);
+	    return noErr;
+	}
+    }
+
     // Window bounds
 
-    Rect bounds = {0, 0, 328, 320};
+    Rect bounds = {0, 0, 304, 320};
 
     // Create window
 
@@ -1376,7 +1507,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandZoom);
+    HIViewSetCommandID(check.zoom, kCommandZoom);
 
     // Place in group box
 
@@ -1390,7 +1521,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandStrobe);
+    HIViewSetCommandID(check.strobe, kCommandStrobe);
 
     // Place in group box
 
@@ -1404,7 +1535,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandFilter);
+    HIViewSetCommandID(check.filter, kCommandFilter);
 
     // Place in group box
 
@@ -1418,7 +1549,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandLock);
+    HIViewSetCommandID(check.lock, kCommandLock);
 
     // Place in group box
 
@@ -1432,7 +1563,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandResize);
+    HIViewSetCommandID(check.resize, kCommandResize);
 
     // Place in group box
 
@@ -1446,7 +1577,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Set command ID
 
-    HIViewSetCommandID(strobe.view, kCommandMultiple);
+    HIViewSetCommandID(check.multiple, kCommandMultiple);
 
     // Place in group box
 
@@ -1461,84 +1592,70 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Create static text
 
     CreateStaticTextControl(window, &bounds,
-			    CFSTR("Reference:  440.00"),
-                            NULL, &legend.preferences.reference);
+			    CFSTR("Reference:"),
+                            NULL, &text);
+
+    // Place in group box
+
+    HIViewAddSubview(group, text);
+    HIViewPlaceInSuperviewAt(text, 16, 90);
+
+    // Edit bounds
+
+    bounds.bottom = 16;
+    bounds.right  = 56;
+
+    // Create edit control
+
+    CreateEditUnicodeTextControl(window, &bounds,
+				 CFSTR("440.00"),
+				 false, NULL, &legend.preferences.reference);
+    // Focus event type spec
+
+    EventTypeSpec focusEvents[] =
+	{kEventClassControl, kEventControlSetFocusPart};
+
+    // Install event handlers
+
+    InstallControlEventHandler(legend.preferences.reference,
+			       NewEventHandlerUPP(FocusEventHandler),
+			       LENGTH(focusEvents), focusEvents,
+			       scope.view, NULL);
+    // Set control data
+
+    Boolean single = true;
+
+    SetControlData(legend.preferences.reference,
+		   kControlEditTextPart,
+		   kControlEditTextSingleLineTag,
+		   sizeof(single), &single);
+
+    // Set command ID
+
+    HIViewSetCommandID(legend.preferences.reference, kCommandReference);
 
     // Place in group box
 
     HIViewAddSubview(group, legend.preferences.reference);
-    HIViewPlaceInSuperviewAt(legend.preferences.reference, 16, 90);
+    HIViewPlaceInSuperviewAt(legend.preferences.reference, 98, 90);
 
-    // Bounds of button
+    // Arrows bounds
 
-    bounds.bottom = 16;
-    bounds.right  = 16;
+    bounds.bottom = 22;
+    bounds.right  = 13;
 
-    // Create button
+    CreateLittleArrowsControl(window, &bounds,
+			      kReferenceValue, kReferenceMin,
+			      kReferenceMax, kReferenceStep,
+			      &arrow.reference);
+    //Set action proc
 
-    CreateBevelButtonControl(window, &bounds, CFSTR("-"),
-			     kControlBevelButtonNormalBevel,
-			     kControlBehaviorPushbutton,
-			     NULL, 0, 0, 0, &button);
+    SetControlAction(arrow.reference, ReferenceActionProc);
 
-    // Set command ID
+    // Place in group box
 
-    HIViewSetCommandID(button, kCommandMinus);
-
-    // Place in the window
-
-    HIViewAddSubview(content, button);
-    HIViewPlaceInSuperviewAt(button, 20, 158);
-
-    // Bounds of slider
-
-    bounds.bottom = 16;
-    bounds.right  = 232;
-
-    // Create reference slider
-
-    CreateSliderControl(window, &bounds, kReferenceValue, kReferenceMin, kReferenceMax,
-                        kControlSliderPointsUpOrLeft, 0, false,
-			NULL, &slider);
-
-    // Control size
-
-    ControlSize small = kControlSizeSmall;
-
-    // Set control size
-
-    SetControlData(slider, kControlEntireControl, kControlSizeTag,
-		   sizeof(ControlSize), &small);
-
-    // Set command ID
-
-    HIViewSetCommandID(slider, kCommandReference);
-
-    // Place in the window
-
-    HIViewAddSubview(content, slider);
-    HIViewPlaceInSuperviewAt(slider, 44, 156);
-
-    // Bounds of button
-
-    bounds.bottom = 16;
-    bounds.right  = 16;
-
-    // Create button
-
-    CreateBevelButtonControl(window, &bounds, CFSTR("+"),
-			     kControlBevelButtonNormalBevel,
-			     kControlBehaviorPushbutton,
-			     NULL, 0, 0, 0, &button);
-
-    // Set command ID
-
-    HIViewSetCommandID(button, kCommandPlus);
-
-    // Place in the window
-
-    HIViewAddSubview(content, button);
-    HIViewPlaceInSuperviewAt(button, 284, 158);
+    HIViewAddSubview(group, arrow.reference);
+    HIViewPlaceInSuperviewAt(arrow.reference, 166, 88);
 
     // Group box bounds
 
@@ -1552,7 +1669,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Place in window
 
     HIViewAddSubview(content, group);
-    HIViewPlaceInSuperviewAt(group, 20, 192);
+    HIViewPlaceInSuperviewAt(group, 20, 168);
 
     // Text bounds
 
@@ -1579,12 +1696,29 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     CreateEditUnicodeTextControl(window, &bounds,
 				 CFSTR("1.00000"),
-				 false, NULL, &edit);
+				 false, NULL,
+				 &legend.preferences.correction);
+    // Install event handlers
+
+    InstallControlEventHandler(legend.preferences.correction,
+			       NewEventHandlerUPP(FocusEventHandler),
+			       LENGTH(focusEvents), focusEvents,
+			       scope.view, NULL);
+    // Set control data
+
+    SetControlData(legend.preferences.correction,
+		   kControlEditTextPart,
+		   kControlEditTextSingleLineTag,
+		   sizeof(single), &single);
+
+    // Set command ID
+
+    HIViewSetCommandID(legend.preferences.correction, kCommandCorrection);
 
     // Place in group box
 
-    HIViewAddSubview(group, edit);
-    HIViewPlaceInSuperviewAt(edit, 98, 16);
+    HIViewAddSubview(group, legend.preferences.correction);
+    HIViewPlaceInSuperviewAt(legend.preferences.correction, 98, 16);
 
     // Arrows bounds
 
@@ -1592,17 +1726,18 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     bounds.right  = 13;
 
     CreateLittleArrowsControl(window, &bounds,
-			      100000, 0, 120000, 1,
-			      &arrows);
+			      kCorrectionValue, kCorrectionMin,
+			      kCorrectionMax, kCorrectionStep,
+			      &arrow.correction);
 
     //Set action proc
 
-    SetControlAction(arrows, LittleArrowActionProc);
+    SetControlAction(arrow.correction, CorrectionActionProc);
 
     // Place in group box
 
-    HIViewAddSubview(group, arrows);
-    HIViewPlaceInSuperviewAt(arrows, 166, 14);
+    HIViewAddSubview(group, arrow.correction);
+    HIViewPlaceInSuperviewAt(arrow.correction, 166, 14);
 
     // Button bounds
 
@@ -1642,12 +1777,12 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Text bounds
 
     bounds.bottom = 16;
-    bounds.right  = 146;
+    bounds.right  = 144;
 
     // Create static text
 
     CreateStaticTextControl(window, &bounds,
-			    CFSTR("Sample rate:  11025.0"),
+			    CFSTR("Sample rate: 11025.0"),
                             NULL, &legend.preferences.sample);
 
     // Place in group box
@@ -1674,27 +1809,171 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     HIViewPlaceInSuperviewAt(button, 192, 83);
 }
 
-// Little arrow action proc
+// Focus event handler
 
-void LittleArrowActionProc(HIViewRef view, ControlPartCode part)
+OSStatus FocusEventHandler(EventHandlerCallRef next, EventRef event,
+			   void *data)
 {
+    HIViewRef view;
+    UInt32 id;
 
+    // Get the view
+
+    GetEventParameter(event, kEventParamDirectObject,
+                      typeControlRef, NULL, sizeof(view),
+                      NULL, &view);
+
+    // Get command id
+
+    HIViewGetCommandID(view, &id);
+
+    // Copy text
+
+    CFStringRef text = HIViewCopyText(view);
+
+    // Get value
+
+    double value = CFStringGetDoubleValue(text);
+
+    CFRelease(text);
+
+    switch (id)
+    {
+    case kCommandReference:
+	audio.reference = value;
+	HIViewSetValue(arrow.reference, value * 10);
+	HIViewSetNeedsDisplay(display.view, true);
+	break;
+
+    case kCommandCorrection:
+	audio.correction = value;
+	HIViewSetValue(arrow.correction, value * 100000);
+	break;
+    }
+
+    return eventNotHandledErr;
+}
+
+// Text event handler
+
+OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
+			  void *data)
+{
+    return eventNotHandledErr;
+}
+
+// Change reference
+
+OSStatus ChangeReference(EventRef event,
+			  HICommandExtended command,
+			  UInt32 value)
+{
+    CFStringRef text = HIViewCopyText(command.source.control);
+
+    CFRelease(text);
+
+    eventNotHandledErr;
+}
+
+// Reference action proc
+
+void ReferenceActionProc(HIViewRef view, ControlPartCode part)
+{
     SInt32 value = HIViewGetValue(view);
-    SInt32 s = 0;
+    SInt32 step = 0;
 
     GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
-		   sizeof(s), &s, nil);
+		   sizeof(step), &step, nil);
 
     switch (part)
     {
     case kControlUpButtonPart:
-	HIViewSetValue(view, value + s);
+	value += step;
 	break;
 
     case kControlDownButtonPart:
-	HIViewSetValue(view, value - s);
+	value -= step;
 	break;
     }
+
+    HIViewSetValue(view, value);
+
+    static char s[64];
+
+    audio.reference = (double)value / 10.0;
+    sprintf(s, "%6.2lf", audio.reference);
+    HIViewSetText(legend.preferences.reference,
+		  CFStringCreateWithCString(kCFAllocatorDefault, s,
+					    kCFStringEncodingMacRoman));
+
+    HIViewSetNeedsDisplay(display.view, true);
+
+    CFPreferencesSetAppValue(CFSTR("Reference"),
+			     CFNumberCreate(kCFAllocatorDefault,
+					    kCFNumberCFIndexType,
+					    &value),
+			     kCFPreferencesCurrentApplication);
+}
+
+// Change correction
+
+OSStatus ChangeCorrection(EventRef event,
+			  HICommandExtended command,
+			  UInt32 value)
+{
+    CFStringRef text = HIViewCopyText(command.source.control);
+
+    CFRelease(text);
+
+    eventNotHandledErr;
+}
+
+// Correction action proc
+
+void CorrectionActionProc(HIViewRef view, ControlPartCode part)
+{
+
+    SInt32 value = HIViewGetValue(view);
+    SInt32 step = 0;
+
+    GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
+		   sizeof(step), &step, nil);
+
+    switch (part)
+    {
+    case kControlUpButtonPart:
+	value += step;
+	break;
+
+    case kControlDownButtonPart:
+	value -= step;
+	break;
+    }
+
+    HIViewSetValue(view, value);
+
+    static char s[64];
+
+    audio.correction = (double)value / 100000.0;
+
+    sprintf(s, "%6.5lf", audio.correction);
+    HIViewSetText(legend.preferences.correction,
+		  CFStringCreateWithCString(kCFAllocatorDefault, s,
+					    kCFStringEncodingMacRoman));
+
+    sprintf(s, "Correction: %6.5lf", audio.correction);
+    HIViewSetText(legend.status.correction,
+		  CFStringCreateWithCString(kCFAllocatorDefault, s,
+					    kCFStringEncodingMacRoman));
+
+    sprintf(s, "Sample rate: %6.1lf", 11025.0 / audio.correction);
+    HIViewSetText(legend.preferences.sample,
+		  CFStringCreateWithCString(kCFAllocatorDefault, s,
+					    kCFStringEncodingMacRoman));
+
+    HIViewSetText(legend.status.sample,
+		  CFStringCreateWithCString(kCFAllocatorDefault, s,
+					    kCFStringEncodingMacRoman));
 }
 
 // FFT
