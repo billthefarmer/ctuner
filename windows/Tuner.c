@@ -51,14 +51,13 @@ enum
      SPECTRUM_ID,
      DISPLAY_ID,
      STROBE_ID,
-     METER_ID,
      VOLUME_ID,
      STATUS_ID,
      SLIDER_ID,
+     METER_ID,
      QUIT_ID,
      ZOOM_ID,
      TEXT_ID,
-     EDIT_ID,
      SAVE_ID,
      LOCK_ID,
      PLUS_ID,
@@ -66,11 +65,11 @@ enum
      MINUS_ID,
      RESIZE_ID,
      FILTER_ID,
-     UPDOWN_ID,
      ENABLE_ID,
      OPTIONS_ID,
      MULTIPLE_ID,
-     REFERENCE_ID};
+     REFERENCE_ID,
+     CORRECTION_ID};
 
 // Wave in values
 
@@ -109,7 +108,11 @@ enum
 
      MAX_METER = 200,
      REF_METER = 100,
-     MIN_METER = 0};
+     MIN_METER = 0,
+
+     MAX_CORRECTION = 110000,
+     REF_CORRECTION = 100000,
+     MIN_CORRECTION =  90000};
 
 // Timer values
 
@@ -197,34 +200,36 @@ typedef struct
 
 DISPLAY display;
 
-TOOL adjust;
-TOOL options;
-TOOL multiple;
 TOOL group;
 TOOL zoom;
 TOOL text;
-TOOL edit;
 TOOL lock;
 TOOL resize;
 TOOL filter;
-TOOL updown;
 TOOL enable;
+TOOL options;
+TOOL multiple;
+TOOL reference;
+TOOL correction;
 
-struct
+typedef struct
 {
-    TOOL plus;
-    TOOL minus;
     TOOL options;
     TOOL save;
     TOOL close;
     TOOL quit;
-} button;
+} BUTTON, *BUTTONP;
 
-struct
+BUTTON button;
+
+typedef struct
 {
-    TOOL reference;
     TOOL sample;
-} legend;
+    TOOL reference;
+    TOOL correction;
+} LEGEND, *LEGENDP;
+
+LEGEND legend;
 
 typedef struct
 {
@@ -293,16 +298,13 @@ BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL ResizeClicked(WPARAM, LPARAM);
-BOOL MinusClicked(WPARAM, LPARAM);
-BOOL MinusPressed(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
 BOOL LockClicked(WPARAM, LPARAM);
-BOOL PlusClicked(WPARAM, LPARAM);
-BOOL PlusPressed(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
 BOOL MultipleClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
-BOOL EditChange(WPARAM, LPARAM);
+BOOL EditReference(WPARAM, LPARAM);
+BOOL EditCorrection(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
 BOOL CharPressed(WPARAM, LPARAM);
 BOOL CopyDisplay(WPARAM, LPARAM);
@@ -1026,7 +1028,7 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 			 WS_VISIBLE | WS_POPUP |
 			 WS_CAPTION,
 			 rWnd.right + 10, rWnd.top,
-			 WIDTH, 340, window.hwnd,
+			 WIDTH, 320, window.hwnd,
 			 (HMENU)NULL, hInst, NULL);
     }
 
@@ -1057,7 +1059,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 2, width - 20, 148,
+			 10, 2, width - 20, 156,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create zoom tickbox
@@ -1188,71 +1190,50 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	// Create text
 
-	sprintf(s, "Reference:  %6.2lfHz", audio.reference);
-
-	legend.reference.hwnd =
-	    CreateWindow(WC_STATIC, s,
+	text.hwnd =
+	    CreateWindow(WC_STATIC, "Reference:",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 124, width - 40, 20,
-			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
+			 20, 126, 72, 20, hWnd,
+			 (HMENU)TEXT_ID, hInst, NULL);
 
-	// Create minus button
+	// Create edit control
 
-	button.minus.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
+	sprintf(s, "%6.2lf", audio.reference);
+
+	legend.reference.hwnd =
+	    CreateWindow(WC_EDIT, s,
 			 WS_VISIBLE | WS_CHILD |
-			 BS_OWNERDRAW,
-			 10, 160, 16, 16, hWnd,
-			 (HMENU)MINUS_ID, hInst, NULL);
-
-	// Add minus button to tooltip
-
-	tooltip.info.uId = (UINT_PTR)button.minus.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
-	    "click to decrease";
-
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
-
-	// Create reference slider
-
-	adjust.hwnd =
-	    CreateWindow(TRACKBAR_CLASS, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
-			 26, 156, width - 52, 24, hWnd,
+			 WS_BORDER,
+			 100, 124, 82, 20, hWnd,
 			 (HMENU)REFERENCE_ID, hInst, NULL);
 
-	SendMessage(adjust.hwnd, TBM_SETRANGE, TRUE,
-		    MAKELONG(MIN_REF, MAX_REF));
-	SendMessage(adjust.hwnd, TBM_SETPAGESIZE, 0, STEP_REF);
-	SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, (audio.reference == 0)?
-		    REF_REF: audio.reference * 10);
+	// Add edit to tooltip
 
-	// Add adjust to tooltip
-
-	tooltip.info.uId = (UINT_PTR)adjust.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
+	tooltip.info.uId = (UINT_PTR)legend.reference.hwnd;
+	tooltip.info.lpszText = "Reference, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
-	// Create plus button
+	// Create up-down control
 
-	button.plus.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
+	reference.hwnd =
+	    CreateWindow(UPDOWN_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
-			 BS_OWNERDRAW,
-			 width - 26, 160, 16, 16, hWnd,
-			 (HMENU)PLUS_ID, hInst, NULL);
+			 UDS_AUTOBUDDY | UDS_ALIGNRIGHT,
+			 0, 0, 0, 0, hWnd,
+			 (HMENU)REFERENCE_ID, hInst, NULL);
 
-	// Add plus button to tooltip
+	SendMessage(reference.hwnd, UDM_SETRANGE32, MIN_REF, MAX_REF);
+	SendMessage(reference.hwnd, UDM_SETPOS32, 0, audio.reference * 10);
 
-	tooltip.info.uId = (UINT_PTR)button.plus.hwnd;
-	tooltip.info.lpszText = "Reference frequency, "
-	    "click to increase";
+	// Add updown to tooltip
+
+	tooltip.info.uId = (UINT_PTR)reference.hwnd;
+	tooltip.info.lpszText = "Reference, "
+	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -1263,7 +1244,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 BS_GROUPBOX,
-			 10, 180, width - 20, 124,
+			 10, 160, width - 20, 124,
 			 hWnd, NULL, hInst, NULL);
 
 	// Create text
@@ -1272,23 +1253,23 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, "Correction:",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 202, 76, 20,
+			 20, 182, 76, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create edit control
 
 	sprintf(s, "%6.5lf", audio.correction);
 
-	edit.hwnd =
+	legend.correction.hwnd =
 	    CreateWindow(WC_EDIT, s,
 			 WS_VISIBLE | WS_CHILD |
 			 WS_BORDER,
-			 100, 200, 82, 20, hWnd,
-			 (HMENU)EDIT_ID, hInst, NULL);
+			 100, 180, 82, 20, hWnd,
+			 (HMENU)CORRECTION_ID, hInst, NULL);
 
 	// Add edit to tooltip
 
-	tooltip.info.uId = (UINT_PTR)edit.hwnd;
+	tooltip.info.uId = (UINT_PTR)legend.correction.hwnd;
 	tooltip.info.lpszText = "Correction, "
 	    "click to change";
 
@@ -1297,19 +1278,21 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	// Create up-down control
 
-	updown.hwnd =
+	correction.hwnd =
 	    CreateWindow(UPDOWN_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 UDS_AUTOBUDDY | UDS_ALIGNRIGHT,
 			 0, 0, 0, 0, hWnd,
-			 (HMENU)UPDOWN_ID, hInst, NULL);
+			 (HMENU)CORRECTION_ID, hInst, NULL);
 
-	SendMessage(updown.hwnd, UDM_SETRANGE32, 99000, 110000);
-	SendMessage(updown.hwnd, UDM_SETPOS32, 0, audio.correction * 100000);
+	SendMessage(correction.hwnd, UDM_SETRANGE32,
+		    MIN_CORRECTION, MAX_CORRECTION);
+	SendMessage(correction.hwnd, UDM_SETPOS32, 0,
+		    audio.correction * 100000);
 
 	// Add updown to tooltip
 
-	tooltip.info.uId = (UINT_PTR)updown.hwnd;
+	tooltip.info.uId = (UINT_PTR)correction.hwnd;
 	tooltip.info.lpszText = "Correction, "
 	    "click to change";
 
@@ -1322,7 +1305,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Save",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 197, 85, 26,
+			 209, 177, 85, 26,
 			 hWnd, (HMENU)SAVE_ID, hInst, NULL);
 
 	// Create text
@@ -1333,7 +1316,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			 "is significantly inaccurate.",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 230, width - 40, 40,
+			 20, 210, width - 40, 40,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create text
@@ -1345,7 +1328,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_STATIC, s,
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 272, 152, 20,
+			 20, 252, 152, 20,
 			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create close button
@@ -1354,7 +1337,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_BUTTON, "Close",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
-			 209, 267, 85, 26,
+			 209, 247, 85, 26,
 			 hWnd, (HMENU)CLOSE_ID, hInst, NULL);
 
 	break;
@@ -1374,13 +1357,11 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Updown control
 
     case WM_VSCROLL:
-	ChangeCorrection(wParam, lParam);
-	break;
+	if ((HWND)lParam == reference.hwnd)
+	    ChangeReference(wParam, lParam);
 
-	// Reference
-
-    case WM_HSCROLL:
-	ChangeReference(wParam, lParam);
+	if ((HWND)lParam ==correction.hwnd)
+	    ChangeCorrection(wParam, lParam);
 
 	// Set the focus back to the window
 
@@ -1463,26 +1444,14 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
-	    // Plus button
+	    // Reference
 
-	case PLUS_ID:
-	    PlusClicked(wParam, lParam);
+	case REFERENCE_ID:
+	    EditReference(wParam, lParam);
 	    break;
 
-	    // Minus button
-
-	case MINUS_ID:
-	    MinusClicked(wParam, lParam);
-	    break;
-
-	    // Updown control
-
-	case EDIT_ID:
-	    EditChange(wParam, lParam);
-
-	    // Set the focus back to the window
-
-	    // SetFocus(hWnd);
+	case CORRECTION_ID:
+	    EditCorrection(wParam, lParam);
 	    break;
 
 	case CLOSE_ID:
@@ -1647,19 +1616,20 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-// Edit change
+// Edit correction
 
-BOOL EditChange(WPARAM wParam, LPARAM lParam)
+BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
 {
     static char s[64];
 
     switch (HIWORD(wParam))
     {
     case EN_KILLFOCUS:
-	SendMessage(edit.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
+	SendMessage(legend.correction.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
 	audio.correction = atof(s);
 
-	SendMessage(updown.hwnd, UDM_SETPOS32, 0, audio.correction * 100000);
+	SendMessage(correction.hwnd, UDM_SETPOS32, 0,
+		    audio.correction * 100000);
 
 	sprintf(s, "Sample rate:  %6.1lf",
 		(double)SAMPLE_RATE / audio.correction);
@@ -1678,11 +1648,11 @@ BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
 {
     static char s[64];
 
-    long value = SendMessage(updown.hwnd, UDM_GETPOS32, 0, 0);
+    long value = SendMessage(correction.hwnd, UDM_GETPOS32, 0, 0);
     audio.correction = (double)value / 100000.0;
 
     sprintf(s, "%6.5lf", audio.correction);
-    SendMessage(edit.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+    SendMessage(legend.correction.hwnd, WM_SETTEXT, 0, (LPARAM)s);
 
     sprintf(s, "Sample rate:  %6.1lf",
 	    (double)SAMPLE_RATE / audio.correction);
@@ -1792,14 +1762,6 @@ BOOL CharPressed(WPARAM w, LPARAM l)
     case 'Z':
     case 'z':
 	ZoomClicked(w, l);
-	break;
-
-    case '+':
-	PlusPressed(w, l);
-	break;
-
-    case '-':
-	MinusPressed(w, l);
 	break;
     }
 }
@@ -2667,124 +2629,6 @@ BOOL DrawPlus(HDC hdc, RECT rect, UINT state)
 	      (rect.right - rect.left) / 2 + rect.left + 1, rect.bottom - 2);
 }
 
-// Plus clicked
-
-BOOL PlusClicked(WPARAM wParam, LPARAM lParam)
-{
-    switch(HIWORD(wParam))
-    {
-    case BN_CLICKED:
-	PlusPressed(wParam, lParam);
-	break;
-
-    default:
-	return FALSE;
-    }
-}
-
-// Plus pressed
-
-BOOL PlusPressed(WPARAM wParam, LPARAM lParam)
-{
-    if (audio.reference == 0)
-	return FALSE;
-
-    int value = audio.reference * 10;
-
-    SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, ++value);
-    audio.reference = value / 10.0;
-    InvalidateRgn(display.hwnd, NULL, TRUE);
-
-    static char s[64];
-
-    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
-    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
-
-    HKEY hkey;
-    LONG error;
-
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
-			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
-
-    if (error == ERROR_SUCCESS)
-    {
-	RegSetValueEx(hkey, "Reference", 0, REG_DWORD,
-		      (LPBYTE)&value, sizeof(value));
-
-	RegCloseKey(hkey);
-    }
-
-    else
-    {
-	static char s[64];
-
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
-		      0, s, sizeof(s), NULL);
-
-	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
-    }
-
-    return TRUE;
-}
-
-// Minus clicked
-
-BOOL MinusClicked(WPARAM wParam, LPARAM lParam)
-{
-    switch (HIWORD(wParam))
-    {
-    case BN_CLICKED:
-	MinusPressed(wParam, lParam);
-	break;
-
-    default:
-	return FALSE;
-    }
-}
-
-BOOL MinusPressed(WPARAM wParam, LPARAM lParam)
-{
-    if (audio.reference == 0)
-	return FALSE;
-
-    int value = audio.reference * 10;
-
-    SendMessage(adjust.hwnd, TBM_SETPOS, TRUE, --value);
-    audio.reference = value / 10.0;
-    InvalidateRgn(display.hwnd, NULL, TRUE);
-
-    static char s[64];
-
-    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
-    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
-
-    HKEY hkey;
-    LONG error;
-
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
-			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
-
-    if (error == ERROR_SUCCESS)
-    {
-	RegSetValueEx(hkey, "Reference", 0, REG_DWORD,
-		      (LPBYTE)&value, sizeof(value));
-
-	RegCloseKey(hkey);
-    }
-
-    else
-    {
-	static char s[64];
-
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
-		      0, s, sizeof(s), NULL);
-
-	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
-    }
-
-    return TRUE;
-}
-
 // Display clicked
 
 BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
@@ -2952,38 +2796,73 @@ BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-// Change reference
+// Edit reference
 
-BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
+BOOL EditReference(WPARAM wParam, LPARAM lParam)
 {
+    static char s[64];
+
     if (audio.reference == 0)
 	return FALSE;
 
-    switch (LOWORD(wParam))
+    switch (HIWORD(wParam))
     {
-	// Adjustments
+    case EN_KILLFOCUS:
+	SendMessage(legend.reference.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
+	audio.reference = atof(s);
 
-    case TB_PAGEDOWN:
-    case TB_PAGEUP:
-	break;
-
-    case TB_THUMBPOSITION:
-    case TB_THUMBTRACK:
+	SendMessage(reference.hwnd, UDM_SETPOS32, 0,
+		    audio.reference * 10);
 	break;
 
     default:
 	return FALSE;
     }
 
-    int value = SendMessage(adjust.hwnd, TBM_GETPOS, 0, 0);
-    audio.reference = value / 10.0;
-
     InvalidateRgn(display.hwnd, NULL, TRUE);
 
+    HKEY hkey;
+    LONG error;
+
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
+			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
+
+    if (error == ERROR_SUCCESS)
+    {
+	int value = audio.reference * 10;
+
+	RegSetValueEx(hkey, "Reference", 0, REG_DWORD,
+		      (LPBYTE)&value, sizeof(value));
+
+	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static char s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
+
+    return TRUE;
+}
+
+// Change reference
+
+BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
+{
     static char s[64];
 
-    sprintf(s, "Reference:  %6.2lfHz", audio.reference);
+    long value = SendMessage(reference.hwnd, UDM_GETPOS32, 0, 0);
+    audio.reference = (double)value / 10.0;
+
+    sprintf(s, "%6.2lf", audio.reference);
     SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+
+    InvalidateRgn(display.hwnd, NULL, TRUE);
 
     HKEY hkey;
     LONG error;
