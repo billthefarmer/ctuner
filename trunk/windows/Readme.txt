@@ -42,8 +42,8 @@ audio filter on the input. This is intended to make it easier to tune
 low notes by reducing the level of harmonics. The display lock tick
 box may be used to lock the display. The resize tick box may be used
 to resize the display. The multiple tick box may be used to display
-multiple tuning values. The slider below and the + and - buttons allow
-the reference to be adjusted.
+multiple tuning values. The text box and up/down arrows may be used to
+adjust the reference.
 
 Some audio input devices appear to have inaccurate clocks. Out of
 three laptops I have tested, two were up to 0.7% out. The correction
