@@ -60,9 +60,7 @@ enum
      TEXT_ID,
      SAVE_ID,
      LOCK_ID,
-     PLUS_ID,
      CLOSE_ID,
-     MINUS_ID,
      RESIZE_ID,
      FILTER_ID,
      ENABLE_ID,
@@ -124,6 +122,11 @@ enum
 enum
     {WIDTH  = 320,
      HEIGHT = 396};
+
+// Memory size
+
+enum
+    {MEM_SIZE = 1024};
 
 // Global data
 
@@ -288,8 +291,6 @@ BOOL DrawScope(HDC, RECT);
 BOOL DrawSpectrum(HDC, RECT);
 BOOL DrawDisplay(HDC, RECT);
 BOOL DrawMeter(HDC, RECT);
-BOOL DrawMinus(HDC, RECT, UINT);
-BOOL DrawPlus(HDC, RECT, UINT);
 BOOL DisplayContextMenu(HWND, POINTS);
 BOOL DisplayOptions(WPARAM, LPARAM);
 BOOL DisplayOptionsMenu(HWND, POINTS);
@@ -306,6 +307,7 @@ BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditReference(WPARAM, LPARAM);
 BOOL EditCorrection(WPARAM, LPARAM);
 BOOL ChangeVolume(WPARAM, LPARAM);
+BOOL VolumeChange(WPARAM, LPARAM);
 BOOL CharPressed(WPARAM, LPARAM);
 BOOL CopyDisplay(WPARAM, LPARAM);
 BOOL ChangeCorrection(WPARAM, LPARAM);
@@ -315,7 +317,6 @@ DWORD WINAPI AudioThread(LPVOID);
 VOID WaveInData(WPARAM, LPARAM);
 VOID UpdateMeter(METERP);
 VOID CALLBACK DisplayCallback(PVOID, BOOL);
-VOID CALLBACK TimerCallback(PVOID, BOOL);
 VOID fftr(complex[], int);
 
 // Application entry point.
@@ -734,58 +735,52 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
     case WM_COMMAND:
 	switch (LOWORD(wParam))
 	{
+	    // Scope
+
 	case SCOPE_ID:
 	    ScopeClicked(wParam, lParam);
 	    break;
+
+	    // Display
 
 	case DISPLAY_ID:
 	    DisplayClicked(wParam, lParam);
 	    break;
 
+	    // Spectrum
+
 	case SPECTRUM_ID:
 	    SpectrumClicked(wParam, lParam);
 	    break;
+
+	    // Strobe
 
 	case STROBE_ID:
 	    StrobeClicked(wParam, lParam);
 	    break;
 
+	    // Zoom control
+
 	case ZOOM_ID:
 	    ZoomClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-
-	    SetFocus(hWnd);
 	    break;
 
 	    // Enable control
 
 	case ENABLE_ID:
 	    EnableClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-
-	    SetFocus(hWnd);
 	    break;
 
 	    // Filter control
 
 	case FILTER_ID:
 	    FilterClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-
-	    SetFocus(hWnd);
 	    break;
 
 	    // Lock control
 
 	case LOCK_ID:
 	    LockClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-
-	    SetFocus(hWnd);
 	    break;
 
 	    // Resize control
@@ -793,6 +788,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	case RESIZE_ID:
 	    ResizeClicked(wParam, lParam);
 	    break;
+
+	    // Multiple control
 
 	case MULTIPLE_ID:
 	    MultipleClicked(wParam, lParam);
@@ -820,6 +817,18 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
     case WM_CHAR:
 	CharPressed(wParam, lParam);
+	break;
+
+	// Audio input data
+
+    case MM_WIM_DATA:
+	WaveInData(wParam, lParam);
+	break;
+
+	// Mixer control change
+
+    case MM_MIXM_CONTROL_CHANGE:
+	VolumeChange(wParam, lParam);
 	break;
 
         // Process other messages.
@@ -873,6 +882,8 @@ BOOL ResizeWindow(WPARAM wParam, LPARAM lParam)
 
     GetClientRect(window.hwnd, &window.rclt);
 
+    // Resize child windows
+
     EnumChildWindows(window.hwnd, ResizeProc, window.zoom);
 }
 
@@ -886,12 +897,18 @@ BOOL CALLBACK ResizeProc(HWND hwnd, LPARAM lParam)
 	POINT p[2];
     } rect;
 
+    // Get window rect and convert to client coordinates
+
     GetWindowRect(hwnd, &rect.r);
     ScreenToClient(window.hwnd, &rect.p[0]);
     ScreenToClient(window.hwnd, &rect.p[1]);
 
+    // Calculate dimensions
+
     int width = rect.r.right - rect.r.left;
     int height = rect.r.bottom - rect.r.top;
+
+    // Resize each window
 
     if (lParam)
 	MoveWindow(hwnd, rect.r.left * 2, rect.r.top * 2,
@@ -915,54 +932,49 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 
     SetGraphicsMode(hdc, GM_ADVANCED);
 
-    switch (wParam)
+    // Change transform
+
+    if (window.zoom)
     {
-    case PLUS_ID:
-    case MINUS_ID:
-	break;
+	XFORM xform =
+	    {2.0, 0.0, 0.0, 2.0, 0, 0};
 
-    default:
-	if (window.zoom)
-	{
-	    XFORM xform =
-		{2.0, 0.0, 0.0, 2.0, 0, 0};
+	SetWorldTransform(hdc, &xform);
 
-	    SetWorldTransform(hdc, &xform);
-
-	    rect.right /= 2;
-	    rect.bottom /= 2;
-	}
-	break;
+	rect.right /= 2;
+	rect.bottom /= 2;
     }
 
     switch (wParam)
     {
+	// Scope
+
     case SCOPE_ID:
 	return DrawScope(hdc, rect);
 	break;
+
+	// Spectrum
 
     case SPECTRUM_ID:
 	return DrawSpectrum(hdc, rect);
 	break;
 
+	// Strobe
+
     case STROBE_ID:
 	return DrawStrobe(hdc, rect);
 	break;
+
+	// Display
 
     case DISPLAY_ID:
 	return DrawDisplay(hdc, rect);
 	break;
 
+	// Meter
+
     case METER_ID:
 	return DrawMeter(hdc, rect);
-	break;
-
-    case MINUS_ID:
-	return DrawMinus(hdc, rect, state);
-	break;
-
-    case PLUS_ID:
-	return DrawPlus(hdc, rect, state);
 	break;
     }
 }
@@ -974,10 +986,16 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
     HMENU menu;
     POINT point;
 
+    // Convert coordinates
+
     POINTSTOPOINT(point, points);
     ClientToScreen(hWnd, &point);
 
+    // Create menu
+
     menu = CreatePopupMenu();
+
+    // Add menu items
 
     AppendMenu(menu, spectrum.zoom? MF_STRING | MF_CHECKED:
 	       MF_STRING, ZOOM_ID, "Zoom spectrum");
@@ -996,6 +1014,8 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
     AppendMenu(menu, MF_STRING, QUIT_ID, "Quit");
 
+    // Pop up the menu
+
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
 		   0, hWnd, NULL);
@@ -1005,6 +1025,8 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 
 BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 {
+    // Check if exists
+
     if (options.hwnd == NULL)
     {
 	WNDCLASS wc = 
@@ -1019,9 +1041,13 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 
 	RegisterClass(&wc);
 
+	// Get the main window rect
+
 	RECT rWnd;
 
 	GetWindowRect(window.hwnd, &rWnd);
+
+	// Create the window, offset right
 
 	options.hwnd =
 	    CreateWindow(PCLASS, "Tuner Options",
@@ -1031,6 +1057,8 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 			 WIDTH, 320, window.hwnd,
 			 (HMENU)NULL, hInst, NULL);
     }
+
+    // Show existing window
 
     else
 	ShowWindow(options.hwnd, TRUE);
@@ -1046,8 +1074,12 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
     RECT cRect;
     static char s[64];
 
+    // Get the client rect
+
     GetClientRect(hWnd, &cRect);
     int width = cRect.right;
+
+    // Switch on message
 
     switch (uMsg)
     {
@@ -1375,11 +1407,13 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SetFocus(hWnd);
 	break;
 
+	// Display options menu
+
     case WM_RBUTTONDOWN:
 	DisplayOptionsMenu(hWnd, MAKEPOINTS(lParam));
 	break;
 
-	// Buttons
+	// Commands
 
     case WM_COMMAND:
 	switch (LOWORD(wParam))
@@ -1450,9 +1484,13 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    EditReference(wParam, lParam);
 	    break;
 
+	    // Correction
+
 	case CORRECTION_ID:
 	    EditCorrection(wParam, lParam);
 	    break;
+
+	    // Close
 
 	case CLOSE_ID:
 	    ShowWindow(hWnd, FALSE);
@@ -1721,36 +1759,50 @@ BOOL CharPressed(WPARAM w, LPARAM l)
 {
     switch (w)
     {
+	// Copy display
+
     case 'C':
     case 'c':
     case 0x3:
 	CopyDisplay(w, l);
 	break;
 
+	// Filter
+
     case 'F':
     case 'f':
 	FilterClicked(w, l);
 	break;
+
+	// Lock
 
     case 'L':
     case 'l':
 	LockClicked(w, l);
 	break;
 
+	// Options
+
     case 'O':
     case 'o':
 	DisplayOptions(w, l);
 	break;
+
+	// Resize
 
     case 'R':
     case 'r':
 	ResizeClicked(w, l);
 	break;
 
+	// Strobe
+
     case 'S':
     case 's':
 	EnableClicked(w, l);
 	break;
+
+	// Multiple
 
     case 'M':
     case 'm':
@@ -1758,6 +1810,8 @@ BOOL CharPressed(WPARAM w, LPARAM l)
     case 't':
 	MultipleClicked(w, l);
 	break;
+
+	// Zoom
 
     case 'Z':
     case 'z':
@@ -1776,12 +1830,18 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 	{"A", "Bb", "B", "C", "C#", "D",
 	 "Eb", "E", "F", "F#", "G", "Ab"};
 
+    // Open clipboard
+
     if (!OpenClipboard(window.hwnd))
 	return FALSE;
 
+    // Empty clipboard
+
     EmptyClipboard(); 
 
-    HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, 1024);
+    // Allocate memory
+
+    HGLOBAL mem = GlobalAlloc(GMEM_MOVEABLE, MEM_SIZE);
 
     if (mem == NULL)
     {
@@ -1789,10 +1849,16 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 	return FALSE;
     }
 
+    // Lock the memory
+
     LPTSTR text = GlobalLock(mem);
 
-    if (display.multiple)
+    // Check if multiple
+
+    if (display.multiple && display.count > 0)
     {
+	// For each set of values
+
 	for (int i = 0; i < display.count; i++)
 	{
 	    double f = display.maxima[i];
@@ -1816,9 +1882,13 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 	    if (!isfinite(c))
 		continue;
 
+	    // Print the text
+
 	    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
 		    notes[n % LENGTH(notes)], n / 12,
 		    c * 100.0, fr, f, f - fr);
+
+	    // Copy to the memory
 
 	    if (i == 0)
 		strcpy(text, s);
@@ -1830,13 +1900,19 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 
     else
     {
+	// Print the values
+
 	sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
 		notes[display.n % LENGTH(notes)], display.n / 12,
 		display.c * 100.0, display.fr, display.f,
 		display.f - display.fr);
 
+	// Copy to the memory
+
 	strcpy(text, s);
     }
+
+    // Place in clipboard
 
     GlobalUnlock(text);
     SetClipboardData(CF_TEXT, mem);
@@ -1849,6 +1925,8 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
 
 VOID CALLBACK DisplayCallback(PVOID lpParameter, BOOL TimerFired)
 {
+    // Refresh strobe
+
     InvalidateRgn(strobe.hwnd, NULL, TRUE);
     UpdateMeter(&meter);
 }
@@ -1859,9 +1937,13 @@ VOID UpdateMeter(METERP meter)
 {
     static float mc;
 
+    // Do calculation
+
     mc = ((mc * 7.0) + meter->c) / 8.0;
 
     int value = round(mc * MAX_METER) + REF_METER;
+
+    // Update meter
 
     SendMessage(meter->slider.hwnd, TBM_SETPOS, TRUE, value);
 }
@@ -2088,10 +2170,14 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     MoveToEx(hbdc, 0, 0, NULL);
     if (spectrum.zoom)
     {
+	// Calculate scale
+
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
 	for (int i = 0; i < round((float)width / xscale) + 1; i++)
 	{
+	    // Calculate index
+
 	    int n = spectrum.r + i - (width / (xscale * 2.0));
 
 	    if (n >= 0 && n < spectrum.length)
@@ -2115,12 +2201,16 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	SetDCPenColor(hbdc, RGB(255, 255, 0));
 
+	// Draw line for nearest frequency
+
 	int x = (spectrum.f - spectrum.x[0]) * xscale;
 	MoveToEx(hbdc, x, 0, NULL);
 	LineTo(hbdc, x, -height);
 
 	for (int i = 0; i < spectrum.count; i++)
 	{
+	    // Draw line for others that are in range
+
 	    if (spectrum.values[i] > spectrum.x[0] &&
 		spectrum.values[i] < spectrum.x[1])
 	    {
@@ -2589,46 +2679,6 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     return TRUE;
 }
 
-// Draw minus
-
-BOOL DrawMinus(HDC hdc, RECT rect, UINT state)
-{
-    // Draw nice etched edge
-
-    if (state & ODS_SELECTED)
-	DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
-
-    else
-	DrawEdge(hdc, &rect , EDGE_RAISED, BF_ADJUST | BF_RECT);
-
-    SelectObject(hdc, GetStockObject(BLACK_PEN));
-    SelectObject(hdc, GetStockObject(BLACK_BRUSH));
-
-    Rectangle(hdc, rect.left + 2, (rect.bottom - rect.top) / 2 + rect.top - 1,
-	      rect.right - 2, (rect.bottom - rect.top) / 2 + rect.top + 1);
-}
-
-// Draw plus
-
-BOOL DrawPlus(HDC hdc, RECT rect, UINT state)
-{
-    // Draw nice etched edge
-
-    if (state & ODS_SELECTED)
-	DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
-
-    else
-	DrawEdge(hdc, &rect , EDGE_RAISED, BF_ADJUST | BF_RECT);
-
-    SelectObject(hdc, GetStockObject(BLACK_PEN));
-    SelectObject(hdc, GetStockObject(BLACK_BRUSH));
-
-    Rectangle(hdc, rect.left + 2, (rect.bottom - rect.top) / 2 + rect.top - 1,
-	      rect.right - 2, (rect.bottom - rect.top) / 2 + rect.top + 1);
-    Rectangle(hdc, (rect.right - rect.left) / 2 + rect.left - 1, rect.top + 2,
-	      (rect.right - rect.left) / 2 + rect.left + 1, rect.bottom - 2);
-}
-
 // Display clicked
 
 BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
@@ -2796,6 +2846,26 @@ BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+// Volume change
+
+BOOL VolumeChange(WPARAM wParam, LPARAM lParam)
+{
+    // Get the value
+
+    mixerGetControlDetails((HMIXEROBJ)mixer.hmx, mixer.pmxcd,
+			   MIXER_GETCONTROLDETAILSF_VALUE);
+
+    // Set the slider
+
+    int value = MAX_VOL - (mixer.pmxcdu->dwValue * (MAX_VOL - MIN_VOL) /
+			   (mixer.pmxc->Bounds.dwMaximum -
+			    mixer.pmxc->Bounds.dwMinimum));
+
+    SendMessage(volume.hwnd, TBM_SETPOS, TRUE, value);
+
+    return TRUE;
+}
+
 // Edit reference
 
 BOOL EditReference(WPARAM wParam, LPARAM lParam)
@@ -2938,8 +3008,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	// Open a mixer device
 
-	mmr = mixerOpen(&mixer.hmx, (UINT)audio.hwi, 0, 0,
-			MIXER_OBJECTF_HWAVEIN);
+	mmr = mixerOpen(&mixer.hmx, (UINT)audio.hwi, (DWORD_PTR)window.hwnd, 0,
+			CALLBACK_WINDOW | MIXER_OBJECTF_HWAVEIN);
 
 	if (mmr != MMSYSERR_NOERROR)
 	{
