@@ -2850,18 +2850,21 @@ BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
 
 BOOL VolumeChange(WPARAM wParam, LPARAM lParam)
 {
-    // Get the value
+    if (lParam == mixer.pmxcd->dwControlID)
+    {
+	// Get the value
 
-    mixerGetControlDetails((HMIXEROBJ)mixer.hmx, mixer.pmxcd,
-			   MIXER_GETCONTROLDETAILSF_VALUE);
+	mixerGetControlDetails((HMIXEROBJ)mixer.hmx, mixer.pmxcd,
+			       MIXER_GETCONTROLDETAILSF_VALUE);
 
-    // Set the slider
+	// Set the slider
 
-    int value = MAX_VOL - (mixer.pmxcdu->dwValue * (MAX_VOL - MIN_VOL) /
-			   (mixer.pmxc->Bounds.dwMaximum -
-			    mixer.pmxc->Bounds.dwMinimum));
+	int value = MAX_VOL - (mixer.pmxcdu->dwValue * (MAX_VOL - MIN_VOL) /
+			       (mixer.pmxc->Bounds.dwMaximum -
+				mixer.pmxc->Bounds.dwMinimum));
 
-    SendMessage(volume.hwnd, TBM_SETPOS, TRUE, value);
+	SendMessage(volume.hwnd, TBM_SETPOS, TRUE, value);
+    }
 
     return TRUE;
 }
