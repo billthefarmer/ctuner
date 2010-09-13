@@ -1755,51 +1755,51 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
 
 // Char pressed
 
-BOOL CharPressed(WPARAM w, LPARAM l)
+BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 {
-    switch (w)
+    switch (wParam)
     {
 	// Copy display
 
     case 'C':
     case 'c':
     case 0x3:
-	CopyDisplay(w, l);
+	CopyDisplay(wParam, lParam);
 	break;
 
 	// Filter
 
     case 'F':
     case 'f':
-	FilterClicked(w, l);
+	FilterClicked(wParam, lParam);
 	break;
 
 	// Lock
 
     case 'L':
     case 'l':
-	LockClicked(w, l);
+	LockClicked(wParam, lParam);
 	break;
 
 	// Options
 
     case 'O':
     case 'o':
-	DisplayOptions(w, l);
+	DisplayOptions(wParam, lParam);
 	break;
 
 	// Resize
 
     case 'R':
     case 'r':
-	ResizeClicked(w, l);
+	ResizeClicked(wParam, lParam);
 	break;
 
 	// Strobe
 
     case 'S':
     case 's':
-	EnableClicked(w, l);
+	EnableClicked(wParam, lParam);
 	break;
 
 	// Multiple
@@ -1808,21 +1808,21 @@ BOOL CharPressed(WPARAM w, LPARAM l)
     case 'm':
     case 'T':
     case 't':
-	MultipleClicked(w, l);
+	MultipleClicked(wParam, lParam);
 	break;
 
 	// Zoom
 
     case 'Z':
     case 'z':
-	ZoomClicked(w, l);
+	ZoomClicked(wParam, lParam);
 	break;
     }
 }
 
 // CopyDisplay
 
-BOOL CopyDisplay(WPARAM w, LPARAM l)
+BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 {
     static char s[64];
 
@@ -1918,7 +1918,7 @@ BOOL CopyDisplay(WPARAM w, LPARAM l)
     SetClipboardData(CF_TEXT, mem);
     CloseClipboard(); 
  
-    return TRUE; 
+    return TRUE;
 }
 
 // Display callback
@@ -2174,21 +2174,26 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
+	// Calculate offset
+
+	int offset = round((spectrum.x[0] -
+			    floor(spectrum.x[0])) * xscale);
+
 	for (int i = 0; i < round((float)width / xscale) + 1; i++)
 	{
 	    // Calculate index
 
-	    int n = spectrum.r + i - (width / (xscale * 2.0));
+	    int n = round(spectrum.x[0]) + i;
 
-	    if (n >= 0 && n < spectrum.length)
+	    if (n > 0 && n < spectrum.length)
 	    {
 		float value = spectrum.data[n];
 
 		if (max < value)
 		    max = value;
 
-		int y = -value * yscale;
-		int x = i * xscale;
+		int y = -round(value * yscale);
+		int x = round((float)i * xscale) + offset;
 
 		LineTo(hbdc, x, y);
 	    }
@@ -2203,7 +2208,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	// Draw line for nearest frequency
 
-	int x = (spectrum.f - spectrum.x[0]) * xscale;
+	int x = round((spectrum.f - spectrum.x[0]) * xscale);
 	MoveToEx(hbdc, x, 0, NULL);
 	LineTo(hbdc, x, -height);
 
@@ -2214,7 +2219,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    if (spectrum.values[i] > spectrum.x[0] &&
 		spectrum.values[i] < spectrum.x[1])
 	    {
-		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+		x = round((spectrum.values[i] - spectrum.x[0]) * xscale);
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
 	    }
@@ -2245,7 +2250,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    if (max < value)
 		max = value;
 
-	    int y = -value * yscale;
+	    int y = -round(value * yscale);
 
 	    LineTo(hbdc, x, y);
 	}
