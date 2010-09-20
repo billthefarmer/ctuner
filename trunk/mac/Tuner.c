@@ -30,30 +30,35 @@
 
 #define LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
-#define OCTAVE 12
-#define MIN   0.5
+#define kMin 0.5
+#define kTimerDelay 0.1
 
-// Wave in values
+#define DEBUG
+
+// Audio in values
 
 enum
-    {SAMPLE_RATE = 11025,
-     BITS_PER_SAMPLE = 16,
-     BLOCK_ALIGN = 2,
-     CHANNELS = 1};
+    {kSampleRate       = 11025,
+     kBytesPerPacket   = 4,
+     kBytesPerFrame    = 4,
+     kChannelsPerFrame = 1};
 
 // Audio processing values
 
 enum
-    {OVERSAMPLE = 8,
-     SAMPLES = 8192,
-     RANGE = SAMPLES / 4,
-     STEP = SAMPLES / OVERSAMPLE};
+    {kOversample = 16,
+     kSamples = 16384,
+     kMaxima = 8,
+     kFrames = 512,
+     kRange = kSamples * 5 / 8,
+     kStep = kSamples / kOversample};
 
 // Tuner reference values
 
 enum
     {kA5Reference = 440,
-     kA5Offset    = 60};
+     kA5Offset    = 60,
+     kOctave      = 12};
 
 // Slider values
 
@@ -72,17 +77,12 @@ enum
     {kReferenceMax   = 4500,
      kReferenceValue = 4400,
      kReferenceMin   = 4300,
-     kReferenceStep  = 10,
+     kReferenceStep  = 1,
 
      kCorrectionMax    = 110000,
      kCorrectionValue  = 100000,
      kCorrectionMin    = 99000,
      kCorrectionStep   = 1};
-
-// Timer values
-
-enum
-    {STROBE_DELAY = 100};
 
 // Command IDs
 
@@ -99,8 +99,13 @@ enum
 
 // HIView IDs
 
-HIViewID kHIViewIDText =
-    {'text', 101};
+// HIViewID kHIViewIDText =
+//     {'text', 101};
+
+// Event constants
+
+enum
+    {kEventControlRefresh = 'refr'};
 
 // Global data
 
@@ -123,10 +128,13 @@ typedef struct
 {
     HIViewRef view;
     int length;
+    int count;
     bool zoom;
+    float f;
     float r;
-    float x;
+    float x[2];
     double *data;
+    float *values;
 } Spectrum;
 
 Spectrum spectrum;
@@ -134,12 +142,14 @@ Spectrum spectrum;
 typedef struct
 {
     HIViewRef view;
+    EventLoopTimerRef timer;
     double f;
     double fr;
     double c;
     bool lock;
     bool resize;
     bool multiple;
+    int count;
     int n;
 } Display;
 
@@ -153,6 +163,14 @@ typedef struct
 } Strobe;
 
 Strobe strobe;
+
+typedef struct
+{
+    HIViewRef view;
+    float c;
+} Meter;
+
+Meter meter;
 
 typedef struct
 {
@@ -194,11 +212,13 @@ Arrow arrow;
 
 typedef struct
 {
+    AudioUnit output;
     bool filter;
-    MPTaskID task;
-    MPQueueID queue;
-    double correction;
+    int divisor;
+    double sample;
+    double actual;
     double reference;
+    double correction;
 } Audio;
 
 Audio audio;
@@ -212,19 +232,20 @@ OSStatus strobeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus meterDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus WindowEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus CommandEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus RefreshEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus FocusEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
-OSStatus AudioProc(void *);
+OSStatus AudioProc(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
 
 OSStatus DisplayPreferences(EventRef, void *);
 OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
-OSStatus ChangeReference(EventRef, HICommandExtended, UInt32);
-OSStatus ChangeCorrection(EventRef, HICommandExtended, UInt32);
+OSStatus ControlRefresh(HIViewRef *);
 
+void TimerProc(EventLoopTimerRef, void *);
 void ReferenceActionProc(HIViewRef, ControlPartCode);
 void CorrectionActionProc(HIViewRef, ControlPartCode);
 
@@ -240,7 +261,6 @@ int main(int argc, char *argv[])
     HIViewRef slider;
     HIViewRef button;
     HIViewRef group;
-    HIViewRef meter;
 
     MenuRef menu;
 
@@ -302,7 +322,7 @@ int main(int argc, char *argv[])
     // Show and position the window
 
     ShowWindow(window);
-    RepositionWindow(window, NULL, kWindowCascadeOnMainScreen);
+    RepositionWindow(window, NULL, kWindowCenterOnMainScreen);
 
     // Find the window content
 
@@ -406,7 +426,6 @@ int main(int argc, char *argv[])
 
     HIViewAddSubview(content, strobe.view);
     HIViewPlaceInSuperviewAt(strobe.view, 20, 210);
-    strobe.enable = true;
 
     // Bounds of meter
 
@@ -415,12 +434,12 @@ int main(int argc, char *argv[])
 
     // Create meter pane
 
-    CreateUserPaneControl(window, &bounds, 0, &meter);
+    CreateUserPaneControl(window, &bounds, 0, &meter.view);
 
     // Place in the window
 
-    HIViewAddSubview(content, meter);
-    HIViewPlaceInSuperviewAt(meter, 20, 262);
+    HIViewAddSubview(content, meter.view);
+    HIViewPlaceInSuperviewAt(meter.view, 20, 262);
 
     // Bounds of slider
 
@@ -440,7 +459,7 @@ int main(int argc, char *argv[])
 
     // Place in the pane
 
-    HIViewAddSubview(meter, slider);
+    HIViewAddSubview(meter.view, slider);
     HIViewPlaceInSuperviewAt(slider, 28, 284);
 
     // Bounds of preferences button
@@ -570,6 +589,17 @@ int main(int argc, char *argv[])
                                    LENGTH(textEvents), textEvents,
                                    window, NULL);
 
+    // Refresh events type spec
+
+    EventTypeSpec refreshEvents[] =
+        {{kEventClassControl, kEventControlRefresh}};
+
+    // Install event handler
+
+    InstallApplicationEventHandler(NewEventHandlerUPP(RefreshEventHandler),
+                                   LENGTH(refreshEvents), refreshEvents,
+                                   window, NULL);
+
     // Draw events type spec
 
     EventTypeSpec drawEvents[] =
@@ -597,14 +627,21 @@ int main(int argc, char *argv[])
 			       LENGTH(drawEvents), drawEvents,
 			       strobe.view, NULL);
 
-    InstallControlEventHandler(meter,
+    InstallControlEventHandler(meter.view,
 			       NewEventHandlerUPP(meterDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
-			       meter, NULL);
+			       meter.view, NULL);
+
+    // Set up timer
+
+    InstallEventLoopTimer(GetMainEventLoop(), kTimerDelay, kTimerDelay,
+			  NewEventLoopTimerUPP(TimerProc),
+			  NULL, &display.timer);
+			  
     // Set up audio
-#ifdef AUDIO
-    AudioProc(NULL);
-#endif
+
+    AudioProc();
+
     // Run the application event loop
 
     RunApplicationEventLoop();
@@ -618,6 +655,10 @@ void GetPreferences()
 {
     Boolean found;
     Boolean flag;
+
+    strobe.enable = true;
+    audio.correction = 1.0;
+    audio.reference = kA5Reference;
 
     flag = CFPreferencesGetAppBooleanValue(CFSTR("Zoom"),
 					   kCFPreferencesCurrentApplication,
@@ -637,6 +678,12 @@ void GetPreferences()
     if (found)
 	audio.filter = flag;
 
+    flag = CFPreferencesGetAppBooleanValue(CFSTR("Resize"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	display.resize = flag;
+
     CFIndex value;
 
     value = CFPreferencesGetAppIntegerValue(CFSTR("Correction"),
@@ -650,179 +697,191 @@ void GetPreferences()
 					   &found);
     if (found)
 	audio.reference = (double)value / 10.0;
-;
-
 }
+
 // Audio proc
 
-OSStatus AudioProc(void *data)
+OSStatus AudioProc()
 {
-    OSStatus status;
-
     Component cp;
-    ComponentDescription dc;
-    ComponentInstance output;
-    ComponentInstance convert;
+    ComponentDescription dc =
+	{kAudioUnitType_Output,
+	 kAudioUnitSubType_HALOutput,
+	 kAudioUnitManufacturer_Apple,
+	 0, 0};
 
-    dc.componentManufacturer = kAudioUnitManufacturer_Apple;
-
-    dc.componentType = kAudioUnitType_Output;
-    dc.componentSubType = kAudioUnitSubType_HALOutput;
-
-    dc.componentFlags = 0;
-    dc.componentFlagsMask = 0;
+    // Find an output unit
 
     cp = FindNextComponent(NULL, &dc);
 
-    if (cp == NULL)
-    {
-	StandardAlert(kAlertCautionAlert, "\pFindNextComponent",
-		      "\perror", NULL, NULL);
-    }
+    // Open it
 
-    OpenAComponent(cp, &output);
+    OpenAComponent(cp, &audio.output);
 
     UInt32 enable;
     UInt32 size;
 
+    // Enable input
+
     enable = true;
-    AudioUnitSetProperty(output, kAudioOutputUnitProperty_EnableIO,
+    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_EnableIO,
 			 kAudioUnitScope_Input,
 			 1, &enable, sizeof(enable));
 
+    // Disable output
+
     enable = false;
-    AudioUnitSetProperty(output, kAudioOutputUnitProperty_EnableIO,
+    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_EnableIO,
 			 kAudioUnitScope_Output,
 			 0, &enable, sizeof(enable));
 
     AudioDeviceID id;
     size = sizeof(id);
 
+    // Get the default input device
+
     AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
 			     &size, &id);
+#ifdef DEBUG
 
-    AudioUnitSetProperty(output, kAudioOutputUnitProperty_CurrentDevice, 
-                         kAudioUnitScope_Global, 0, &id, sizeof(id));
+    // Get sample rates size
 
-    dc.componentType = kAudioUnitType_FormatConverter;
-    dc.componentSubType = kAudioUnitSubType_AUConverter;
+    AudioDeviceGetPropertyInfo(id, 0, true,
+			       kAudioDevicePropertyAvailableNominalSampleRates,
+			       &size, NULL);
 
-    cp = FindNextComponent(NULL, &dc);
+    // Allocate memory
 
-    if (cp == NULL)
+    AudioValueRange *range = malloc(size);
+
+    // Get the sample rates
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyAvailableNominalSampleRates,
+			   &size, range);
+
+    // Create a pasteboard
+
+    PasteboardRef paste;
+
+    PasteboardCreate(kPasteboardClipboard, &paste);
+    PasteboardClear(paste);
+
+    char s[64];
+    char *txt = malloc(16384);
+
+    strcpy(txt, "Sample rates:\n");
+
+    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
     {
-	StandardAlert(kAlertCautionAlert, "\pFindNextComponent",
-		      "\perror", NULL, NULL);
+	sprintf(s, "%6.1lf - %6.1lf\n",
+		range[i].mMinimum, range[i].mMaximum);
+
+	strcat(txt, s);
     }
 
-    OpenAComponent(cp, &convert);
+#endif
 
-    AudioUnitConnection ac =
-	{output, 1, 0};
-
-    status = AudioUnitSetProperty(convert, kAudioUnitProperty_MakeConnection, 
-                         kAudioUnitScope_Input, 0, &ac, sizeof(ac));
-
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitSetProperty",
-		      "\perror", NULL, NULL);
-    }
-
-    Float64 rate;
+    Float64 rate = kSampleRate;
     size = sizeof(rate);
 
-    status = AudioDeviceGetProperty(id, 0, true,
-				    kAudioDevicePropertyNominalSampleRate,
-				    &size, &rate);
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioDeviceGetProperty",
-		      "\perror", NULL, NULL);
-    }
+    // Set the sample rate
 
-    rate = 11025.0;
+    AudioDeviceSetProperty(id, NULL, 0, true,
+			   kAudioDevicePropertyNominalSampleRate,
+			   sizeof(rate), &rate);
 
-    status = AudioDeviceSetProperty(id, NULL, 0, true,
-				    kAudioDevicePropertyNominalSampleRate,
-				    sizeof(rate), &rate);
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioDeviceSetProperty",
-		      "\perror", NULL, NULL);
-    }
+    // Get the sample rate
 
-    AudioStreamBasicDescription DeviceFormat;
-    size = sizeof(AudioStreamBasicDescription);
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyNominalSampleRate,
+			   &size, &rate);
 
-    status = AudioUnitGetProperty(convert, kAudioUnitProperty_StreamFormat,
-				  kAudioUnitScope_Input, 0,
-				  &DeviceFormat, &size);
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitGetProperty",
-		      "\perror", NULL, NULL);
-    }
+    // Set the divisor
 
-    DeviceFormat.mSampleRate = 11025.0;
-    DeviceFormat.mBytesPerPacket = 4;
-    DeviceFormat.mBytesPerFrame = 4;
-    DeviceFormat.mChannelsPerFrame = 1;
+    audio.divisor = round(rate / kSampleRate);
 
-    status = AudioUnitSetProperty(convert, kAudioUnitProperty_StreamFormat,
-				  kAudioUnitScope_Output, 0, &DeviceFormat,
-				  sizeof(AudioStreamBasicDescription));
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitSetProperty",
-		      "\perror", NULL, NULL);
-    }
+#ifdef DEBUG
+
+    sprintf(s, "Nominal sample rate: %6.1lf\n", rate);
+    strcat(txt, s);
+
+    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
+				  (UInt8 *)txt, strlen(txt));
+
+    OSStatus status = PasteboardPutItemFlavor(paste, (PasteboardItemID)data,
+				     kUTTypeUTF8PlainText, data,
+				     kPasteboardFlavorNoFlags);
+    free(txt);
+    CFRelease(data);
+    CFRelease(paste);
+
+#endif
+
+    // Set the audio unit device
+
+    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_CurrentDevice, 
+                         kAudioUnitScope_Global, 0, &id, sizeof(id));
+
+    // Set the status text
+
+    CFStringRef text =
+	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				 CFSTR("Sample rate: %6.1lf\n"),
+				 rate / audio.divisor);
+
+    HIViewSetText(legend.status.sample, text);
+
+    CFRelease(text);
+
+    audio.sample = rate / audio.divisor;
+
+    AudioStreamBasicDescription format;
+    size = sizeof(format);
+
+    // Get stream format
+
+    AudioUnitGetProperty(audio.output, kAudioUnitProperty_StreamFormat,
+			 kAudioUnitScope_Input, 1,
+			 &format, &size);
+
+    format.mSampleRate = rate;
+    format.mBytesPerPacket = kBytesPerPacket;
+    format.mBytesPerFrame = kBytesPerFrame;
+    format.mChannelsPerFrame = kChannelsPerFrame;
+
+    // Set stream format
+
+    AudioUnitSetProperty(audio.output, kAudioUnitProperty_StreamFormat,
+			 kAudioUnitScope_Output, 1, &format,
+			 sizeof(format));
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyActualSampleRate,
+			   &size, &rate);
+    text =
+	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				 CFSTR("Actual: %6.1lf"),
+				 rate);
+
+    HIViewSetText(legend.status.correction, text);
+
+    CFRelease(text);
 
     AURenderCallbackStruct input =
-		{InputProc, &convert};
+	{InputProc, &audio.output};
 
-    status = AudioUnitSetProperty(output,
-				  kAudioOutputUnitProperty_SetInputCallback,
-				  kAudioUnitScope_Global, 0, &input,
-				  sizeof(AURenderCallbackStruct));
+    // Set callback
 
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitSetProperty",
-		      "\perror", NULL, NULL);
-    }
+    AudioUnitSetProperty(audio.output,
+			 kAudioOutputUnitProperty_SetInputCallback,
+			 kAudioUnitScope_Global, 0, &input,
+			 sizeof(input));
 
-    status = AudioUnitInitialize(convert);
+    // Start the audio unit
 
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitInitialize",
-		      "\perror", NULL, NULL);
-    }
-
-    status = AudioUnitInitialize(output);
-
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioUnitInitialize",
-		      "\perror", NULL, NULL);
-    }
-
-    status = AudioOutputUnitStart(convert);
-
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioOutputUnitStart",
-		      "\perror", NULL, NULL);
-    }
-
-    status = AudioOutputUnitStart(output);
-
-    if (status != noErr)
-    {
-	StandardAlert(kAlertCautionAlert, "\pAudioOutputUnitStart",
-		      "\perror", NULL, NULL);
-    }
+    AudioUnitInitialize(audio.output);
+    AudioOutputUnitStart(audio.output);
 }
 
 // Input proc
@@ -831,34 +890,392 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 		   const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
 		   UInt32 inNumberFrames, AudioBufferList *ioData)
 {
-    static long n;
-    static float buffer[1024];
+    static long iterations;
     static AudioBufferList abl =
-	{1, {1, sizeof(buffer), &buffer}};
+	{1, {1, 0, NULL}};
 
-    OSStatus status = noErr;
+    static float buffer[kSamples];
 
-    status = AudioUnitRender(*(AudioUnit *)inRefCon, ioActionFlags,
-			     inTimeStamp, inBusNumber,
-			     inNumberFrames, &abl);
+    static complex x[kSamples];
+    static double xa[kRange];
+    static double xp[kRange];
+    static double xf[kRange];
+
+    static double dxa[kRange];
+    static double dxf[kRange];
+
+    static double maxima[kMaxima];
+    static float values[kMaxima];
+
+    static double fps;
+    static double expect;
+
+    OSStatus status
+	= AudioUnitRender(*(AudioUnit *)inRefCon, ioActionFlags,
+			  inTimeStamp, inBusNumber,
+			  inNumberFrames, &abl);
     if (status != noErr)
 	return status;
 
-    scope.data = abl.mBuffers[0].mData;
-    scope.length = abl.mBuffers[0].mDataByteSize / sizeof(float);
+    Float32 *data = abl.mBuffers[0].mData;
 
-    if ((n++ % 8) == 0)
+    if (scope.data == NULL)
     {
-	static char s[32];
+	scope.data = buffer + kSamples - kFrames;
+	scope.length = kFrames;
 
-	HIViewSetNeedsDisplay(scope.view, true);
+	spectrum.data = xa;
+	spectrum.length = LENGTH(xa);
+	spectrum.values = values;
 
-	sprintf(s, "Input: %d", n);
-	HIViewSetText(legend.status.correction,
-		      CFStringCreateWithCString(kCFAllocatorDefault,
-						s, kCFStringEncodingMacRoman));
+	fps = audio.sample / (double)kSamples;
+	expect = 2.0 * M_PI * (double)kStep / (double)kSamples;
+    }
+
+    // Copy the input data
+
+    memmove(buffer, buffer + kFrames / audio.divisor,
+	    (kSamples - (kFrames / audio.divisor)) * sizeof(float));
+
+    // Butterworth filter, 3dB/octave
+
+    for (int i = 0; i < kFrames / audio.divisor; i++)
+    {
+
+	static double G = 3.023332184e+01;
+	static double K = 0.9338478249;
+
+	static double xv[2];
+	static double yv[2];
+
+	xv[0] = xv[1];
+	xv[1] = data[i * audio.divisor] / G;
+
+	yv[0] = yv[1];
+	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
+
+	// Choose filtered/unfiltered data
+
+	buffer[kSamples - (kFrames / audio.divisor) + i] =
+	    audio.filter? yv[1]: data[i * audio.divisor];
+    }
+
+    if ((iterations++ % 8) != 0)
+	return status;
+
+    // Maximum data value
+
+    static double dmax;
+
+    if (dmax < 0.25)
+	dmax = 0.25;
+
+    // Calculate normalising value
+
+    double norm = dmax;
+    dmax = 0.0;
+
+    // Copy data to FFT input arrays
+
+    for (int i = 0; i < LENGTH(buffer); i++)
+    {
+	// Find the magnitude
+
+	if (dmax < fabs(buffer[i]))
+	    dmax = fabs(buffer[i]);
+
+	// Calculate the window
+
+	double window =
+	    0.5 - 0.5 * cos(2.0 * M_PI *
+			    i / kSamples);
+
+	// Normalise and window the input data
+
+	x[i].r = buffer[i] / norm * window;
+    }
+
+    // do FFT
+
+    fftr(x, LENGTH(x));
+
+    // Process FFT output
+
+    for (int i = 1; i < LENGTH(xa); i++)
+    {
+	double real = x[i].r;
+	double imag = x[i].i;
+
+	xa[i] = sqrt((real * real) + (imag * imag));
+#ifdef NOISE
+	// Do noise cancellation
+
+	xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
+
+	if (xm[i] > xa[i])
+	    xm[i] = xa[i];
+
+	xa[i] = xa[i] - xm[i];
+#endif
+	// Do frequency calculation
+
+	double p = atan2(imag, real);
+	double dp = xp[i] - p;
+	xp[i] = p;
+
+	// Calculate phase difference
+
+	dp -= (double)i * expect;
+
+	int qpd = dp / M_PI;
+
+	if (qpd >= 0)
+	    qpd += qpd & 1;
+
+	else
+	    qpd -= qpd & 1;
+
+	dp -=  M_PI * (double)qpd;
+
+	// Calculate frequency difference
+
+	double df = kOversample * dp / (2.0 * M_PI);
+
+	// Calculate actual frequency from slot frequency plus
+	// frequency difference and correction value
+
+	xf[i] = (i * fps + df * fps) / audio.correction;
+
+	// Calculate differences for finding maxima
+
+	dxa[i] = xa[i] - xa[i - 1];
+	dxf[i] = xf[i] - xf[i - 1];
+    }
+
+    // Maximum FFT output
+
+    double max = 0.0;
+    double f = 0.0;
+    int count = 0;
+	
+    // Find maximum value, and list of maxima
+
+    for (int i = 1; i < LENGTH(xa) - 1; i++)
+    {
+	if (xa[i] > max)
+	{
+	    max = xa[i];
+	    f = xf[i];
+	}
+
+	// If display not locked, find maxima and add to list
+
+	if (!display.lock &&
+	    xa[i] > kMin && xa[i] > (max / 2) &&
+	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
+	    maxima[count++] = xf[i];
+
+	if (count == LENGTH(maxima))
+	    break;
+    }
+
+    // Reference note frequency and lower and upper limits
+
+    double fr = 0.0;
+    double fx0 = 0.0;
+    double fx1 = 0.0;
+
+    // Note number
+
+    int n = 0;
+
+    // Found flag and cents value
+
+    bool found = FALSE;
+    double c = 0.0;
+
+    // Do the note and cents calculations
+
+    if (max > kMin)
+    {
+	// Cents relative to reference
+
+	double cf =
+	    -12.0 * (log(audio.reference / f) / log(2.0));
+
+	// Reference note
+
+	fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	// Lower and upper freq
+
+	fx0 = audio.reference * pow(2.0, (round(cf) - 0.5) / 12.0);
+	fx1 = audio.reference * pow(2.0, (round(cf) + 0.5) / 12.0);
+
+	// Note number
+
+	n = round(cf) + kA5Offset;
+
+	if (n < 0)
+	    n = 0;
+
+	// Find nearest maximum to reference note
+
+	double df = 1000.0;
+
+	for (int i = 0; i < count; i++)
+	{
+	    if (fabs(maxima[i] - fr) < df)
+	    {
+		df = fabs(maxima[i] - fr);
+		f = maxima[i];
+	    }
+	}
+
+	// Cents relative to reference note
+
+	c = -12.0 * (log(fr / f) / log(2.0));
+
+	// Ignore silly values
+
+	if (!isfinite(c))
+	    c = 0.0;
+
+	// Ignore if not within 50 cents of reference note
+
+	if (fabs(c) < 0.5)
+	    found = true;
+    }
+
+    // If display not locked
+
+    if (!display.lock)
+    {
+	// Update scope window
+
+	ControlRefresh(&scope.view);
+
+	// HIViewSetNeedsDisplay(scope.view, true);
+
+	// Update spectrum window
+
+	for (int i = 0; i < count; i++)
+	    values[i] = maxima[i] / fps * audio.correction;
+
+	spectrum.count = count;
+
+	if (found)
+	{
+	    spectrum.f = f  / fps * audio.correction;
+	    spectrum.r = fr / fps * audio.correction;
+	    spectrum.x[0] = fx0 / fps * audio.correction;
+	    spectrum.x[1] = fx1 / fps * audio.correction;
+	}
+
+	ControlRefresh(&spectrum.view);
+    }
+
+    if (found)
+    {
+	// If display not locked
+
+	if (!display.lock)
+	{
+	    // Update the display struct
+
+	    display.f = f;
+	    display.fr = fr;
+	    display.c = c;
+	    display.n = n;
+	    display.count = count;
+
+	    // Update meter
+
+	    meter.c = c;
+
+	    // Update strobe
+
+	    strobe.c = c;
+	}
+
+	// Update display
+
+	ControlRefresh(&display.view);
+    }
+
+    return status;
+}
+
+// Refresh control
+
+OSStatus ControlRefresh(HIViewRef *view)
+{
+    EventRef event;
+
+    CreateEvent(kCFAllocatorDefault, kEventClassControl,
+		kEventControlRefresh, 0,
+		kEventAttributeUserEvent, &event);
+
+    SetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, sizeof(ControlRef),
+		      view);
+
+    return PostEventToQueue(GetMainEventQueue(), event,
+			    kEventPriorityStandard);
+}
+
+// Refresh event handler
+
+OSStatus RefreshEventHandler(EventHandlerCallRef next,
+			     EventRef event, void *data)
+{
+    HIViewRef view;
+
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL, &view);
+
+    HIViewSetNeedsDisplay(view, true);
+}
+
+// Timer proc
+
+void TimerProc(EventLoopTimerRef timer, void *data)
+{
+    static long iterations;
+
+    HIViewSetNeedsDisplay(strobe.view, true);
+
+    if ((iterations++ % kFrames) == 0)
+    {
+    	AudioDeviceID id;
+    	UInt32 size = sizeof(id);
+
+    	// Get the default input device
+
+    	AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
+    				 &size, &id);
+    	Float64 rate;
+    	size = sizeof(rate);
+
+    	AudioDeviceGetProperty(id, 0, true,
+    			       kAudioDevicePropertyActualSampleRate,
+    			       &size, &rate);
+
+    	audio.actual = rate / audio.divisor;
+
+	CFStringRef text =
+	    CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				     CFSTR("Actual: %6.1lf"),
+				     audio.actual);
+
+	HIViewSetText(legend.status.correction, text);
+
+	CFRelease(text);
     }
 }
+
+// Draw edge
 
 HIRect DrawEdge(CGContextRef context, HIRect bounds)
 {
@@ -983,8 +1400,8 @@ OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
 
     static float max;
 
-    if (max < 4096.0)
-	max = 4096.0;
+    if (max < 0.25)
+	max = 0.25;
 
     float yscale = max / (height / 2);
 
@@ -1051,7 +1468,127 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 
     CGContextStrokePath(context);
 
-    return noErr;
+    // Don't attempt the trace until there's a buffer
+
+    if (spectrum.data == NULL)
+	return noErr;
+
+    // Move the origin
+
+    CGContextTranslateCTM(context, 0, height - 1);
+
+    static float max;
+
+    if (max < 1.0)
+	max = 1.0;
+
+    // Calculate the scaling
+
+    float yscale = (float)height / max;
+
+    max = 0.0;
+
+    // Green pen for spectrum trace
+
+    CGContextSetRGBStrokeColor(context, 0, 1, 0, 1);
+
+    // Draw the spectrum
+
+    CGContextBeginPath(context);
+    CGContextMoveToPoint(context, 0, 0);
+
+    if (spectrum.zoom)
+    {
+	// Calculate scale
+
+	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
+
+	// Calculate offset
+
+	int offset = round((spectrum.x[0] -
+			    floor(spectrum.x[0])) * xscale);
+
+	for (int i = 0; i < round((float)width / xscale) + 1; i++)
+	{
+	    // Calculate index
+
+	    int n = round(spectrum.x[0]) + i;
+
+	    if (n > 0 && n < spectrum.length)
+	    {
+		float value = spectrum.data[n];
+
+		if (max < value)
+		    max = value;
+
+		int y = -round(value * yscale);
+		int x = round((float)i * xscale) + offset;
+
+		CGContextAddLineToPoint(context, x, y);
+	    }
+	}
+
+	CGContextMoveToPoint(context, width / 2, 0);
+	CGContextAddLineToPoint(context, width / 2, -height);
+	CGContextStrokePath(context);
+
+	// Yellow pen for frequency trace
+
+	CGContextSetRGBStrokeColor(context, 1, 1, 0, 1);
+
+	// Draw line for nearest frequency
+
+	int x = round((spectrum.f - spectrum.x[0]) * xscale);
+	CGContextMoveToPoint(context, x, 0);
+	CGContextAddLineToPoint(context, x, -height);
+
+	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Draw line for others that are in range
+
+	    if (spectrum.values[i] > spectrum.x[0] &&
+		spectrum.values[i] < spectrum.x[1])
+	    {
+		x = round((spectrum.values[i] - spectrum.x[0]) * xscale);
+		CGContextMoveToPoint(context, x, 0);
+		CGContextAddLineToPoint(context, x, -height);
+	    }
+	}
+
+	CGContextStrokePath(context);
+    }
+
+    else
+    {
+	float xscale = (float)spectrum.length / (float)width;
+
+	for (int x = 0; x < width; x++)
+	{
+	    float value = 0.0;
+
+	    // Don't show DC component
+
+	    if (x > 0)
+	    {
+		for (int j = 0; j < xscale; j++)
+		{
+		    int n = x * xscale + j;
+
+		    if (value < spectrum.data[n])
+			value = spectrum.data[n];
+		}
+	    }
+
+	    if (max < value)
+		max = value;
+
+	    int y = -round(value * yscale);
+
+	    CGContextAddLineToPoint(context, x, y);
+	}
+
+	CGContextStrokePath(context);
+    }
 }
 
 OSStatus displayDrawEventHandler(EventHandlerCallRef next,
@@ -1308,6 +1845,7 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 			     void *data)
 {
     HICommandExtended command;
+    WindowRef window;
     CFIndex number;
     UInt32 value;
 
@@ -1316,6 +1854,10 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
     GetEventParameter(event, kEventParamDirectObject,
                       typeHICommand, NULL, sizeof(command),
                       NULL, &command);
+
+    // Get the window
+    
+    window = ActiveNonFloatingWindow();
 
     // Get the value
 
@@ -1367,22 +1909,24 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	display.lock = value;
 	break;
 
+	// Resize
+
+    case kCommandResize:
+	display.resize = value;
+
+	CFPreferencesSetAppValue(CFSTR("Resize"),
+				 value? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+
+	CFPreferencesSetAppValue(CFSTR("AppleDisplayScaleFactor"),
+				 value? CFSTR("2.0"): CFSTR("1.0"),
+				 kCFPreferencesCurrentApplication);
+	break;
+
 	// Multiple
 
     case kCommandMultiple:
 	display.multiple = value;
-	break;
-
-	// Reference
-
-    case kCommandReference:
-	ChangeReference(event, command, value);
-	break;
-
-	// Correction
-
-    case kCommandCorrection:
-	ChangeCorrection(event, command, value);
 	break;
 
         // Preferences button
@@ -1419,6 +1963,10 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
     default:
         return eventNotHandledErr;
 	}
+
+    ClearKeyboardFocus(window);
+
+    return noErr;
 }
 
 // Change volume
@@ -1473,7 +2021,8 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Show and position the window
 
     ShowWindow(window);
-    RepositionWindow(window, parent, kWindowAlertPositionOnParentWindow);
+    RepositionWindow(window, parent,
+		     kWindowAlertPositionOnParentWindowScreen);
 
     // Find the window content
 
@@ -1559,7 +2108,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Create  check box
 
     CreateCheckBoxControl(window, &bounds, CFSTR("Resize display"),
-			  spectrum.zoom, true, &check.resize);
+			  display.resize, true, &check.resize);
 
     // Set command ID
 
@@ -1623,7 +2172,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 			       scope.view, NULL);
     // Set control data
 
-    Boolean single = true;
+    bool single = true;
 
     SetControlData(legend.preferences.reference,
 		   kControlEditTextPart,
@@ -1862,25 +2411,16 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
     return eventNotHandledErr;
 }
 
-// Change reference
-
-OSStatus ChangeReference(EventRef event,
-			  HICommandExtended command,
-			  UInt32 value)
-{
-    CFStringRef text = HIViewCopyText(command.source.control);
-
-    CFRelease(text);
-
-    eventNotHandledErr;
-}
-
 // Reference action proc
 
 void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 {
+    // Get value
+
     SInt32 value = HIViewGetValue(view);
-    SInt32 step = 0;
+    SInt32 step;
+
+    // Get step
 
     GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
 		   sizeof(step), &step, nil);
@@ -1898,15 +2438,17 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 
     HIViewSetValue(view, value);
 
-    static char s[64];
-
     audio.reference = (double)value / 10.0;
-    sprintf(s, "%6.2lf", audio.reference);
-    HIViewSetText(legend.preferences.reference,
-		  CFStringCreateWithCString(kCFAllocatorDefault, s,
-					    kCFStringEncodingMacRoman));
-
     HIViewSetNeedsDisplay(display.view, true);
+
+    CFStringRef text =
+	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				 CFSTR("%6.2lf"),
+				 audio.reference);
+
+    HIViewSetText(legend.preferences.reference, text);
+
+    CFRelease(text);
 
     CFPreferencesSetAppValue(CFSTR("Reference"),
 			     CFNumberCreate(kCFAllocatorDefault,
@@ -1915,26 +2457,16 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 			     kCFPreferencesCurrentApplication);
 }
 
-// Change correction
-
-OSStatus ChangeCorrection(EventRef event,
-			  HICommandExtended command,
-			  UInt32 value)
-{
-    CFStringRef text = HIViewCopyText(command.source.control);
-
-    CFRelease(text);
-
-    eventNotHandledErr;
-}
-
 // Correction action proc
 
 void CorrectionActionProc(HIViewRef view, ControlPartCode part)
 {
+    // Get value
 
     SInt32 value = HIViewGetValue(view);
-    SInt32 step = 0;
+    SInt32 step;
+
+    // Get step
 
     GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
 		   sizeof(step), &step, nil);
