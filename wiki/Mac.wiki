@@ -10,5 +10,11 @@ http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/fi
 = Progress =
 
   * The basic layout and graphics are done.
+  * The audio capture and processing system is working.
 
-  * The audio capture system is working after a fashion.
+  * There are a number of differences from the Windows version:
+    * Clicking on panes to change options doesn't work.
+    * The Mac audio system calculates the actual sample rate, so correction is redundant.
+    * The Mac version currently uses more CPU time.
+    * The volume control is independent from the audio input volume control in the System Preferences application.
+    * The strobe pane animation is jerkier, due to the type of timer available on the Mac.
