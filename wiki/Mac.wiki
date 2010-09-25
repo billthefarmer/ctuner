@@ -21,4 +21,3 @@ There are a number of differences from the Windows version:
   * The Mac version currently uses more CPU time.
   * The volume control is independent from the sound input volume control in System Preferences.
   * The strobe pane animation is jerkier, due to the type of timer available on the Mac.
-  * Resize display is currently somewhat of a kludge. To resize, type 'R', or click the resize check box. Nothing happens. Restart the app and it comes up resized. There must be a better way to do this, but I haven't found it yet.
