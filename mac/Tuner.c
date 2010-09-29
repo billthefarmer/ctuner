@@ -24,13 +24,13 @@
 
 #include <Carbon/Carbon.h>
 #include <AudioUnit/AudioUnit.h>
-#include <AudioToolbox/AudioToolbox.h>
+#include <CoreAudio/CoreAudio.h>
 
 // Macros
 
 #define LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
-#define kMin 0.5
+#define kMin        0.5
 #define kTimerDelay 0.1
 
 #define DEBUG
@@ -77,35 +77,23 @@ enum
     {kReferenceMax   = 4500,
      kReferenceValue = 4400,
      kReferenceMin   = 4300,
-     kReferenceStep  = 1,
-
-     kCorrectionMax    = 110000,
-     kCorrectionValue  = 100000,
-     kCorrectionMin    = 99000,
-     kCorrectionStep   = 1};
+     kReferenceStep  = 1};
 
 // Command IDs
 
 enum
-    {kCommandVolume     = 'volm',
-     kCommandCorrection = 'crtn',
-     kCommandReference  = 'rfnc',
-     kCommandStrobe     = 'strb',
-     kCommandResize     = 'resz',
-     kCommandMultiple   = 'mult',
-     kCommandZoom       = 'zoom',
-     kCommandLock       = 'lock',
-     kCommandFilter     = 'fltr'};
-
-// HIView IDs
-
-// HIViewID kHIViewIDText =
-//     {'text', 101};
+    {kCommandVolume     = 'Volm',
+     kCommandReference  = 'Rfnc',
+     kCommandStrobe     = 'Strb',
+     kCommandMultiple   = 'Mult',
+     kCommandZoom       = 'Zoom',
+     kCommandLock       = 'Lock',
+     kCommandFilter     = 'Fltr'};
 
 // Event constants
 
 enum
-    {kEventControlRefresh = 'refr'};
+    {kEventAudioUpdate = 'Updt'};
 
 // Global data
 
@@ -143,11 +131,12 @@ typedef struct
 {
     HIViewRef view;
     EventLoopTimerRef timer;
+    double *maxima;
     double f;
     double fr;
     double c;
     bool lock;
-    bool resize;
+    bool zoom;
     bool multiple;
     int count;
     int n;
@@ -167,6 +156,7 @@ Strobe strobe;
 typedef struct
 {
     HIViewRef view;
+    HIViewRef slider; 
     float c;
 } Meter;
 
@@ -177,14 +167,12 @@ typedef struct
     struct
     {
 	HIViewRef sample;
-	HIViewRef correction;
+	HIViewRef actual;
     } status;
 
     struct
     {
-	HIViewRef sample;
 	HIViewRef reference;
-	HIViewRef correction;
     } preferences;
 } Legend;
 
@@ -196,7 +184,6 @@ typedef struct
     HIViewRef lock;
     HIViewRef strobe;
     HIViewRef filter;
-    HIViewRef resize;
     HIViewRef multiple;
 } Check;
 
@@ -213,27 +200,28 @@ Arrow arrow;
 typedef struct
 {
     AudioUnit output;
+    float *buffer;
     bool filter;
     int divisor;
+    int frames;
     double sample;
-    double actual;
     double reference;
-    double correction;
 } Audio;
 
 Audio audio;
 
 // Function prototypes.
 
-OSStatus scopeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus spectrumDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus displayDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus strobeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus meterDrawEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus ScopeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus SpectrumDrawEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus DisplayDrawEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus StrobeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus MeterDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus WindowEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus CommandEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus RefreshEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus AudioEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus FocusEventHandler(EventHandlerCallRef, EventRef, void *);
+OSStatus MouseEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
 OSStatus AudioProc(void);
@@ -241,13 +229,15 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
 
+OSStatus DisplayContextMenu(EventRef, Point, void *);
 OSStatus DisplayPreferences(EventRef, void *);
 OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
-OSStatus ControlRefresh(HIViewRef *);
+OSStatus WindowZoomed(EventRef, void *);
+OSStatus CopyDisplay(EventRef);
+OSStatus CopyInfo(EventRef);
 
 void TimerProc(EventLoopTimerRef, void *);
 void ReferenceActionProc(HIViewRef, ControlPartCode);
-void CorrectionActionProc(HIViewRef, ControlPartCode);
 
 void GetPreferences(void);
 void fftr(complex[], int);
@@ -272,16 +262,24 @@ int main(int argc, char *argv[])
 
     // Create window
 
-    OSStatus status =
-	CreateNewWindow(kDocumentWindowClass,
-			kWindowStandardFloatingAttributes |
-			kWindowStandardHandlerAttribute |
-			kWindowCompositingAttribute,
-			&bounds, &window);
+    CreateNewWindow(kDocumentWindowClass,
+		    kWindowStandardFloatingAttributes |
+		    kWindowFullZoomAttribute |
+		    kWindowFrameworkScaledAttribute |
+		    kWindowStandardHandlerAttribute |
+		    kWindowCompositingAttribute,
+		    &bounds, &window);
 
     // Set the title
 
     SetWindowTitleWithCFString(window, CFSTR("Tuner"));
+
+    // Set resize limits
+
+    HISize min = {320, 394};
+    HISize max = {640, 788};
+
+    SetWindowResizeLimits(window, &min, &max);
 
     // Create an application menu
 
@@ -289,20 +287,22 @@ int main(int argc, char *argv[])
 
     // Set menu title
 
-    SetMenuTitleWithCFString(menu,
+    CFStringRef apple =
 	CFStringCreateWithPascalString(kCFAllocatorDefault,
 				       "\p\024",
-				       kCFStringEncodingMacRoman));
+				       kCFStringEncodingMacRoman);
+
+    SetMenuTitleWithCFString(menu, apple);
+    CFRelease(apple);
+
     // Create an about item
 
     AppendMenuItemTextWithCFString(menu, CFSTR("About Tuner"),
                                    0, kHICommandAbout, NULL);
-								   
     // Create a separator
 
     AppendMenuItemTextWithCFString(menu, NULL,
 				   kMenuItemAttrSeparator, 0, NULL);
-
     // Create an preferences item
 
     AppendMenuItemTextWithCFString(menu, CFSTR("Preferences..."),
@@ -310,6 +310,7 @@ int main(int argc, char *argv[])
     // Insert the menu
 
     InsertMenu(menu, 0);
+    ReleaseMenu(menu);
 
     // Create a standard window menu
 
@@ -318,11 +319,12 @@ int main(int argc, char *argv[])
     // Insert the menu
 
     InsertMenu(menu, 0);
+    ReleaseMenu(menu);
 
     // Show and position the window
 
     ShowWindow(window);
-    RepositionWindow(window, NULL, kWindowCenterOnMainScreen);
+    RepositionWindow(window, NULL, kWindowAlertPositionOnMainScreen);
 
     // Find the window content
 
@@ -348,11 +350,23 @@ int main(int argc, char *argv[])
     // Set control size
 
     SetControlData(slider, kControlEntireControl, kControlSizeTag,
-		   sizeof(ControlSize), &small);
+		   sizeof(small), &small);
 
     // Set command ID
 
     HIViewSetCommandID(slider, kCommandVolume);
+
+    // Set help tag
+
+    HMHelpContentRec help =
+	{kMacHelpVersion,
+	 {0, 0, 0, 0},
+	 kHMInsideLeftCenterAligned,
+	 {{kHMCFStringContent,
+	   CFSTR("Volume, click to adjust")},
+	  {kHMNoContent, NULL}}};
+
+    HMSetControlHelpContent(slider, &help);
 
     // Place in the window
 
@@ -372,6 +386,12 @@ int main(int argc, char *argv[])
 
     HIViewSetCommandID(scope.view, kCommandFilter);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Scope, press 'F' key to filter audio");
+    HMSetControlHelpContent(scope.view, &help);
+
     // Place in the window
 
     HIViewAddSubview(content, scope.view);
@@ -390,6 +410,12 @@ int main(int argc, char *argv[])
 
     HIViewSetCommandID(spectrum.view, kCommandZoom);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Spectrum, press 'Z' key to zoom");
+    HMSetControlHelpContent(spectrum.view, &help);
+
     // Place in the window
 
     HIViewAddSubview(content, spectrum.view);
@@ -403,6 +429,12 @@ int main(int argc, char *argv[])
     // Create display pane
 
     CreateUserPaneControl(window, &bounds, 0, &display.view);
+
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Display, press 'L' key to lock");
+    HMSetControlHelpContent(display.view, &help);
 
     // Place in the window
 
@@ -422,6 +454,12 @@ int main(int argc, char *argv[])
 
     HIViewSetCommandID(strobe.view, kCommandStrobe);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Strobe, press 'S' key to enable");
+    HMSetControlHelpContent(strobe.view, &help);
+
     // Place in the window
 
     HIViewAddSubview(content, strobe.view);
@@ -436,6 +474,12 @@ int main(int argc, char *argv[])
 
     CreateUserPaneControl(window, &bounds, 0, &meter.view);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Cents");
+    HMSetControlHelpContent(meter.view, &help);
+
     // Place in the window
 
     HIViewAddSubview(content, meter.view);
@@ -443,24 +487,30 @@ int main(int argc, char *argv[])
 
     // Bounds of slider
 
-    bounds.bottom = 20;
+    bounds.bottom = 16;
     bounds.right  = 264;
 
     // Create meter slider
 
     CreateSliderControl(window, &bounds, kMeterValue, kMeterMin, kMeterMax,
                         kControlSliderPointsUpOrLeft, 0, false,
-			NULL, &slider);
+			NULL, &meter.slider);
 
     // Set control size
 
-    SetControlData(slider, kControlEntireControl, kControlSizeTag,
+    SetControlData(meter.slider, kControlEntireControl, kControlSizeTag,
 		   sizeof(ControlSize), &small);
 
-    // Place in the pane
+    // Set help tag
 
-    HIViewAddSubview(meter.view, slider);
-    HIViewPlaceInSuperviewAt(slider, 28, 284);
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Cents");
+    HMSetControlHelpContent(meter.slider, &help);
+
+    // Place in the window
+
+    HIViewAddSubview(content, meter.slider);
+    HIViewPlaceInSuperviewAt(meter.slider, 28, 290);
 
     // Bounds of preferences button
 
@@ -549,18 +599,59 @@ int main(int argc, char *argv[])
     // Create static text
 
     CreateStaticTextControl(window, &bounds,
-			    CFSTR("Correction: 1.00000"),
-                            &style, &legend.status.correction);
+			    CFSTR("Actual rate: 11025.0"),
+                            &style, &legend.status.actual);
 
     // Place in group box
 
-    HIViewAddSubview(group, legend.status.correction);
-    HIViewPlaceInSuperviewAt(legend.status.correction, 164, 2);
+    HIViewAddSubview(group, legend.status.actual);
+    HIViewPlaceInSuperviewAt(legend.status.actual, 164, 2);
+
+    HILayoutInfo layout =
+	{kHILayoutInfoVersionZero};
+
+    HIViewRef view = HIViewGetFirstSubview(content);
+
+    while (view != NULL) 
+    {
+	HIRect outer;
+	HIViewGetBounds(content, &outer);
+
+	HIRect bounds;
+	HIViewGetBounds(view, &bounds);
+
+	HIViewGetLayoutInfo(view, &layout);
+
+	layout.scale.x.ratio = bounds.size.width / outer.size.width;
+	layout.scale.y.ratio = bounds.size.height / outer.size.height;
+
+	HIViewSetLayoutInfo(view, &layout);
+
+	HIViewRef subview = HIViewGetFirstSubview(view);
+
+	while (subview != NULL)
+	{
+	    HIViewGetBounds(view, &outer);
+
+	    HIViewGetLayoutInfo(subview, &layout);
+	    HIViewGetBounds(subview, &bounds);
+
+	    layout.scale.x.ratio = bounds.size.width / outer.size.width;
+	    layout.scale.y.ratio = bounds.size.height / outer.size.height;
+
+	    HIViewSetLayoutInfo(subview, &layout);
+
+	    subview = HIViewGetNextView(subview);
+	}
+
+	view = HIViewGetNextView(view);
+    }
 
     // Window events type spec
 
     EventTypeSpec windowEvents[] =
-        {{kEventClassWindow, kEventWindowClose}};
+        {{kEventClassWindow, kEventWindowClose},
+	 {kEventClassWindow, kEventWindowZoomed}};
 
     // Install event handler
 
@@ -578,6 +669,16 @@ int main(int argc, char *argv[])
     InstallApplicationEventHandler(NewEventHandlerUPP(CommandEventHandler),
                                    LENGTH(commandEvents), commandEvents,
                                    window, NULL);
+    // Mouse events type spec
+
+    EventTypeSpec mouseEvents[] =
+        {{kEventClassMouse, kEventMouseDown}};
+
+    // Install event handler
+
+    InstallWindowEventHandler(window, NewEventHandlerUPP(MouseEventHandler),
+			      LENGTH(mouseEvents), mouseEvents,
+			      window, NULL);
     // Text events type spec
 
     EventTypeSpec textEvents[] =
@@ -588,47 +689,46 @@ int main(int argc, char *argv[])
     InstallApplicationEventHandler(NewEventHandlerUPP(TextEventHandler),
                                    LENGTH(textEvents), textEvents,
                                    window, NULL);
+    // Audio events type spec
 
-    // Refresh events type spec
-
-    EventTypeSpec refreshEvents[] =
-        {{kEventClassControl, kEventControlRefresh}};
+    EventTypeSpec audioEvents[] =
+        {{kEventClassApplication, kEventAudioUpdate}};
 
     // Install event handler
 
-    InstallApplicationEventHandler(NewEventHandlerUPP(RefreshEventHandler),
-                                   LENGTH(refreshEvents), refreshEvents,
+    InstallApplicationEventHandler(NewEventHandlerUPP(AudioEventHandler),
+                                   LENGTH(audioEvents), audioEvents,
                                    window, NULL);
 
     // Draw events type spec
 
     EventTypeSpec drawEvents[] =
-	{kEventClassControl, kEventControlDraw};
+	{{kEventClassControl, kEventControlDraw}};
 
     // Install event handlers
 
     InstallControlEventHandler(scope.view,
-			       NewEventHandlerUPP(scopeDrawEventHandler),
+			       NewEventHandlerUPP(ScopeDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       scope.view, NULL);
 
     InstallControlEventHandler(spectrum.view,
-			       NewEventHandlerUPP(spectrumDrawEventHandler),
+			       NewEventHandlerUPP(SpectrumDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       spectrum.view, NULL);
 
     InstallControlEventHandler(display.view,
-			       NewEventHandlerUPP(displayDrawEventHandler),
+			       NewEventHandlerUPP(DisplayDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       display.view, NULL);
 
     InstallControlEventHandler(strobe.view,
-			       NewEventHandlerUPP(strobeDrawEventHandler),
+			       NewEventHandlerUPP(StrobeDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       strobe.view, NULL);
 
     InstallControlEventHandler(meter.view,
-			       NewEventHandlerUPP(meterDrawEventHandler),
+			       NewEventHandlerUPP(MeterDrawEventHandler),
 			       LENGTH(drawEvents), drawEvents,
 			       meter.view, NULL);
 
@@ -657,7 +757,6 @@ void GetPreferences()
     Boolean flag;
 
     strobe.enable = true;
-    audio.correction = 1.0;
     audio.reference = kA5Reference;
 
     flag = CFPreferencesGetAppBooleanValue(CFSTR("Zoom"),
@@ -678,19 +777,7 @@ void GetPreferences()
     if (found)
 	audio.filter = flag;
 
-    flag = CFPreferencesGetAppBooleanValue(CFSTR("Resize"),
-					   kCFPreferencesCurrentApplication,
-					   &found);
-    if (found)
-	display.resize = flag;
-
     CFIndex value;
-
-    value = CFPreferencesGetAppIntegerValue(CFSTR("Correction"),
-					   kCFPreferencesCurrentApplication,
-					   &found);
-    if (found)
-	audio.correction = (double)value / 100000.0;
 
     value = CFPreferencesGetAppIntegerValue(CFSTR("Reference"),
 					   kCFPreferencesCurrentApplication,
@@ -742,45 +829,6 @@ OSStatus AudioProc()
 
     AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
 			     &size, &id);
-#ifdef DEBUG
-
-    // Get sample rates size
-
-    AudioDeviceGetPropertyInfo(id, 0, true,
-			       kAudioDevicePropertyAvailableNominalSampleRates,
-			       &size, NULL);
-
-    // Allocate memory
-
-    AudioValueRange *range = malloc(size);
-
-    // Get the sample rates
-
-    AudioDeviceGetProperty(id, 0, true,
-			   kAudioDevicePropertyAvailableNominalSampleRates,
-			   &size, range);
-
-    // Create a pasteboard
-
-    PasteboardRef paste;
-
-    PasteboardCreate(kPasteboardClipboard, &paste);
-    PasteboardClear(paste);
-
-    char s[64];
-    char *txt = malloc(16384);
-
-    strcpy(txt, "Sample rates:\n");
-
-    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
-    {
-	sprintf(s, "%6.1lf - %6.1lf\n",
-		range[i].mMinimum, range[i].mMaximum);
-
-	strcat(txt, s);
-    }
-
-#endif
 
     Float64 rate = kSampleRate;
     size = sizeof(rate);
@@ -801,28 +849,6 @@ OSStatus AudioProc()
 
     audio.divisor = round(rate / kSampleRate);
 
-#ifdef DEBUG
-
-    sprintf(s, "Nominal sample rate: %6.1lf\n", rate);
-    strcat(txt, s);
-
-    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
-				  (UInt8 *)txt, strlen(txt));
-
-    OSStatus status = PasteboardPutItemFlavor(paste, (PasteboardItemID)data,
-				     kUTTypeUTF8PlainText, data,
-				     kPasteboardFlavorNoFlags);
-    free(txt);
-    CFRelease(data);
-    CFRelease(paste);
-
-#endif
-
-    // Set the audio unit device
-
-    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_CurrentDevice, 
-                         kAudioUnitScope_Global, 0, &id, sizeof(id));
-
     // Set the status text
 
     CFStringRef text =
@@ -831,10 +857,35 @@ OSStatus AudioProc()
 				 rate / audio.divisor);
 
     HIViewSetText(legend.status.sample, text);
-
     CFRelease(text);
 
+    text =
+	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				 CFSTR("Actual rate: %6.1lf\n"),
+				 rate / audio.divisor);
+
+    HIViewSetText(legend.status.actual, text);
+    CFRelease(text);
+
+    // Set the rate
+
     audio.sample = rate / audio.divisor;
+
+    // Get the frames
+
+    UInt32 frames;
+    size = sizeof(frames);
+
+    AudioUnitGetProperty(audio.output,
+			 kAudioUnitProperty_MaximumFramesPerSlice,
+			 kAudioUnitScope_Global, 0, &frames, &size);
+
+    audio.frames = frames;
+
+    // Set the audio unit device
+
+    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_CurrentDevice, 
+                         kAudioUnitScope_Global, 0, &id, sizeof(id));
 
     AudioStreamBasicDescription format;
     size = sizeof(format);
@@ -855,18 +906,6 @@ OSStatus AudioProc()
     AudioUnitSetProperty(audio.output, kAudioUnitProperty_StreamFormat,
 			 kAudioUnitScope_Output, 1, &format,
 			 sizeof(format));
-
-    AudioDeviceGetProperty(id, 0, true,
-			   kAudioDevicePropertyActualSampleRate,
-			   &size, &rate);
-    text =
-	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
-				 CFSTR("Actual: %6.1lf"),
-				 rate);
-
-    HIViewSetText(legend.status.correction, text);
-
-    CFRelease(text);
 
     AURenderCallbackStruct input =
 	{InputProc, &audio.output};
@@ -896,19 +935,8 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     static float buffer[kSamples];
 
-    static complex x[kSamples];
-    static double xa[kRange];
-    static double xp[kRange];
-    static double xf[kRange];
-
-    static double dxa[kRange];
-    static double dxf[kRange];
-
-    static double maxima[kMaxima];
-    static float values[kMaxima];
-
-    static double fps;
-    static double expect;
+    if (audio.buffer == NULL)
+	audio.buffer = buffer;
 
     OSStatus status
 	= AudioUnitRender(*(AudioUnit *)inRefCon, ioActionFlags,
@@ -917,29 +945,16 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     if (status != noErr)
 	return status;
 
-    Float32 *data = abl.mBuffers[0].mData;
-
-    if (scope.data == NULL)
-    {
-	scope.data = buffer + kSamples - kFrames;
-	scope.length = kFrames;
-
-	spectrum.data = xa;
-	spectrum.length = LENGTH(xa);
-	spectrum.values = values;
-
-	fps = audio.sample / (double)kSamples;
-	expect = 2.0 * M_PI * (double)kStep / (double)kSamples;
-    }
-
     // Copy the input data
 
-    memmove(buffer, buffer + kFrames / audio.divisor,
-	    (kSamples - (kFrames / audio.divisor)) * sizeof(float));
+    memmove(buffer, buffer + audio.frames / audio.divisor,
+	    (kSamples - (audio.frames / audio.divisor)) * sizeof(float));
+
+    Float32 *data = abl.mBuffers[0].mData;
 
     // Butterworth filter, 3dB/octave
 
-    for (int i = 0; i < kFrames / audio.divisor; i++)
+    for (int i = 0; i < audio.frames / audio.divisor; i++)
     {
 
 	static double G = 3.023332184e+01;
@@ -956,12 +971,64 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
 	// Choose filtered/unfiltered data
 
-	buffer[kSamples - (kFrames / audio.divisor) + i] =
+	buffer[kSamples - (audio.frames / audio.divisor) + i] =
 	    audio.filter? yv[1]: data[i * audio.divisor];
     }
 
-    if ((iterations++ % 8) != 0)
+    if ((iterations++ % (audio.divisor * 2)) != 0)
 	return status;
+
+    // Create an event to post to the main event queue
+
+    EventRef event;
+
+    CreateEvent(kCFAllocatorDefault, kEventClassApplication,
+		kEventAudioUpdate, 0,
+		kEventAttributeUserEvent, &event);
+
+    PostEventToQueue(GetMainEventQueue(), event,
+		     kEventPriorityHigh);
+
+    ReleaseEvent(event);
+}
+
+// Audio event handler
+
+OSStatus AudioEventHandler(EventHandlerCallRef next,
+			   EventRef event, void *data)
+{
+    // Arrays for processing input
+
+    static complex x[kSamples];
+    static double xa[kRange];
+    static double xp[kRange];
+    static double xf[kRange];
+
+    static double dxa[kRange];
+    static double dxf[kRange];
+
+    static double maxima[kMaxima];
+    static float values[kMaxima];
+
+    static double fps;
+    static double expect;
+
+    // Initialise tructures
+
+    if (scope.data == NULL)
+    {
+	scope.data = audio.buffer + kSamples - audio.frames;
+	scope.length = audio.frames;
+
+	spectrum.data = xa;
+	spectrum.length = kRange;
+	spectrum.values = values;
+
+	display.maxima = maxima;
+
+	fps = audio.sample / (double)kSamples;
+	expect = 2.0 * M_PI * (double)kStep / (double)kSamples;
+    }
 
     // Maximum data value
 
@@ -977,12 +1044,12 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     // Copy data to FFT input arrays
 
-    for (int i = 0; i < LENGTH(buffer); i++)
+    for (int i = 0; i < kSamples; i++)
     {
 	// Find the magnitude
 
-	if (dmax < fabs(buffer[i]))
-	    dmax = fabs(buffer[i]);
+	if (dmax < fabs(audio.buffer[i]))
+	    dmax = fabs(audio.buffer[i]);
 
 	// Calculate the window
 
@@ -992,7 +1059,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
 	// Normalise and window the input data
 
-	x[i].r = buffer[i] / norm * window;
+	x[i].r = audio.buffer[i] / norm * window;
     }
 
     // do FFT
@@ -1007,7 +1074,9 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	double imag = x[i].i;
 
 	xa[i] = sqrt((real * real) + (imag * imag));
+
 #ifdef NOISE
+
 	// Do noise cancellation
 
 	xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
@@ -1016,7 +1085,9 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	    xm[i] = xa[i];
 
 	xa[i] = xa[i] - xm[i];
+
 #endif
+
 	// Do frequency calculation
 
 	double p = atan2(imag, real);
@@ -1044,7 +1115,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	// Calculate actual frequency from slot frequency plus
 	// frequency difference and correction value
 
-	xf[i] = (i * fps + df * fps) / audio.correction;
+	xf[i] = i * fps + df * fps;
 
 	// Calculate differences for finding maxima
 
@@ -1091,7 +1162,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     // Found flag and cents value
 
-    bool found = FALSE;
+    bool found = false;
     double c = 0.0;
 
     // Do the note and cents calculations
@@ -1153,26 +1224,24 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     {
 	// Update scope window
 
-	ControlRefresh(&scope.view);
-
-	// HIViewSetNeedsDisplay(scope.view, true);
+	HIViewSetNeedsDisplay(scope.view, true);
 
 	// Update spectrum window
 
 	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i] / fps * audio.correction;
+	    values[i] = maxima[i] / fps;
 
 	spectrum.count = count;
 
 	if (found)
 	{
-	    spectrum.f = f  / fps * audio.correction;
-	    spectrum.r = fr / fps * audio.correction;
-	    spectrum.x[0] = fx0 / fps * audio.correction;
-	    spectrum.x[1] = fx1 / fps * audio.correction;
+	    spectrum.f = f  / fps;
+	    spectrum.r = fr / fps;
+	    spectrum.x[0] = fx0 / fps;
+	    spectrum.x[1] = fx1 / fps;
 	}
 
-	ControlRefresh(&spectrum.view);
+	HIViewSetNeedsDisplay(spectrum.view, true);
     }
 
     if (found)
@@ -1189,6 +1258,10 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	    display.n = n;
 	    display.count = count;
 
+	    // Update display
+
+	    HIViewSetNeedsDisplay(display.view, true);
+
 	    // Update meter
 
 	    meter.c = c;
@@ -1197,56 +1270,126 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
 	    strobe.c = c;
 	}
-
-	// Update display
-
-	ControlRefresh(&display.view);
     }
 
-    return status;
+    return noErr;
 }
 
-// Refresh control
+// Copy info
 
-OSStatus ControlRefresh(HIViewRef *view)
+#ifdef DEBUG
+
+OSStatus CopyInfo(EventRef event)
 {
-    EventRef event;
+    AudioDeviceID id;
+    UInt32 size = sizeof(id);
 
-    CreateEvent(kCFAllocatorDefault, kEventClassControl,
-		kEventControlRefresh, 0,
-		kEventAttributeUserEvent, &event);
+    // Get the default input device
 
-    SetEventParameter(event, kEventParamDirectObject,
-		      typeControlRef, sizeof(ControlRef),
-		      view);
+    AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
+			     &size, &id);
 
-    return PostEventToQueue(GetMainEventQueue(), event,
-			    kEventPriorityStandard);
+    // Get sample rates size
+
+    AudioDeviceGetPropertyInfo(id, 0, true,
+			       kAudioDevicePropertyAvailableNominalSampleRates,
+			       &size, NULL);
+
+    // Allocate memory
+
+    AudioValueRange *range = malloc(size);
+
+    // Get the sample rates
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyAvailableNominalSampleRates,
+			   &size, range);
+    char s[64];
+    char *text = malloc(16384);
+
+    strcpy(text, "Sample rates:\n");
+
+    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
+    {
+	sprintf(s, "%d: %6.1lf - %6.1lf\n", i,
+		range[i].mMinimum, range[i].mMaximum);
+
+	strcat(text, s);
+    }
+
+    Float64 rate;
+    size = sizeof(rate);
+
+    // Get the sample rate
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyNominalSampleRate,
+			   &size, &rate);
+
+    sprintf(s, "Nominal sample rate: %6.1lf\n", rate);
+    strcat(text, s);
+
+    UInt32 frames;
+    size = sizeof(frames);
+
+    AudioUnitGetProperty(audio.output,
+			 kAudioUnitProperty_MaximumFramesPerSlice,
+			 kAudioUnitScope_Global, 0, &frames, &size);
+
+    sprintf(s, "Maximum frames: %ld\n", frames);
+    strcat(text, s);
+
+    Float32 volume;
+
+    AudioUnitGetParameter(audio.output, kHALOutputParam_Volume,
+			  kAudioUnitScope_Input, 1, &volume);
+
+    sprintf(s, "Volume: %lf\n", volume);
+    strcat(text, s);
+
+    // Create a pasteboard
+
+    PasteboardRef paste;
+
+    PasteboardCreate(kPasteboardClipboard, &paste);
+    PasteboardClear(paste);
+
+    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
+				  (UInt8 *)text, strlen(text));
+
+    PasteboardPutItemFlavor(paste, (PasteboardItemID)data,
+			    kUTTypeUTF8PlainText, data,
+			    kPasteboardFlavorNoFlags);
+    free(text);
+    CFRelease(data);
+    CFRelease(paste);
 }
 
-// Refresh event handler
-
-OSStatus RefreshEventHandler(EventHandlerCallRef next,
-			     EventRef event, void *data)
-{
-    HIViewRef view;
-
-    GetEventParameter(event, kEventParamDirectObject,
-		      typeControlRef, NULL,
-		      sizeof(view), NULL, &view);
-
-    HIViewSetNeedsDisplay(view, true);
-}
+#endif
 
 // Timer proc
 
 void TimerProc(EventLoopTimerRef timer, void *data)
 {
     static long iterations;
+    static float mc;
 
-    HIViewSetNeedsDisplay(strobe.view, true);
+    if (strobe.enable)
+	HIViewSetNeedsDisplay(strobe.view, true);
 
-    if ((iterations++ % kFrames) == 0)
+    // Do meter calculation
+
+    mc = ((mc * 7.0) + meter.c) / 8.0;
+
+    int value = round(mc * kMeterMax) + kMeterValue;
+
+    // Update meter
+
+    HIViewSetValue(meter.slider, value);
+
+    // Update sample rate
+
+    if ((++iterations % kFrames) == 0)
     {
     	AudioDeviceID id;
     	UInt32 size = sizeof(id);
@@ -1258,19 +1401,22 @@ void TimerProc(EventLoopTimerRef timer, void *data)
     	Float64 rate;
     	size = sizeof(rate);
 
+	// Get the actual sample rate
+
     	AudioDeviceGetProperty(id, 0, true,
     			       kAudioDevicePropertyActualSampleRate,
     			       &size, &rate);
 
-    	audio.actual = rate / audio.divisor;
+	// Update the notional rate
+
+    	audio.sample = rate / audio.divisor;
 
 	CFStringRef text =
 	    CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
-				     CFSTR("Actual: %6.1lf"),
-				     audio.actual);
+				     CFSTR("Actual rate: %6.1lf"),
+				     audio.sample);
 
-	HIViewSetText(legend.status.correction, text);
-
+	HIViewSetText(legend.status.actual, text);
 	CFRelease(text);
     }
 }
@@ -1279,11 +1425,23 @@ void TimerProc(EventLoopTimerRef timer, void *data)
 
 HIRect DrawEdge(CGContextRef context, HIRect bounds)
 {
+    // Scale context and adjust bounds
+
+    if (display.zoom)
+    {
+	CGContextScaleCTM(context, 2.0, 2.0);
+
+	bounds.size.width /= 2.0;
+	bounds.size.height /= 2.0;
+    }
+
     int width = bounds.size.width;
     int height = bounds.size.height;
 
     CGContextSetShouldAntialias(context, false);
     CGContextSetLineWidth(context, 1);
+
+    // Draw edge
 
     CGContextBeginPath(context);
 
@@ -1321,10 +1479,13 @@ HIRect DrawEdge(CGContextRef context, HIRect bounds)
     CGContextSetGrayStrokeColor(context, 1, 1);
     CGContextStrokePath(context);
 
-    return CGRectInset(bounds, 2, 2);
+    CGRect inset = CGRectInset(bounds, 2, 2);
+    CGContextClipToRect(context, inset);
+
+    return inset;
 }
 
-OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
+OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 			       EventRef event, void *data)
 {
     CGContextRef context;
@@ -1400,10 +1561,10 @@ OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
 
     static float max;
 
-    if (max < 0.25)
-	max = 0.25;
+    if (max < 0.125)
+	max = 0.125;
 
-    float yscale = max / (height / 2);
+    float yscale = max / (float)(height / 2);
 
     max = 0.0;
 
@@ -1414,17 +1575,31 @@ OSStatus scopeDrawEventHandler(EventHandlerCallRef next,
 
     for (int i = 0; i < width; i++)
     {
-	if (max < abs(scope.data[n + i]))
-	    max = abs(scope.data[n + i]);
+	if (max < fabs(scope.data[n + i]))
+	    max = fabs(scope.data[n + i]);
 
 	float y = scope.data[n + i] / yscale;
 	CGContextAddLineToPoint(context, i, y);
     }
 
+    // Show F if filtered
+
+    if (audio.filter)
+    {
+	CGContextMoveToPoint(context, 0, height / 2 - 7);
+	CGContextAddLineToPoint(context, 0, height);
+
+	CGContextMoveToPoint(context, 0, height / 2 - 7);
+	CGContextAddLineToPoint(context, 4, height / 2 - 7);
+
+	CGContextMoveToPoint(context, 0, height / 2 - 4);
+	CGContextAddLineToPoint(context, 3, height / 2 - 4);
+    }
+
     CGContextStrokePath(context);
 }
 
-OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
+OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 				  EventRef event, void *data)
 {
     CGContextRef context;
@@ -1505,8 +1680,8 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 
 	// Calculate offset
 
-	int offset = round((spectrum.x[0] -
-			    floor(spectrum.x[0])) * xscale);
+	float offset = (spectrum.x[0] -
+			floor(spectrum.x[0])) * xscale;
 
 	for (int i = 0; i < round((float)width / xscale) + 1; i++)
 	{
@@ -1521,8 +1696,8 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 		if (max < value)
 		    max = value;
 
-		int y = -round(value * yscale);
-		int x = round((float)i * xscale) + offset;
+		float y = -value * yscale;
+		float x = ((float)i * xscale) + offset;
 
 		CGContextAddLineToPoint(context, x, y);
 	    }
@@ -1538,7 +1713,7 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 
 	// Draw line for nearest frequency
 
-	int x = round((spectrum.f - spectrum.x[0]) * xscale);
+	float x = (spectrum.f - spectrum.x[0]) * xscale;
 	CGContextMoveToPoint(context, x, 0);
 	CGContextAddLineToPoint(context, x, -height);
 
@@ -1549,7 +1724,7 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 	    if (spectrum.values[i] > spectrum.x[0] &&
 		spectrum.values[i] < spectrum.x[1])
 	    {
-		x = round((spectrum.values[i] - spectrum.x[0]) * xscale);
+		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
 		CGContextMoveToPoint(context, x, 0);
 		CGContextAddLineToPoint(context, x, -height);
 	    }
@@ -1582,7 +1757,7 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
 	    if (max < value)
 		max = value;
 
-	    int y = -round(value * yscale);
+	    float y = -value * yscale;
 
 	    CGContextAddLineToPoint(context, x, y);
 	}
@@ -1591,16 +1766,19 @@ OSStatus spectrumDrawEventHandler(EventHandlerCallRef next,
     }
 }
 
-OSStatus displayDrawEventHandler(EventHandlerCallRef next,
+OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 				 EventRef event, void *data)
 {
     enum
     {kTextSizeLarge  = 36,
-     kTextSizeMedium = 24};
+     kTextSizeMedium = 24,
+     kTextSizeSmall  = 12};
 
     static char *notes[] =
 	{"A", "Bb", "B", "C", "C#", "D",
 	 "Eb", "E", "F", "F#", "G", "Ab"};
+
+    static char s[64];
 
     CGContextRef context;
     HIRect bounds, inset;
@@ -1620,49 +1798,149 @@ OSStatus displayDrawEventHandler(EventHandlerCallRef next,
     CGContextTranslateCTM(context, 2, 4);
     CGContextSetLineWidth(context, 1);
 
-    CGContextSetGrayStrokeColor(context, 0, 1);
-    CGContextSetGrayFillColor(context, 0, 1);
+    if (display.lock)
+    {
+	CGContextSetRGBStrokeColor(context, 0.25, 0.5, 0.5, 1);
+	CGContextSetRGBFillColor(context, 0.25, 0.5, 0.5, 1);	
+    }
+
+    else
+    {
+	CGContextSetGrayStrokeColor(context, 0, 1);
+	CGContextSetGrayFillColor(context, 0, 1);
+    }
 
     CGContextSetShouldAntialias(context, true);
-
-    // Select font
-
-    CGContextSelectFont(context, "Arial Bold", kTextSizeLarge,
-			kCGEncodingMacRoman);
     CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
     CGContextSetTextDrawingMode(context, kCGTextFill);
 
-    static char s[64];
-    int y = kTextSizeLarge;
+    if (display.multiple)
+    {
+	// Select font
 
-    sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)], display.n / 12); 
-    CGContextShowTextAtPoint(context, 8, y, s, strlen(s));
+	CGContextSelectFont(context, "Arial", kTextSizeSmall,
+			    kCGEncodingMacRoman);
 
-    sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
-    CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+	if (display.count == 0)
+	{
+	    // Display note
 
-    y += kTextSizeMedium;
-    CGContextSetFontSize(context, kTextSizeMedium);
+	    sprintf(s, "%3s%d", notes[display.n % LENGTH(notes)],
+		    display.n / 12);
+	    CGContextShowTextAtPoint(context, 0, kTextSizeSmall,
+				     s, strlen(s));
+	    // Display cents
 
-    sprintf(s, "%9.2lfHz  ", display.fr);
-    CGContextShowTextAtPoint(context, 8, y, s, strlen(s));
+	    sprintf(s, "%+6.2lf¢", display.c * 100.0);
+	    CGContextShowTextAtPoint(context, 30, kTextSizeSmall,
+				     s, strlen(s));
+	    // Display reference
 
-    sprintf(s, "%9.2lfHz  ", display.f);
-    CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+	    sprintf(s, "%8.2lfHz", display.fr);
+	    CGContextShowTextAtPoint(context, 76, kTextSizeSmall,
+				     s, strlen(s));
+	    // Display frequency
 
-    y += kTextSizeMedium;
+	    sprintf(s, "%8.2lfHz", display.f);
+	    CGContextShowTextAtPoint(context, 146, kTextSizeSmall,
+				     s, strlen(s));
+	    // Display difference
 
-    sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
-	    kA5Reference: audio.reference);
-    CGContextShowTextAtPoint(context, 8, y, s, strlen(s));
+	    sprintf(s, "%+6.2lfHz", display.f - display.fr);
+	    CGContextShowTextAtPoint(context, 220, kTextSizeSmall,
+				     s, strlen(s));
+	}
 
-    sprintf(s, "%+8.2lfHz  ", display.fr - display.f);
-    CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i];
+
+	    double cf =
+		-12.0 * (log(audio.reference / f) / log(2.0));
+
+	    // Reference freq
+
+	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    int n = round(cf) + kA5Offset;
+
+	    if (n < 0)
+		n = 0;
+
+	    double c = -12.0 * (log(fr / f) / log(2.0));
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    // Display note
+
+	    sprintf(s, "%3s%d", notes[n % LENGTH(notes)], n / 12);
+	    CGContextShowTextAtPoint(context, 0, (i + 1) * kTextSizeSmall,
+				     s, strlen(s));
+	    // Display cents
+
+	    sprintf(s, "%+6.2lf¢", c * 100.0);
+	    CGContextShowTextAtPoint(context, 30, (i + 1) * kTextSizeSmall,
+				     s, strlen(s));
+	    // Display reference
+
+	    sprintf(s, "%8.2lfHz", fr);
+	    CGContextShowTextAtPoint(context, 76, (i + 1) * kTextSizeSmall,
+				     s, strlen(s));
+	    // Display frequency
+
+	    sprintf(s, "%8.2lfHz", f);
+	    CGContextShowTextAtPoint(context, 146, (i + 1) * kTextSizeSmall,
+				     s, strlen(s));
+	    // Display difference
+
+	    sprintf(s, "%+6.2lfHz", f - fr);
+	    CGContextShowTextAtPoint(context, 220, (i + 1) * kTextSizeSmall,
+				     s, strlen(s));
+	}
+    }
+
+    else
+    {
+	// Select font
+
+	CGContextSelectFont(context, "Arial Bold", kTextSizeLarge,
+			    kCGEncodingMacRoman);
+
+	int y = kTextSizeLarge;
+
+	sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)],
+		display.n / 12); 
+	CGContextShowTextAtPoint(context, 0, y, s, strlen(s));
+
+	sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
+	CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+
+	y += kTextSizeMedium;
+	CGContextSetFontSize(context, kTextSizeMedium);
+
+	sprintf(s, "%9.2lfHz  ", display.fr);
+	CGContextShowTextAtPoint(context, 0, y, s, strlen(s));
+
+	sprintf(s, "%9.2lfHz  ", display.f);
+	CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+
+	y += kTextSizeMedium;
+
+	sprintf(s, "%9.2lfHz  ", (audio.reference == 0)?
+		kA5Reference: audio.reference);
+	CGContextShowTextAtPoint(context, 0, y, s, strlen(s));
+
+	sprintf(s, "%+8.2lfHz  ", display.f - display.fr);
+	CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
+    }
 
     return noErr;
 }
 
-OSStatus strobeDrawEventHandler(EventHandlerCallRef next,
+OSStatus StrobeDrawEventHandler(EventHandlerCallRef next,
 				EventRef event, void *data)
 {
     CGContextRef context;
@@ -1683,7 +1961,6 @@ OSStatus strobeDrawEventHandler(EventHandlerCallRef next,
     int width = inset.size.width;
     int height = inset.size.height;
 
-    CGContextClipToRect(context, inset);
     CGContextTranslateCTM(context, 2, 2);
     CGContextSetGrayFillColor(context, 0, 1);
 
@@ -1716,7 +1993,7 @@ OSStatus strobeDrawEventHandler(EventHandlerCallRef next,
     return noErr;
 }
 
-OSStatus meterDrawEventHandler(EventHandlerCallRef next,
+OSStatus MeterDrawEventHandler(EventHandlerCallRef next,
 			       EventRef event, void *data)
 {
     CGContextRef context;
@@ -1802,23 +2079,22 @@ OSStatus meterDrawEventHandler(EventHandlerCallRef next,
 OSStatus WindowEventHandler(EventHandlerCallRef next,
                        EventRef event, void *data)
 {
-    WindowRef window;
     UInt32 kind;
 
     // Get the event kind
 
     kind = GetEventKind(event);
 
-    // Get the window
-
-    GetEventParameter(event, kEventParamDirectObject,
-                      typeWindowRef, NULL, sizeof(window),
-                      NULL, &window);
-
     // Switch on event kind
 
     switch (kind)
     {
+	// Window zoomed event
+
+    case kEventWindowZoomed:
+	WindowZoomed(event, data);
+	break;
+
         // Window close event
 
     case kEventWindowClose:
@@ -1841,11 +2117,136 @@ OSStatus WindowEventHandler(EventHandlerCallRef next,
     return noErr;
 }
 
+// Window zoomed
+
+OSStatus WindowZoomed(EventRef event, void *data)
+{
+    WindowRef window;
+    HIViewRef content;
+
+    // Font style
+
+    ControlFontStyleRec style;
+
+    // Change the zoom value
+
+    display.zoom = !display.zoom;
+
+    // Get the window
+
+    GetEventParameter(event, kEventParamDirectObject,
+                      typeWindowRef, NULL, sizeof(window),
+                      NULL, &window);
+
+    // Find the window content
+
+    HIViewFindByID(HIViewGetRoot(window),
+                   kHIViewWindowContentID,
+                   &content);
+
+    // Iterate through the views
+
+    HIViewRef view = HIViewGetFirstSubview(content);
+
+    while (view != NULL) 
+    {
+	HIRect bounds;
+	HIViewKind kind;
+	ControlSize size;
+
+	// Get the bounds
+
+	HIViewGetFrame(view, &bounds);
+
+	// Get the kind
+
+	HIViewGetKind(view, &kind);
+
+	// Move the view
+
+	if (display.zoom)
+	{
+	    HIViewMoveBy(view, bounds.origin.x, bounds.origin.y);
+	    size = kControlSizeNormal;
+	}
+
+	else
+	{
+	    HIViewMoveBy(view, -bounds.origin.x / 2,
+			 -bounds.origin.y / 2);
+	    size = kControlSizeSmall;
+	}
+
+	switch (kind.kind)
+	{
+	case kControlKindSlider:
+
+	    // Set control size
+
+	    SetControlData(view, kControlEntireControl, kControlSizeTag,
+			   sizeof(size), &size);
+	    HIViewGetOptimalBounds(view, &bounds, NULL);
+	    HIViewSetFrame(view, &bounds);
+	    break;
+	}
+
+	// Iterate through subviews
+
+	HIViewRef subview = HIViewGetFirstSubview(view);
+
+	while (subview != NULL)
+	{
+	    // Get the bounds
+
+	    HIViewGetFrame(subview, &bounds);
+
+	    // Get the kind
+
+	    HIViewGetKind(subview, &kind);
+
+	    // Get the style
+
+	    GetControlData(subview, kControlEntireControl, kControlFontStyleTag,
+			   sizeof(style), &style, NULL);
+
+	    // Move the view
+
+	    if (display.zoom)
+	    {
+		HIViewMoveBy(subview, bounds.origin.x, bounds.origin.y);
+		style.font = kControlFontBigSystemFont;
+	    }
+
+	    else
+	    {
+		HIViewMoveBy(subview, -bounds.origin.x / 2,
+			     -bounds.origin.y / 2);
+		style.font = kControlFontSmallSystemFont;
+	    }
+
+	    switch (kind.kind)
+	    {
+	    case kControlKindStaticText:
+
+		// Set control font size
+
+		SetControlFontStyle(subview, &style);
+		break;
+	    }
+
+	    subview = HIViewGetNextView(subview);
+	}
+
+	view = HIViewGetNextView(view);
+    }
+}
+
 OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 			     void *data)
 {
     HICommandExtended command;
     WindowRef window;
+    HIViewRef view;
     CFIndex number;
     UInt32 value;
 
@@ -1855,116 +2256,176 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
                       typeHICommand, NULL, sizeof(command),
                       NULL, &command);
 
-    // Get the window
-    
-    window = ActiveNonFloatingWindow();
-
-    // Get the value
-
-    value = HIViewGetValue(command.source.control);
-
-    // Switch on the command ID
-
-    switch (command.commandID)
+    switch (command.attributes)
     {
-	// Volume
+	// Control
 
-    case kCommandVolume:
-	ChangeVolume(event, command, value);
-	break;
+    case kHICommandFromControl:
 
-	// Zoom
+	// Get the window
+    
+	window = HIViewGetWindow(command.source.control);
 
-    case kCommandZoom:
-	spectrum.zoom = value;
+	// Get the value
 
-	CFPreferencesSetAppValue(CFSTR("Zoom"),
-				 value? kCFBooleanTrue: kCFBooleanFalse,
-				 kCFPreferencesCurrentApplication);
-	break;
+	value = HIViewGetValue(command.source.control);
 
-	// Strobe
+	// Switch on the command ID
 
-    case kCommandStrobe:
-	strobe.enable = value;
+	switch (command.commandID)
+	{
+	    // Volume
 
-	CFPreferencesSetAppValue(CFSTR("Strobe"),
-				 value? kCFBooleanTrue: kCFBooleanFalse,
-				 kCFPreferencesCurrentApplication);
-	break;
+	case kCommandVolume:
+	    ChangeVolume(event, command, value);
+	    break;
 
-	// Filter
+	    // Zoom
 
-    case kCommandFilter:
-	audio.filter = value;
+	case kCommandZoom:
+	    spectrum.zoom = value;
+	    HIViewSetNeedsDisplay(spectrum.view, true);
+	    CFPreferencesSetAppValue(CFSTR("Zoom"),
+				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
 
-	CFPreferencesSetAppValue(CFSTR("Filter"),
-				 value? kCFBooleanTrue: kCFBooleanFalse,
-				 kCFPreferencesCurrentApplication);
-	break;
+	    // Strobe
 
-	// Lock
+	case kCommandStrobe:
+	    strobe.enable = value;
+	    CFPreferencesSetAppValue(CFSTR("Strobe"),
+				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
 
-    case kCommandLock:
-	display.lock = value;
-	break;
+	    // Filter
 
-	// Resize
+	case kCommandFilter:
+	    audio.filter = value;
+	    HIViewSetNeedsDisplay(scope.view, true);
+	    CFPreferencesSetAppValue(CFSTR("Filter"),
+				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
 
-    case kCommandResize:
-	display.resize = value;
+	    // Lock
 
-	CFPreferencesSetAppValue(CFSTR("Resize"),
-				 value? kCFBooleanTrue: kCFBooleanFalse,
-				 kCFPreferencesCurrentApplication);
+	case kCommandLock:
+	    display.lock = value;
+	    HIViewSetNeedsDisplay(display.view, true);
+	    break;
 
-	CFPreferencesSetAppValue(CFSTR("AppleDisplayScaleFactor"),
-				 value? CFSTR("2.0"): CFSTR("1.0"),
-				 kCFPreferencesCurrentApplication);
-	break;
+	    // Multiple
 
-	// Multiple
+	case kCommandMultiple:
+	    display.multiple = value;
+	    HIViewSetNeedsDisplay(display.view, true);
+	    break;
 
-    case kCommandMultiple:
-	display.multiple = value;
-	break;
+	    // Preferences button
 
-        // Preferences button
+	case kHICommandPreferences:
+	    DisplayPreferences(event, data);
+	    break;
 
-    case kHICommandPreferences:
-	DisplayPreferences(event, data);
-	break;
+	    // Close
 
-	// Save
+	// case kHICommandClose:
 
-    case kHICommandSave:
-	number = round(audio.correction * 10000.0);
-	CFPreferencesSetAppValue(CFSTR("Correction"),
-				 CFNumberCreate(kCFAllocatorDefault,
-						kCFNumberCFIndexType,
-						&number),
-				 kCFPreferencesCurrentApplication);
-	break;
+	    // Quit
 
-	// Close
+	case kHICommandQuit:
 
-    case kHICommandClose:
+	    // Flush preferences
 
-        // Quit
+	    CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
 
-    case kHICommandQuit:
+	    // Let the default handler handle it
 
-	// Flush preferences
-
-	CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
-
-        // Let the default handler handle it
-
-    default:
-        return eventNotHandledErr;
+	default:
+	    return eventNotHandledErr;
 	}
 
-    ClearKeyboardFocus(window);
+	ClearKeyboardFocus(window);
+	break;
+
+    case kHICommandFromMenu:
+
+	// Switch on the command ID
+
+	switch (command.commandID)
+	{
+	    // Zoom
+
+	case kCommandZoom:
+	    spectrum.zoom = !spectrum.zoom;
+	    HIViewSetValue(check.zoom, spectrum.zoom);
+	    HIViewSetNeedsDisplay(spectrum.view, true);
+	    CFPreferencesSetAppValue(CFSTR("Zoom"), spectrum.zoom?
+				     kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
+
+	    // Strobe
+
+	case kCommandStrobe:
+	    strobe.enable = !strobe.enable;
+	    HIViewSetValue(check.strobe, strobe.enable);
+	    HIViewSetNeedsDisplay(strobe.view, true);
+	    CFPreferencesSetAppValue(CFSTR("Strobe"), strobe.enable?
+				     kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
+
+	    // Filter
+
+	case kCommandFilter:
+	    audio.filter = !audio.filter;
+	    HIViewSetValue(check.filter, audio.filter);
+	    HIViewSetNeedsDisplay(scope.view, true);
+	    CFPreferencesSetAppValue(CFSTR("Filter"), audio.filter?
+				     kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
+
+	    // Lock
+
+	case kCommandLock:
+	    display.lock = !display.lock;
+	    HIViewSetValue(check.lock, display.lock);
+	    HIViewSetNeedsDisplay(display.view, true);
+	    break;
+
+	    // Multiple
+
+	case kCommandMultiple:
+	    display.multiple = !display.multiple;
+	    HIViewSetValue(check.multiple, display.multiple);
+	    HIViewSetNeedsDisplay(display.view, true);
+	    break;
+
+	    // Preferences
+
+	case kHICommandPreferences:
+	    DisplayPreferences(event, data);
+	    break;
+
+	    // Quit
+
+	case kHICommandQuit:
+
+	    // Flush preferences
+
+	    CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
+
+	    // Let the default handler handle it
+
+	default:
+	    return eventNotHandledErr;
+
+	}
+    }
 
     return noErr;
 }
@@ -1975,7 +2436,14 @@ OSStatus ChangeVolume(EventRef event,
 		      HICommandExtended command,
 		      UInt32 value)
 {
-    return eventNotHandledErr;
+    Float32 volume;
+
+    volume = (float)value / (float)kVolumeMax;
+
+    AudioUnitSetParameter(audio.output, kHALOutputParam_Volume,
+			  kAudioUnitScope_Input, 1, volume, 0);
+
+    return noErr;
 }
 
 OSStatus DisplayPreferences(EventRef event, void *data)
@@ -2003,16 +2471,15 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Window bounds
 
-    Rect bounds = {0, 0, 304, 320};
+    Rect bounds = {0, 0, 178, 320};
 
     // Create window
 
-    OSStatus status =
-	CreateNewWindow(kDocumentWindowClass,
-			kWindowStandardFloatingAttributes |
-			kWindowStandardHandlerAttribute |
-			kWindowCompositingAttribute,
-			&bounds, &window);
+    CreateNewWindow(kDocumentWindowClass,
+		    kWindowStandardFloatingAttributes |
+		    kWindowStandardHandlerAttribute |
+		    kWindowCompositingAttribute,
+		    &bounds, &window);
 
     // Set the title
 
@@ -2032,7 +2499,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Group box bounds
 
-    bounds.bottom = 122;
+    bounds.bottom = 138;
     bounds.right = 280;
 
     // Create group box
@@ -2053,10 +2520,21 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     CreateCheckBoxControl(window, &bounds, CFSTR("Zoom spectrum"),
 			  spectrum.zoom, true, &check.zoom);
-
     // Set command ID
 
     HIViewSetCommandID(check.zoom, kCommandZoom);
+
+    // Set help tag
+
+    HMHelpContentRec help =
+	{kMacHelpVersion,
+	 {0, 0, 0, 0},
+	 kHMOutsideBottomLeftAligned,
+	 {{kHMCFStringContent,
+	   CFSTR("Zoom spectrum, click to change")},
+	  {kHMNoContent, NULL}}};
+
+    HMSetControlHelpContent(check.zoom, &help);
 
     // Place in group box
 
@@ -2067,10 +2545,15 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     CreateCheckBoxControl(window, &bounds, CFSTR("Display strobe"),
 			  strobe.enable, true, &check.strobe);
-
     // Set command ID
 
     HIViewSetCommandID(check.strobe, kCommandStrobe);
+
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Display strobe, click to change");
+    HMSetControlHelpContent(check.strobe, &help);
 
     // Place in group box
 
@@ -2081,10 +2564,15 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     CreateCheckBoxControl(window, &bounds, CFSTR("Audio filter"),
 			  audio.filter, true, &check.filter);
-
     // Set command ID
 
     HIViewSetCommandID(check.filter, kCommandFilter);
+
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Audip filter, click to change");
+    HMSetControlHelpContent(check.filter, &help);
 
     // Place in group box
 
@@ -2095,10 +2583,15 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     CreateCheckBoxControl(window, &bounds, CFSTR("Lock display"),
 			  display.lock, true, &check.lock);
-
     // Set command ID
 
     HIViewSetCommandID(check.lock, kCommandLock);
+
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Lock display, click to change");
+    HMSetControlHelpContent(check.lock, &help);
 
     // Place in group box
 
@@ -2107,36 +2600,27 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Create  check box
 
-    CreateCheckBoxControl(window, &bounds, CFSTR("Resize display"),
-			  display.resize, true, &check.resize);
-
-    // Set command ID
-
-    HIViewSetCommandID(check.resize, kCommandResize);
-
-    // Place in group box
-
-    HIViewAddSubview(group, check.resize);
-    HIViewPlaceInSuperviewAt(check.resize, 16, 64);
-
-    // Create  check box
-
     CreateCheckBoxControl(window, &bounds, CFSTR("Multiple notes"),
 			  display.multiple, true, &check.multiple);
-
     // Set command ID
 
     HIViewSetCommandID(check.multiple, kCommandMultiple);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Multiple notes, click to change");
+    HMSetControlHelpContent(check.multiple, &help);
+
     // Place in group box
 
     HIViewAddSubview(group, check.multiple);
-    HIViewPlaceInSuperviewAt(check.multiple, 140, 64);
+    HIViewPlaceInSuperviewAt(check.multiple, 16, 64);
 
     // Text bounds
 
     bounds.bottom = 16;
-    bounds.right  = 140;
+    bounds.right  = 68;
 
     // Create static text
 
@@ -2147,12 +2631,12 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Place in group box
 
     HIViewAddSubview(group, text);
-    HIViewPlaceInSuperviewAt(text, 16, 90);
+    HIViewPlaceInSuperviewAt(text, 16, 103);
 
     // Edit bounds
 
     bounds.bottom = 16;
-    bounds.right  = 56;
+    bounds.right  = 48;
 
     // Create edit control
 
@@ -2169,7 +2653,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     InstallControlEventHandler(legend.preferences.reference,
 			       NewEventHandlerUPP(FocusEventHandler),
 			       LENGTH(focusEvents), focusEvents,
-			       scope.view, NULL);
+			       NULL, NULL);
     // Set control data
 
     bool single = true;
@@ -2183,10 +2667,16 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     HIViewSetCommandID(legend.preferences.reference, kCommandReference);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Reference, click to change");
+    HMSetControlHelpContent(legend.preferences.reference, &help);
+
     // Place in group box
 
     HIViewAddSubview(group, legend.preferences.reference);
-    HIViewPlaceInSuperviewAt(legend.preferences.reference, 98, 90);
+    HIViewPlaceInSuperviewAt(legend.preferences.reference, 95, 104);
 
     // Arrows bounds
 
@@ -2201,143 +2691,16 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     SetControlAction(arrow.reference, ReferenceActionProc);
 
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Reference, click to change");
+    HMSetControlHelpContent(arrow.reference, &help);
+
     // Place in group box
 
     HIViewAddSubview(group, arrow.reference);
-    HIViewPlaceInSuperviewAt(arrow.reference, 166, 88);
-
-    // Group box bounds
-
-    bounds.bottom = 116;
-    bounds.right = 280;
-
-    // Create group box
-
-    CreateGroupBoxControl(window, &bounds, NULL, false, &group);
-
-    // Place in window
-
-    HIViewAddSubview(content, group);
-    HIViewPlaceInSuperviewAt(group, 20, 168);
-
-    // Text bounds
-
-    bounds.bottom = 16;
-    bounds.right  = 72;
-
-    // Create static text
-
-    CreateStaticTextControl(window, &bounds,
-			    CFSTR("Correction:"),
-                            NULL, &text);
-
-    // Place in group box
-
-    HIViewAddSubview(group, text);
-    HIViewPlaceInSuperviewAt(text, 16, 16);
-
-    // Edit bounds
-
-    bounds.bottom = 16;
-    bounds.right  = 56;
-
-    // Create edit control
-
-    CreateEditUnicodeTextControl(window, &bounds,
-				 CFSTR("1.00000"),
-				 false, NULL,
-				 &legend.preferences.correction);
-    // Install event handlers
-
-    InstallControlEventHandler(legend.preferences.correction,
-			       NewEventHandlerUPP(FocusEventHandler),
-			       LENGTH(focusEvents), focusEvents,
-			       scope.view, NULL);
-    // Set control data
-
-    SetControlData(legend.preferences.correction,
-		   kControlEditTextPart,
-		   kControlEditTextSingleLineTag,
-		   sizeof(single), &single);
-
-    // Set command ID
-
-    HIViewSetCommandID(legend.preferences.correction, kCommandCorrection);
-
-    // Place in group box
-
-    HIViewAddSubview(group, legend.preferences.correction);
-    HIViewPlaceInSuperviewAt(legend.preferences.correction, 98, 16);
-
-    // Arrows bounds
-
-    bounds.bottom = 22;
-    bounds.right  = 13;
-
-    CreateLittleArrowsControl(window, &bounds,
-			      kCorrectionValue, kCorrectionMin,
-			      kCorrectionMax, kCorrectionStep,
-			      &arrow.correction);
-
-    //Set action proc
-
-    SetControlAction(arrow.correction, CorrectionActionProc);
-
-    // Place in group box
-
-    HIViewAddSubview(group, arrow.correction);
-    HIViewPlaceInSuperviewAt(arrow.correction, 166, 14);
-
-    // Button bounds
-
-    bounds.bottom = 20;
-    bounds.right  = 72;
-
-    // Create push button
-
-    CreatePushButtonControl(window, &bounds, CFSTR("Save"), &button);
-
-    // Set command ID
-
-    HIViewSetCommandID(button, kHICommandSave); 
-
-    // Place in group box
-
-    HIViewAddSubview(group, button);
-    HIViewPlaceInSuperviewAt(button, 192, 15);
-
-    // Text bounds
-
-    bounds.bottom = 32;
-    bounds.right  = 248;
-
-    // Create static text
-
-    CreateStaticTextControl(window, &bounds,
-			    CFSTR("Use correction if your sound card "
-				  "is significantly inaccurate."),
-                            NULL, &text);
-
-    // Place in group box
-
-    HIViewAddSubview(group, text);
-    HIViewPlaceInSuperviewAt(text, 16, 44);
-
-    // Text bounds
-
-    bounds.bottom = 16;
-    bounds.right  = 144;
-
-    // Create static text
-
-    CreateStaticTextControl(window, &bounds,
-			    CFSTR("Sample rate: 11025.0"),
-                            NULL, &legend.preferences.sample);
-
-    // Place in group box
-
-    HIViewAddSubview(group, legend.preferences.sample);
-    HIViewPlaceInSuperviewAt(legend.preferences.sample, 16, 84);
+    HIViewPlaceInSuperviewAt(arrow.reference, 154, 101);
 
     // Button bounds
 
@@ -2355,7 +2718,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Place in group box
 
     HIViewAddSubview(group, button);
-    HIViewPlaceInSuperviewAt(button, 192, 83);
+    HIViewPlaceInSuperviewAt(button, 192, 102);
 }
 
 // Focus event handler
@@ -2393,14 +2756,38 @@ OSStatus FocusEventHandler(EventHandlerCallRef next, EventRef event,
 	HIViewSetValue(arrow.reference, value * 10);
 	HIViewSetNeedsDisplay(display.view, true);
 	break;
-
-    case kCommandCorrection:
-	audio.correction = value;
-	HIViewSetValue(arrow.correction, value * 100000);
-	break;
     }
 
     return eventNotHandledErr;
+}
+
+// Mouse event handler
+
+OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
+			   void *data)
+{
+    Point location;
+    EventMouseButton button;
+
+    GetEventParameter(event, kEventParamMouseLocation,
+		      typeQDPoint, NULL, sizeof(location),
+		      NULL, &location);
+
+    GetEventParameter(event, kEventParamMouseButton,
+		      typeMouseButton, NULL, sizeof(button),
+		      NULL, &button);
+
+    switch (button)
+    {
+    case kEventMouseButtonSecondary:
+	DisplayContextMenu(event, location, data);
+	break;
+
+    default:
+	return eventNotHandledErr;
+    }
+
+    return noErr;
 }
 
 // Text event handler
@@ -2408,7 +2795,227 @@ OSStatus FocusEventHandler(EventHandlerCallRef next, EventRef event,
 OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 			  void *data)
 {
-    return eventNotHandledErr;
+    char s[4];
+    UInt32 size;
+
+    GetEventParameter(event, kEventParamTextInputSendText,
+		      typeUnicodeText, NULL, sizeof(s),
+		      &size, &s);
+    switch (*s)
+    {
+	// Copy display
+
+    case 'C':
+    case 'c':
+    case 0x3:
+	CopyDisplay(event);
+	break;
+
+	// Copy info
+#ifdef DEBUG
+    case 'D':
+    case 'd':
+	CopyInfo(event);
+	break;
+#endif
+	// Filter
+
+    case 'F':
+    case 'f':
+	audio.filter = !audio.filter;
+	HIViewSetValue(check.filter, audio.filter);
+	CFPreferencesSetAppValue(CFSTR("Filter"),
+				 audio.filter? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+	// Lock
+
+    case 'L':
+    case 'l':
+	display.lock = !display.lock;
+	HIViewSetValue(check.lock, display.lock);
+	HIViewSetNeedsDisplay(display.view, true);
+	break;
+
+	// Preferences
+
+    case 'P':
+    case 'p':
+	DisplayPreferences(event, data);
+	break;
+
+	// Strobe
+
+    case 'S':
+    case 's':
+	strobe.enable = !strobe.enable;
+	HIViewSetValue(check.strobe, strobe.enable);
+	HIViewSetNeedsDisplay(strobe.view, true);
+	CFPreferencesSetAppValue(CFSTR("Strobe"),
+				 strobe.enable? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+	// Multiple
+
+    case 'M':
+    case 'm':
+	display.multiple = !display.multiple;
+	HIViewSetValue(check.multiple, display.multiple);
+	HIViewSetNeedsDisplay(display.view, true);
+	break;
+
+	// Zoom
+
+    case 'Z':
+    case 'z':
+	spectrum.zoom = !spectrum.zoom;
+	HIViewSetValue(check.strobe, spectrum.zoom);
+	HIViewSetNeedsDisplay(spectrum.view, true);
+	CFPreferencesSetAppValue(CFSTR("Zoom"),
+				 spectrum.zoom? kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
+	break;
+
+    default:
+	return eventNotHandledErr;
+    }
+
+    return noErr;
+}
+
+// Display context menu
+
+OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
+{
+    MenuRef menu;
+    MenuItemIndex item;
+
+    CreateNewMenu(0, 0, &menu);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Zoom spectrum"),
+                                   0, kCommandZoom, &item);
+    CheckMenuItem(menu, item, spectrum.zoom);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Display strobe"),
+                                   0, kCommandStrobe, &item);
+    CheckMenuItem(menu, item, strobe.enable);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Audio filter"),
+                                   0, kCommandFilter, &item);
+    CheckMenuItem(menu, item, audio.filter);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Lock display"),
+                                   0, kCommandLock, &item);
+    CheckMenuItem(menu, item, display.lock);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Multiple notes"),
+                                   0, kCommandMultiple, &item);
+    CheckMenuItem(menu, item, display.multiple);
+
+    AppendMenuItemTextWithCFString(menu, NULL,
+                                  kMenuItemAttrSeparator, 0, NULL);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Preferences..."),
+                                   0, kHICommandPreferences, &item);
+
+    AppendMenuItemTextWithCFString(menu, NULL,
+                                  kMenuItemAttrSeparator, 0, NULL);
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Quit"),
+                                   0, kHICommandQuit, &item);
+
+    PopUpMenuSelect(menu, location.v, location.h, 0);
+    ReleaseMenu(menu);
+}
+
+// Copy display
+
+OSStatus CopyDisplay(EventRef event)
+{
+    static char *notes[] =
+	{"A", "Bb", "B", "C", "C#", "D",
+	 "Eb", "E", "F", "F#", "G", "Ab"};
+
+    char s[64];
+    char *text = malloc(4096);
+
+    // Check if multiple
+
+    if (display.multiple && display.count > 0)
+    {
+	// For each set of values
+
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i];
+
+	    double cf =
+		-12.0 * (log(audio.reference / f) / log(2.0));
+
+	    // Reference freq
+
+	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    int n = round(cf) + kA5Offset;
+
+	    if (n < 0)
+		n = 0;
+
+	    double c = -12.0 * (log(fr / f) / log(2.0));
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    // Print the text
+
+	    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+		    notes[n % LENGTH(notes)], n / 12,
+		    c * 100.0, fr, f, f - fr);
+
+	    // Copy to the memory
+
+	    if (i == 0)
+		strcpy(text, s);
+
+	    else
+		strcat(text, s);
+	}
+    }
+
+    else
+    {
+	// Print the values
+
+	sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+		notes[display.n % LENGTH(notes)], display.n / 12,
+		display.c * 100.0, display.fr, display.f,
+		display.f - display.fr);
+
+	// Copy to the memory
+
+	strcpy(text, s);
+    }
+
+    // Create a pasteboard
+
+    PasteboardRef paste;
+
+    PasteboardCreate(kPasteboardClipboard, &paste);
+    PasteboardClear(paste);
+
+    CFDataRef data = CFDataCreate(kCFAllocatorDefault,
+				  (UInt8 *)text, strlen(text));
+
+    PasteboardPutItemFlavor(paste, (PasteboardItemID)data,
+			    kUTTypeUTF8PlainText, data,
+			    kPasteboardFlavorNoFlags);
+    free(text);
+    CFRelease(data);
+    CFRelease(paste);
 }
 
 // Reference action proc
@@ -2450,62 +3057,15 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 
     CFRelease(text);
 
-    CFPreferencesSetAppValue(CFSTR("Reference"),
-			     CFNumberCreate(kCFAllocatorDefault,
-					    kCFNumberCFIndexType,
-					    &value),
+    CFNumberRef index =
+	CFNumberCreate(kCFAllocatorDefault,
+		       kCFNumberCFIndexType,
+		       &value);
+
+    CFPreferencesSetAppValue(CFSTR("Reference"), index,
 			     kCFPreferencesCurrentApplication);
-}
 
-// Correction action proc
-
-void CorrectionActionProc(HIViewRef view, ControlPartCode part)
-{
-    // Get value
-
-    SInt32 value = HIViewGetValue(view);
-    SInt32 step;
-
-    // Get step
-
-    GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
-		   sizeof(step), &step, nil);
-
-    switch (part)
-    {
-    case kControlUpButtonPart:
-	value += step;
-	break;
-
-    case kControlDownButtonPart:
-	value -= step;
-	break;
-    }
-
-    HIViewSetValue(view, value);
-
-    static char s[64];
-
-    audio.correction = (double)value / 100000.0;
-
-    sprintf(s, "%6.5lf", audio.correction);
-    HIViewSetText(legend.preferences.correction,
-		  CFStringCreateWithCString(kCFAllocatorDefault, s,
-					    kCFStringEncodingMacRoman));
-
-    sprintf(s, "Correction: %6.5lf", audio.correction);
-    HIViewSetText(legend.status.correction,
-		  CFStringCreateWithCString(kCFAllocatorDefault, s,
-					    kCFStringEncodingMacRoman));
-
-    sprintf(s, "Sample rate: %6.1lf", 11025.0 / audio.correction);
-    HIViewSetText(legend.preferences.sample,
-		  CFStringCreateWithCString(kCFAllocatorDefault, s,
-					    kCFStringEncodingMacRoman));
-
-    HIViewSetText(legend.status.sample,
-		  CFStringCreateWithCString(kCFAllocatorDefault, s,
-					    kCFStringEncodingMacRoman));
+    CFRelease(index);
 }
 
 // FFT
