@@ -3,7 +3,7 @@
 
 = Introduction =
 
-A Mac version is in development. Slow going so far...
+A Mac version has been released.
 
 http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/files/Preferences.png
 
@@ -11,6 +11,7 @@ http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/fi
 
   * The basic layout and graphics are done.
   * The audio capture and processing system is working.
+  * Initial version released.
 
 == Differences ==
 
@@ -18,6 +19,6 @@ There are a number of differences from the Windows version:
 
   * Clicking on panes to change options doesn't work.
   * The Mac audio system calculates the actual sample rate, so correction is redundant.
-  * The Mac version currently uses more CPU time.
   * The volume control is independent from the sound input volume control in System Preferences.
   * The strobe pane animation is jerkier, due to the type of timer available on the Mac.
+  * Use the zoom button to resize the window.
