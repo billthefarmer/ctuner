@@ -9,15 +9,16 @@
 /* Begin PBXBuildFile section */
 		23250E0211EA22A900755379 /* Tuner.c in Sources */ = {isa = PBXBuildFile; fileRef = 23250E0111EA22A900755379 /* Tuner.c */; };
 		23250E0411EA22EA00755379 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23250E0311EA22EA00755379 /* Carbon.framework */; };
-		23C6BF4011EA23D7006177F5 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */; };
-		23C6BF4411EA23EA006177F5 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23C6BF4311EA23EA006177F5 /* AudioToolbox.framework */; };
+		23A73F6F124B6715002171D6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23A73F6E124B6715002171D6 /* CoreAudio.framework */; };
+		23CC96DE124AB13500E84510 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */; };
+		23D5C9CB11F0660C003699B8 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23EB88F811EA20820036F9F1 /* Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		23250E0111EA22A900755379 /* Tuner.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = Tuner.c; sourceTree = "<group>"; };
 		23250E0311EA22EA00755379 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
+		23A73F6E124B6715002171D6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
 		23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = /System/Library/Frameworks/AudioUnit.framework; sourceTree = "<absolute>"; };
-		23C6BF4311EA23EA006177F5 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
 		23EB88F511EA20820036F9F1 /* Tuner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tuner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		23EB88F811EA20820036F9F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -28,8 +29,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				23250E0411EA22EA00755379 /* Carbon.framework in Frameworks */,
-				23C6BF4011EA23D7006177F5 /* AudioUnit.framework in Frameworks */,
-				23C6BF4411EA23EA006177F5 /* AudioToolbox.framework in Frameworks */,
+				23CC96DE124AB13500E84510 /* AudioUnit.framework in Frameworks */,
+				23A73F6F124B6715002171D6 /* CoreAudio.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -39,9 +40,9 @@
 		23EB88E011EA1FB50036F9F1 = {
 			isa = PBXGroup;
 			children = (
-				23C6BF4311EA23EA006177F5 /* AudioToolbox.framework */,
 				23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */,
 				23250E0311EA22EA00755379 /* Carbon.framework */,
+				23A73F6E124B6715002171D6 /* CoreAudio.framework */,
 				23250E0111EA22A900755379 /* Tuner.c */,
 				23EB88F611EA20820036F9F1 /* Products */,
 				23EB88F811EA20820036F9F1 /* Info.plist */,
@@ -97,6 +98,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				23D5C9CB11F0660C003699B8 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,6 +121,11 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				OTHER_CFLAGS = (
+					"-ffast-math",
+					"-march=opteron",
+				);
 			};
 			name = Debug;
 		};
@@ -127,6 +134,13 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = "";
+				OTHER_CFLAGS = (
+					"-ffast-math",
+					"-march=opteron",
+				);
 			};
 			name = Release;
 		};

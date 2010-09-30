@@ -192,7 +192,6 @@ Check check;
 typedef struct
 {
     HIViewRef reference;
-    HIViewRef correction;
 } Arrow;
 
 Arrow arrow;
@@ -224,7 +223,7 @@ OSStatus FocusEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus MouseEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
-OSStatus AudioProc(void);
+OSStatus SetupAudio(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
@@ -607,37 +606,64 @@ int main(int argc, char *argv[])
     HIViewAddSubview(group, legend.status.actual);
     HIViewPlaceInSuperviewAt(legend.status.actual, 164, 2);
 
+    // Layout info
+
     HILayoutInfo layout =
 	{kHILayoutInfoVersionZero};
+
+    // Iterate through views
 
     HIViewRef view = HIViewGetFirstSubview(content);
 
     while (view != NULL) 
     {
-	HIRect outer;
-	HIViewGetBounds(content, &outer);
+	// Get content view bounds
+
+	HIRect parent;
+	HIViewGetBounds(content, &parent);
+
+	// Get view bounds
 
 	HIRect bounds;
 	HIViewGetBounds(view, &bounds);
 
+	// Get layout info
+
 	HIViewGetLayoutInfo(view, &layout);
 
-	layout.scale.x.ratio = bounds.size.width / outer.size.width;
-	layout.scale.y.ratio = bounds.size.height / outer.size.height;
+	// Calculate the scaling
+
+	layout.scale.x.ratio = bounds.size.width / parent.size.width;
+	layout.scale.y.ratio = bounds.size.height / parent.size.height;
+
+	// Set layout info
 
 	HIViewSetLayoutInfo(view, &layout);
+
+	// Iterate through subviews
 
 	HIViewRef subview = HIViewGetFirstSubview(view);
 
 	while (subview != NULL)
 	{
-	    HIViewGetBounds(view, &outer);
+	    // Get view bounds
 
-	    HIViewGetLayoutInfo(subview, &layout);
+	    HIViewGetBounds(view, &parent);
+
+	    // Get subview bounds
+
 	    HIViewGetBounds(subview, &bounds);
 
-	    layout.scale.x.ratio = bounds.size.width / outer.size.width;
-	    layout.scale.y.ratio = bounds.size.height / outer.size.height;
+	    // Get layout info
+
+	    HIViewGetLayoutInfo(subview, &layout);
+
+	    // Calculate the scaling
+
+	    layout.scale.x.ratio = bounds.size.width / parent.size.width;
+	    layout.scale.y.ratio = bounds.size.height / parent.size.height;
+
+	    // Set layout info
 
 	    HIViewSetLayoutInfo(subview, &layout);
 
@@ -740,7 +766,7 @@ int main(int argc, char *argv[])
 			  
     // Set up audio
 
-    AudioProc();
+    SetupAudio();
 
     // Run the application event loop
 
@@ -759,17 +785,23 @@ void GetPreferences()
     strobe.enable = true;
     audio.reference = kA5Reference;
 
+    // Zoom
+
     flag = CFPreferencesGetAppBooleanValue(CFSTR("Zoom"),
 					   kCFPreferencesCurrentApplication,
 					   &found);
     if (found)
 	spectrum.zoom = flag;
 
+    // Strobe
+
     flag = CFPreferencesGetAppBooleanValue(CFSTR("Strobe"),
 					   kCFPreferencesCurrentApplication,
 					   &found);
     if (found)
 	strobe.enable = flag;
+
+    // Filter
 
     flag = CFPreferencesGetAppBooleanValue(CFSTR("Filter"),
 					   kCFPreferencesCurrentApplication,
@@ -779,6 +811,8 @@ void GetPreferences()
 
     CFIndex value;
 
+    // Reference
+
     value = CFPreferencesGetAppIntegerValue(CFSTR("Reference"),
 					   kCFPreferencesCurrentApplication,
 					   &found);
@@ -786,9 +820,9 @@ void GetPreferences()
 	audio.reference = (double)value / 10.0;
 }
 
-// Audio proc
+// Setup audio
 
-OSStatus AudioProc()
+OSStatus SetupAudio()
 {
     Component cp;
     ComponentDescription dc =
@@ -1320,13 +1354,22 @@ OSStatus CopyInfo(EventRef event)
     Float64 rate;
     size = sizeof(rate);
 
-    // Get the sample rate
+    // Get the nominal sample rate
 
     AudioDeviceGetProperty(id, 0, true,
 			   kAudioDevicePropertyNominalSampleRate,
 			   &size, &rate);
 
     sprintf(s, "Nominal sample rate: %6.1lf\n", rate);
+    strcat(text, s);
+
+    // Get the actual sample rate
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyActualSampleRate,
+			   &size, &rate);
+
+    sprintf(s, "Actual sample rate: %6.1lf\n", rate);
     strcat(text, s);
 
     UInt32 frames;
@@ -1479,6 +1522,8 @@ HIRect DrawEdge(CGContextRef context, HIRect bounds)
     CGContextSetGrayStrokeColor(context, 1, 1);
     CGContextStrokePath(context);
 
+    // Create inset
+
     CGRect inset = CGRectInset(bounds, 2, 2);
     CGContextClipToRect(context, inset);
 
@@ -1490,13 +1535,23 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 {
     CGContextRef context;
     HIRect bounds, inset;
+    HIViewRef view;
+
+    // Get context
 
     GetEventParameter(event, kEventParamCGContextRef,
 		      typeCGContextRef, NULL,
-		      sizeof(CGContextRef), NULL,
+		      sizeof(context), NULL,
 		      &context);
+    // Get view
 
-    HIViewGetBounds((HIViewRef)data, &bounds);
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL,
+		      &view);
+    // Get bounds
+
+    HIViewGetBounds(view, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1506,12 +1561,18 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
     CGContextSetShouldAntialias(context, false);
     CGContextSetLineWidth(context, 1);
 
+    // Black background
+
     CGContextSetGrayFillColor(context, 0, 1);
     CGContextFillRect(context, inset);
 
     CGContextTranslateCTM(context, 2, 3);
 
+    // Dark green graticule
+
     CGContextSetRGBStrokeColor(context, 0, 0.6, 0, 1);
+
+    // Draw graticule
 
     CGContextBeginPath(context);
 
@@ -1528,6 +1589,8 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
     }
 
     CGContextStrokePath(context);
+
+    // No trace if no data
 
     if (scope.data == NULL)
 	return noErr;
@@ -1551,13 +1614,15 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 	    break;
     }
 
-    // Green stroke for scope trace
+    // Green trace
 
     CGContextSetRGBStrokeColor(context, 0, 1, 0, 1);
 
     // Move the origin
 
     CGContextTranslateCTM(context, 0, height / 2);
+
+    // Calculate scale
 
     static float max;
 
@@ -1604,13 +1669,23 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 {
     CGContextRef context;
     HIRect bounds, inset;
+    HIViewRef view;
+
+    // Get context
 
     GetEventParameter(event, kEventParamCGContextRef,
 		      typeCGContextRef, NULL,
-		      sizeof(CGContextRef), NULL,
+		      sizeof(context), NULL,
 		      &context);
+    // Get view
 
-    HIViewGetBounds((HIViewRef)data, &bounds);
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL,
+		      &view);
+    // Get bounds
+
+    HIViewGetBounds(view, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1620,12 +1695,18 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
     CGContextSetShouldAntialias(context, false);
     CGContextSetLineWidth(context, 1);
 
+    // Black background
+
     CGContextSetGrayFillColor(context, 0, 1);
     CGContextFillRect(context, inset);
 
     CGContextTranslateCTM(context, 2, 3);
 
+    // Dark green graticule
+
     CGContextSetRGBStrokeColor(context, 0, 0.6, 0, 1);
+
+    // Draw graticule
 
     CGContextBeginPath(context);
 
@@ -1782,13 +1863,23 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
     CGContextRef context;
     HIRect bounds, inset;
+    HIViewRef view;
+
+    // Get context
 
     GetEventParameter(event, kEventParamCGContextRef,
 		      typeCGContextRef, NULL,
-		      sizeof(CGContextRef), NULL,
+		      sizeof(context), NULL,
 		      &context);
+    // Get view
 
-    HIViewGetBounds((HIViewRef)data, &bounds);
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL,
+		      &view);
+    // Get bounds
+
+    HIViewGetBounds(view, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1798,11 +1889,15 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
     CGContextTranslateCTM(context, 2, 4);
     CGContextSetLineWidth(context, 1);
 
+    // Grey text if locked
+
     if (display.lock)
     {
 	CGContextSetRGBStrokeColor(context, 0.25, 0.5, 0.5, 1);
 	CGContextSetRGBFillColor(context, 0.25, 0.5, 0.5, 1);	
     }
+
+    // Black text
 
     else
     {
@@ -1945,13 +2040,23 @@ OSStatus StrobeDrawEventHandler(EventHandlerCallRef next,
 {
     CGContextRef context;
     HIRect bounds, inset;
+    HIViewRef view;
+
+    // Get context
 
     GetEventParameter(event, kEventParamCGContextRef,
 		      typeCGContextRef, NULL,
-		      sizeof(CGContextRef), NULL,
+		      sizeof(context), NULL,
 		      &context);
+    // Get view
 
-    HIViewGetBounds((HIViewRef)data, &bounds);
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL,
+		      &view);
+    // Get bounds
+
+    HIViewGetBounds(view, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -1998,13 +2103,23 @@ OSStatus MeterDrawEventHandler(EventHandlerCallRef next,
 {
     CGContextRef context;
     HIRect bounds, inset;
+    HIViewRef view;
+
+    // Get context
 
     GetEventParameter(event, kEventParamCGContextRef,
 		      typeCGContextRef, NULL,
-		      sizeof(CGContextRef), NULL,
+		      sizeof(context), NULL,
 		      &context);
+    // Get view
 
-    HIViewGetBounds((HIViewRef)data, &bounds);
+    GetEventParameter(event, kEventParamDirectObject,
+		      typeControlRef, NULL,
+		      sizeof(view), NULL,
+		      &view);
+    // Get bounds
+
+    HIViewGetBounds(view, &bounds);
 
     inset = DrawEdge(context, bounds);
 
@@ -2019,6 +2134,8 @@ OSStatus MeterDrawEventHandler(EventHandlerCallRef next,
 
     CGContextTranslateCTM(context, width / 2, 0);
     CGContextSetShouldAntialias(context, true);
+
+    // Select font
 
     CGContextSelectFont(context, "Arial", 14, kCGEncodingMacRoman);
     CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
@@ -2077,7 +2194,7 @@ OSStatus MeterDrawEventHandler(EventHandlerCallRef next,
 // Window event handler
 
 OSStatus WindowEventHandler(EventHandlerCallRef next,
-                       EventRef event, void *data)
+			    EventRef event, void *data)
 {
     UInt32 kind;
 
@@ -2246,8 +2363,6 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 {
     HICommandExtended command;
     WindowRef window;
-    HIViewRef view;
-    CFIndex number;
     UInt32 value;
 
     // Get the command
@@ -2892,23 +3007,35 @@ OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
     MenuRef menu;
     MenuItemIndex item;
 
+    // Create menu
+
     CreateNewMenu(0, 0, &menu);
+
+    // Zoom
 
     AppendMenuItemTextWithCFString(menu, CFSTR("Zoom spectrum"),
                                    0, kCommandZoom, &item);
     CheckMenuItem(menu, item, spectrum.zoom);
 
+    // Strobe
+
     AppendMenuItemTextWithCFString(menu, CFSTR("Display strobe"),
                                    0, kCommandStrobe, &item);
     CheckMenuItem(menu, item, strobe.enable);
+
+    // Filter
 
     AppendMenuItemTextWithCFString(menu, CFSTR("Audio filter"),
                                    0, kCommandFilter, &item);
     CheckMenuItem(menu, item, audio.filter);
 
+    // Lock
+
     AppendMenuItemTextWithCFString(menu, CFSTR("Lock display"),
                                    0, kCommandLock, &item);
     CheckMenuItem(menu, item, display.lock);
+
+    // Multiple
 
     AppendMenuItemTextWithCFString(menu, CFSTR("Multiple notes"),
                                    0, kCommandMultiple, &item);
@@ -2917,11 +3044,15 @@ OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
     AppendMenuItemTextWithCFString(menu, NULL,
                                   kMenuItemAttrSeparator, 0, NULL);
 
+    // Preferences
+
     AppendMenuItemTextWithCFString(menu, CFSTR("Preferences..."),
                                    0, kHICommandPreferences, &item);
 
     AppendMenuItemTextWithCFString(menu, NULL,
                                   kMenuItemAttrSeparator, 0, NULL);
+
+    // Quit
 
     AppendMenuItemTextWithCFString(menu, CFSTR("Quit"),
                                    0, kHICommandQuit, &item);
@@ -3054,7 +3185,6 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 				 audio.reference);
 
     HIViewSetText(legend.preferences.reference, text);
-
     CFRelease(text);
 
     CFNumberRef index =
@@ -3064,7 +3194,6 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 
     CFPreferencesSetAppValue(CFSTR("Reference"), index,
 			     kCFPreferencesCurrentApplication);
-
     CFRelease(index);
 }
 
