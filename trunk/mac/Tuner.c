@@ -90,10 +90,11 @@ enum
      kCommandLock       = 'Lock',
      kCommandFilter     = 'Fltr'};
 
-// Event constants
+// Audio event constants
 
 enum
-    {kEventAudioUpdate = 'Updt'};
+    {kEventAudioUpdate = 'Updt',
+     kEventAudioRate   = 'Rate'};
 
 // Global data
 
@@ -718,7 +719,8 @@ int main(int argc, char *argv[])
     // Audio events type spec
 
     EventTypeSpec audioEvents[] =
-        {{kEventClassApplication, kEventAudioUpdate}};
+        {{kEventClassApplication, kEventAudioUpdate},
+	 {kEventClassApplication, kEventAudioRate}};
 
     // Install event handler
 
@@ -1046,6 +1048,27 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     static double fps;
     static double expect;
+
+    // Get the event kind
+
+    UInt32 kind = GetEventKind(event);
+
+    // Switch on event kind
+
+    switch (kind)
+    {
+	// Update fps
+
+    case kEventAudioRate:
+	fps = audio.sample / (double)kSamples;
+	return noErr;
+	break;
+
+	// Audio update
+
+    case kEventAudioUpdate:
+	break;
+    }
 
     // Initialise tructures
 
@@ -1461,6 +1484,19 @@ void TimerProc(EventLoopTimerRef timer, void *data)
 
 	HIViewSetText(legend.status.actual, text);
 	CFRelease(text);
+
+	// Create an event to post to the main event queue
+
+	EventRef event;
+
+	CreateEvent(kCFAllocatorDefault, kEventClassApplication,
+		    kEventAudioRate, 0,
+		    kEventAttributeUserEvent, &event);
+
+	PostEventToQueue(GetMainEventQueue(), event,
+			 kEventPriorityStandard);
+
+	ReleaseEvent(event);
     }
 }
 
@@ -1759,26 +1795,19 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
-	// Calculate offset
+	// Draw trace
 
-	float offset = (spectrum.x[0] -
-			floor(spectrum.x[0])) * xscale;
-
-	for (int i = 0; i < round((float)width / xscale) + 1; i++)
+	for (int i = round(spectrum.x[0]); i <= round(spectrum.x[1]); i++)
 	{
-	    // Calculate index
-
-	    int n = round(spectrum.x[0]) + i;
-
-	    if (n > 0 && n < spectrum.length)
+	    if (i > 0 && i < spectrum.length)
 	    {
-		float value = spectrum.data[n];
+		float value = spectrum.data[i];
 
 		if (max < value)
 		    max = value;
 
 		float y = -value * yscale;
-		float x = ((float)i * xscale) + offset;
+		float x = ((float)i - spectrum.x[0]) * xscale; 
 
 		CGContextAddLineToPoint(context, x, y);
 	    }
