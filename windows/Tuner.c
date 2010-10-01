@@ -40,6 +40,8 @@
 #define OCTAVE 12
 #define MIN   0.5
 
+#undef NOISE
+
 // Global handle
 
 HINSTANCE hInst;
@@ -1820,7 +1822,7 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
     }
 }
 
-// CopyDisplay
+// Copy display
 
 BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 {
@@ -2174,26 +2176,17 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
-	// Calculate offset
-
-	int offset = round((spectrum.x[0] -
-			    floor(spectrum.x[0])) * xscale);
-
-	for (int i = 0; i < round((float)width / xscale) + 1; i++)
+	for (int i = round(spectrum.x[0]); i <= round(spectrum.x[1]); i++)
 	{
-	    // Calculate index
-
-	    int n = round(spectrum.x[0]) + i;
-
-	    if (n > 0 && n < spectrum.length)
+	    if (i > 0 && i < spectrum.length)
 	    {
-		float value = spectrum.data[n];
+		float value = spectrum.data[i];
 
 		if (max < value)
 		    max = value;
 
 		int y = -round(value * yscale);
-		int x = round((float)i * xscale) + offset;
+		int x = round(((float)i - spectrum.x[0]) * xscale); 
 
 		LineTo(hbdc, x, y);
 	    }
