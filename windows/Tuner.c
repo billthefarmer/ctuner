@@ -85,7 +85,7 @@ enum
     {MAXIMA = 8,
      OVERSAMPLE = 16,
      SAMPLES = 16384,
-     RANGE = SAMPLES * 5 / 8,
+     RANGE = SAMPLES * 3 / 8,
      STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
@@ -2176,7 +2176,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
 
-	for (int i = round(spectrum.x[0]); i <= round(spectrum.x[1]); i++)
+	for (int i = floor(spectrum.x[0]); i <= ceil(spectrum.x[1]); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
