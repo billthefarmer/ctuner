@@ -25,12 +25,14 @@
 #include <Carbon/Carbon.h>
 #include <AudioUnit/AudioUnit.h>
 #include <CoreAudio/CoreAudio.h>
+#include <Accelerate/Accelerate.h>
 
 // Macros
 
 #define LENGTH(a) (sizeof(a) / sizeof(a[0]))
 
 #define kMin        0.5
+#define kScale   2048.0
 #define kTimerDelay 0.1
 
 #define DEBUG
@@ -48,9 +50,10 @@ enum
 enum
     {kOversample = 16,
      kSamples = 16384,
+     kSamples2 = kSamples / 2,
      kMaxima = 8,
      kFrames = 512,
-     kRange = kSamples * 5 / 8,
+     kRange = kSamples * 5 / 16,
      kStep = kSamples / kOversample};
 
 // Tuner reference values
@@ -100,12 +103,6 @@ enum
 
 typedef struct
 {
-    double r;
-    double i;
-} complex;
-
-typedef struct
-{
     HIViewRef view;
     float *data;
     int length;
@@ -122,8 +119,8 @@ typedef struct
     float f;
     float r;
     float x[2];
-    double *data;
-    float *values;
+    float *data;
+    float *maxima;
 } Spectrum;
 
 Spectrum spectrum;
@@ -132,10 +129,10 @@ typedef struct
 {
     HIViewRef view;
     EventLoopTimerRef timer;
-    double *maxima;
-    double f;
-    double fr;
-    double c;
+    float *maxima;
+    float f;
+    float fr;
+    float c;
     bool lock;
     bool zoom;
     bool multiple;
@@ -204,8 +201,8 @@ typedef struct
     bool filter;
     int divisor;
     int frames;
-    double sample;
-    double reference;
+    float sample;
+    float reference;
 } Audio;
 
 Audio audio;
@@ -231,10 +228,13 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 
 OSStatus DisplayContextMenu(EventRef, Point, void *);
 OSStatus DisplayPreferences(EventRef, void *);
+OSStatus PostCommandEvent(HIViewRef);
 OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
 OSStatus WindowZoomed(EventRef, void *);
 OSStatus CopyDisplay(EventRef);
 OSStatus CopyInfo(EventRef);
+
+HIRect DrawEdge(CGContextRef, HIRect);
 
 void TimerProc(EventLoopTimerRef, void *);
 void ReferenceActionProc(HIViewRef, ControlPartCode);
@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Scope, press 'F' key to filter audio");
+	CFSTR("Scope, click to filter audio");
     HMSetControlHelpContent(scope.view, &help);
 
     // Place in the window
@@ -413,7 +413,7 @@ int main(int argc, char *argv[])
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Spectrum, press 'Z' key to zoom");
+	CFSTR("Spectrum, click to zoom");
     HMSetControlHelpContent(spectrum.view, &help);
 
     // Place in the window
@@ -430,10 +430,14 @@ int main(int argc, char *argv[])
 
     CreateUserPaneControl(window, &bounds, 0, &display.view);
 
+    // Set command ID
+
+    HIViewSetCommandID(display.view, kCommandLock);
+
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Display, press 'L' key to lock");
+	CFSTR("Display, click to lock");
     HMSetControlHelpContent(display.view, &help);
 
     // Place in the window
@@ -457,7 +461,7 @@ int main(int argc, char *argv[])
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Strobe, press 'S' key to enable");
+	CFSTR("Strobe, click to display");
     HMSetControlHelpContent(strobe.view, &help);
 
     // Place in the window
@@ -819,7 +823,7 @@ void GetPreferences()
 					   kCFPreferencesCurrentApplication,
 					   &found);
     if (found)
-	audio.reference = (double)value / 10.0;
+	audio.reference = (float)value / 10.0;
 }
 
 // Setup audio
@@ -957,6 +961,8 @@ OSStatus SetupAudio()
 
     AudioUnitInitialize(audio.output);
     AudioOutputUnitStart(audio.output);
+
+    return noErr;
 }
 
 // Input proc
@@ -993,11 +999,11 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     for (int i = 0; i < audio.frames / audio.divisor; i++)
     {
 
-	static double G = 3.023332184e+01;
-	static double K = 0.9338478249;
+	static float G = 3.023332184e+01;
+	static float K = 0.9338478249;
 
-	static double xv[2];
-	static double yv[2];
+	static float xv[2];
+	static float yv[2];
 
 	xv[0] = xv[1];
 	xv[1] = data[i * audio.divisor] / G;
@@ -1026,6 +1032,8 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 		     kEventPriorityHigh);
 
     ReleaseEvent(event);
+
+    return noErr;
 }
 
 // Audio event handler
@@ -1035,19 +1043,29 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 {
     // Arrays for processing input
 
-    static complex x[kSamples];
-    static double xa[kRange];
-    static double xp[kRange];
-    static double xf[kRange];
+    static float xa[kRange];
+    static float xp[kRange];
+    static float xq[kRange];
+    static float xf[kRange];
 
-    static double dxa[kRange];
-    static double dxf[kRange];
+    static float dxa[kRange];
+    static float dxp[kRange];
 
-    static double maxima[kMaxima];
-    static float values[kMaxima];
+    static float maxima[kMaxima];
 
-    static double fps;
-    static double expect;
+    static float fps;
+    static float expect;
+
+    static float window[kSamples];
+    static float input[kSamples];
+
+    static float re[kSamples2];
+    static float im[kSamples2];
+
+    static DSPSplitComplex x =
+	{re, im};
+
+    static FFTSetup setup;
 
     // Get the event kind
 
@@ -1060,7 +1078,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	// Update fps
 
     case kEventAudioRate:
-	fps = audio.sample / (double)kSamples;
+	fps = audio.sample / (float)kSamples;
 	return noErr;
 	break;
 
@@ -1070,7 +1088,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	break;
     }
 
-    // Initialise tructures
+    // Initialise structures
 
     if (scope.data == NULL)
     {
@@ -1079,81 +1097,86 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	spectrum.data = xa;
 	spectrum.length = kRange;
-	spectrum.values = values;
+	spectrum.maxima = maxima;
 
 	display.maxima = maxima;
 
-	fps = audio.sample / (double)kSamples;
-	expect = 2.0 * M_PI * (double)kStep / (double)kSamples;
+	fps = audio.sample / (float)kSamples;
+	expect = 2.0 * M_PI * (float)kStep / (float)kSamples;
+
+	// Init Hamming window
+
+	vDSP_hamm_window(window, kSamples, 0);
+
+	// Init FFT
+
+	setup = vDSP_create_fftsetup(14, kFFTRadix2);
     }
 
     // Maximum data value
 
-    static double dmax;
+    static float dmax;
 
-    if (dmax < 0.25)
-	dmax = 0.25;
+    if (dmax < 0.125)
+	dmax = 0.125;
 
     // Calculate normalising value
 
-    double norm = dmax;
-    dmax = 0.0;
+    float norm = dmax;
 
-    // Copy data to FFT input arrays
+    // Get max magitude
 
-    for (int i = 0; i < kSamples; i++)
+    vDSP_maxmgv(audio.buffer, 1, &dmax, kSamples);
+
+    // Divide by normalisation
+
+    vDSP_vsdiv(audio.buffer, 1, &norm, input, 1, kSamples);
+
+    // Multiply by window
+
+    vDSP_vmul(input, 1, window, 1, input, 1, kSamples);
+
+    // Copy input to split complex vector
+
+    vDSP_ctoz((COMPLEX *)input, 2, &x, 1, kSamples2);
+
+    // Do FFT
+
+    vDSP_fft_zrip(setup, &x, 1, 14, kFFTDirection_Forward);
+
+    // Zero the zeroth part
+
+    x.realp[0] = 0.0;
+    x.imagp[0] = 0.0;
+
+    // Scale the output
+
+    float scale = kScale;
+
+    vDSP_vsdiv(x.realp, 1, &scale, x.realp, 1, kSamples2);
+    vDSP_vsdiv(x.imagp, 1, &scale, x.imagp, 1, kSamples2);
+
+    // Magnitude
+
+    vDSP_vdist(x.realp, 1, x.imagp, 1, xa, 1, kRange);
+
+    // Phase
+
+    vDSP_zvphas(&x, 1, xq, 1, kRange);
+
+    // Phase difference
+
+    vDSP_vsub(xp, 1, xq, 1, dxp, 1, kRange);
+
+    for (int i = 1; i < kRange; i++)
     {
-	// Find the magnitude
-
-	if (dmax < fabs(audio.buffer[i]))
-	    dmax = fabs(audio.buffer[i]);
-
-	// Calculate the window
-
-	double window =
-	    0.5 - 0.5 * cos(2.0 * M_PI *
-			    i / kSamples);
-
-	// Normalise and window the input data
-
-	x[i].r = audio.buffer[i] / norm * window;
-    }
-
-    // do FFT
-
-    fftr(x, LENGTH(x));
-
-    // Process FFT output
-
-    for (int i = 1; i < LENGTH(xa); i++)
-    {
-	double real = x[i].r;
-	double imag = x[i].i;
-
-	xa[i] = sqrt((real * real) + (imag * imag));
-
-#ifdef NOISE
-
-	// Do noise cancellation
-
-	xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
-
-	if (xm[i] > xa[i])
-	    xm[i] = xa[i];
-
-	xa[i] = xa[i] - xm[i];
-
-#endif
-
 	// Do frequency calculation
 
-	double p = atan2(imag, real);
-	double dp = xp[i] - p;
-	xp[i] = p;
+	float dp = dxp[i];
 
 	// Calculate phase difference
 
-	dp -= (double)i * expect;
+	dp -= (float)i * expect;
 
 	int qpd = dp / M_PI;
 
@@ -1163,39 +1186,41 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	else
 	    qpd -= qpd & 1;
 
-	dp -=  M_PI * (double)qpd;
+	dp -=  M_PI * (float)qpd;
 
 	// Calculate frequency difference
 
-	double df = kOversample * dp / (2.0 * M_PI);
+	float df = kOversample * dp / (2.0 * M_PI);
 
 	// Calculate actual frequency from slot frequency plus
-	// frequency difference and correction value
+	// frequency difference
 
 	xf[i] = i * fps + df * fps;
 
 	// Calculate differences for finding maxima
 
 	dxa[i] = xa[i] - xa[i - 1];
-	dxf[i] = xf[i] - xf[i - 1];
     }
+
+    // Copy phase vector
+
+    memmove(xp, xq, kRange * sizeof(float));
 
     // Maximum FFT output
 
-    double max = 0.0;
-    double f = 0.0;
+    float  max;
+    UInt32 imax;
+
     int count = 0;
 	
+    vDSP_maxmgvi(xa, 1, &max, &imax, kRange);
+
+    float f = xf[imax];
+
     // Find maximum value, and list of maxima
 
-    for (int i = 1; i < LENGTH(xa) - 1; i++)
+    for (int i = 1; i < kRange - 1; i++)
     {
-	if (xa[i] > max)
-	{
-	    max = xa[i];
-	    f = xf[i];
-	}
-
 	// If display not locked, find maxima and add to list
 
 	if (!display.lock &&
@@ -1209,9 +1234,9 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     // Reference note frequency and lower and upper limits
 
-    double fr = 0.0;
-    double fx0 = 0.0;
-    double fx1 = 0.0;
+    float fr = 0.0;
+    float fx0 = 0.0;
+    float fx1 = 0.0;
 
     // Note number
 
@@ -1220,7 +1245,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     // Found flag and cents value
 
     bool found = false;
-    double c = 0.0;
+    float c = 0.0;
 
     // Do the note and cents calculations
 
@@ -1228,17 +1253,17 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     {
 	// Cents relative to reference
 
-	double cf =
-	    -12.0 * (log(audio.reference / f) / log(2.0));
+	float cf =
+	    -12.0 * log2f(audio.reference / f);
 
 	// Reference note
 
-	fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	fr = audio.reference * powf(2.0, round(cf) / 12.0);
 
 	// Lower and upper freq
 
-	fx0 = audio.reference * pow(2.0, (round(cf) - 0.5) / 12.0);
-	fx1 = audio.reference * pow(2.0, (round(cf) + 0.5) / 12.0);
+	fx0 = audio.reference * powf(2.0, (round(cf) - 0.5) / 12.0);
+	fx1 = audio.reference * powf(2.0, (round(cf) + 0.5) / 12.0);
 
 	// Note number
 
@@ -1249,20 +1274,20 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Find nearest maximum to reference note
 
-	double df = 1000.0;
+	float df = 1000.0;
 
 	for (int i = 0; i < count; i++)
 	{
 	    if (fabs(maxima[i] - fr) < df)
 	    {
-		df = fabs(maxima[i] - fr);
+		df = fabsf(maxima[i] - fr);
 		f = maxima[i];
 	    }
 	}
 
 	// Cents relative to reference note
 
-	c = -12.0 * (log(fr / f) / log(2.0));
+	c = -12.0 * log2f(fr / f);
 
 	// Ignore silly values
 
@@ -1271,7 +1296,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Ignore if not within 50 cents of reference note
 
-	if (fabs(c) < 0.5)
+	if (fabsf(c) < 0.5)
 	    found = true;
     }
 
@@ -1284,9 +1309,6 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	HIViewSetNeedsDisplay(scope.view, true);
 
 	// Update spectrum window
-
-	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i] / fps;
 
 	spectrum.count = count;
 
@@ -1429,6 +1451,8 @@ OSStatus CopyInfo(EventRef event)
     free(text);
     CFRelease(data);
     CFRelease(paste);
+
+    return noErr;
 }
 
 #endif
@@ -1698,6 +1722,8 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
     }
 
     CGContextStrokePath(context);
+
+    return noErr;
 }
 
 OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
@@ -1797,7 +1823,7 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
 	// Draw trace
 
-	for (int i = round(spectrum.x[0]); i <= round(spectrum.x[1]); i++)
+	for (int i = floorf(spectrum.x[0]); i <= ceilf(spectrum.x[1]); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
@@ -1831,10 +1857,10 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	{
 	    // Draw line for others that are in range
 
-	    if (spectrum.values[i] > spectrum.x[0] &&
-		spectrum.values[i] < spectrum.x[1])
+	    if (spectrum.maxima[i] > spectrum.x[0] &&
+		spectrum.maxima[i] < spectrum.x[1])
 	    {
-		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+		x = (spectrum.maxima[i] - spectrum.x[0]) * xscale;
 		CGContextMoveToPoint(context, x, 0);
 		CGContextAddLineToPoint(context, x, -height);
 	    }
@@ -1874,6 +1900,8 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
 	CGContextStrokePath(context);
     }
+
+    return noErr;
 }
 
 OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
@@ -1913,7 +1941,6 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
     inset = DrawEdge(context, bounds);
 
     int width = inset.size.width;
-    int height = inset.size.height;
 
     CGContextTranslateCTM(context, 2, 4);
     CGContextSetLineWidth(context, 1);
@@ -1977,21 +2004,21 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    double f = display.maxima[i];
+	    float f = display.maxima[i];
 
-	    double cf =
-		-12.0 * (log(audio.reference / f) / log(2.0));
+	    float cf =
+		-12.0 * log2f(audio.reference / f);
 
 	    // Reference freq
 
-	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    float fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
 	    int n = round(cf) + kA5Offset;
 
 	    if (n < 0)
 		n = 0;
 
-	    double c = -12.0 * (log(fr / f) / log(2.0));
+	    float c = -12.0 * log2f(fr / f);
 
 	    // Ignore silly values
 
@@ -2093,7 +2120,6 @@ OSStatus StrobeDrawEventHandler(EventHandlerCallRef next,
     static float mx = 0.0;
 
     int width = inset.size.width;
-    int height = inset.size.height;
 
     CGContextTranslateCTM(context, 2, 2);
     CGContextSetGrayFillColor(context, 0, 1);
@@ -2112,16 +2138,16 @@ OSStatus StrobeDrawEventHandler(EventHandlerCallRef next,
 	int rx = round(mx - 160.0);
 
 	for (int x = rx % 20; x < width; x += 20)
-	  CGContextFillRect(context, CGRectMake(x, 0, 10, 10));
+	    CGContextFillRect(context, CGRectMake(x, 0, 10, 10));
 
 	for (int x = rx % 40; x < width; x += 40)
-	  CGContextFillRect(context, CGRectMake(x, 10, 20, 10));
+	    CGContextFillRect(context, CGRectMake(x, 10, 20, 10));
 
 	for (int x = rx % 80; x < width; x += 80)
-	  CGContextFillRect(context, CGRectMake(x, 20, 40, 10));
+	    CGContextFillRect(context, CGRectMake(x, 20, 40, 10));
 
 	for (int x = rx % 160; x < width; x += 160)
-	  CGContextFillRect(context, CGRectMake(x, 30, 80, 10));
+	    CGContextFillRect(context, CGRectMake(x, 30, 80, 10));
     }
 
     return noErr;
@@ -2153,7 +2179,6 @@ OSStatus MeterDrawEventHandler(EventHandlerCallRef next,
     inset = DrawEdge(context, bounds);
 
     int width = inset.size.width;
-    int height = inset.size.height;
 
     CGContextTranslateCTM(context, 2, 3);
     CGContextSetLineWidth(context, 1);
@@ -2244,6 +2269,11 @@ OSStatus WindowEventHandler(EventHandlerCallRef next,
         // Window close event
 
     case kEventWindowClose:
+
+	// Close audio unit
+
+	AudioOutputUnitStop(audio.output);
+	AudioUnitUninitialize(audio.output);
 
 	// Flush preferences
 
@@ -2385,6 +2415,8 @@ OSStatus WindowZoomed(EventRef event, void *data)
 
 	view = HIViewGetNextView(view);
     }
+
+    return noErr;
 }
 
 OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
@@ -2427,43 +2459,52 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    // Zoom
 
 	case kCommandZoom:
-	    spectrum.zoom = value;
+	    spectrum.zoom = !spectrum.zoom;
+	    HIViewSetValue(check.zoom, spectrum.zoom);
 	    HIViewSetNeedsDisplay(spectrum.view, true);
 	    CFPreferencesSetAppValue(CFSTR("Zoom"),
-				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     spectrum.zoom?
+				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
 
 	    // Strobe
 
 	case kCommandStrobe:
-	    strobe.enable = value;
+	    strobe.enable = !strobe.enable;
+	    HIViewSetValue(check.strobe, strobe.enable);
+	    HIViewSetNeedsDisplay(strobe.view, true);
 	    CFPreferencesSetAppValue(CFSTR("Strobe"),
-				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     strobe.enable?
+				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
 
 	    // Filter
 
 	case kCommandFilter:
-	    audio.filter = value;
+	    audio.filter = !audio.filter;
+	    HIViewSetValue(check.filter, audio.filter);
 	    HIViewSetNeedsDisplay(scope.view, true);
 	    CFPreferencesSetAppValue(CFSTR("Filter"),
-				     value? kCFBooleanTrue: kCFBooleanFalse,
+				     audio.filter?
+				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
 
 	    // Lock
 
 	case kCommandLock:
-	    display.lock = value;
+	    display.lock = !display.lock;
+	    HIViewSetValue(check.lock, display.lock);
 	    HIViewSetNeedsDisplay(display.view, true);
 	    break;
 
 	    // Multiple
 
 	case kCommandMultiple:
-	    display.multiple = value;
+	    display.multiple = !display.multiple;
+	    HIViewSetValue(check.multiple, display.multiple);
 	    HIViewSetNeedsDisplay(display.view, true);
 	    break;
 
@@ -2480,6 +2521,11 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    // Quit
 
 	case kHICommandQuit:
+
+	    // Close audio unit
+
+	    AudioOutputUnitStop(audio.output);
+	    AudioUnitUninitialize(audio.output);
 
 	    // Flush preferences
 
@@ -2559,6 +2605,11 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 
 	case kHICommandQuit:
 
+	    // Close audio unit
+
+	    AudioOutputUnitStop(audio.output);
+	    AudioUnitUninitialize(audio.output);
+
 	    // Flush preferences
 
 	    CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication);
@@ -2596,7 +2647,6 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     HIViewRef content;
     HIViewRef button;
-    HIViewRef slider;
     HIViewRef group;
     HIViewRef text;
 
@@ -2863,6 +2913,8 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     HIViewAddSubview(group, button);
     HIViewPlaceInSuperviewAt(button, 192, 102);
+
+    return noErr;
 }
 
 // Focus event handler
@@ -2889,7 +2941,7 @@ OSStatus FocusEventHandler(EventHandlerCallRef next, EventRef event,
 
     // Get value
 
-    double value = CFStringGetDoubleValue(text);
+    float value = CFStringGetDoubleValue(text);
 
     CFRelease(text);
 
@@ -2911,11 +2963,8 @@ OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
 			   void *data)
 {
     Point location;
+    WindowRef window;
     EventMouseButton button;
-
-    GetEventParameter(event, kEventParamMouseLocation,
-		      typeQDPoint, NULL, sizeof(location),
-		      NULL, &location);
 
     GetEventParameter(event, kEventParamMouseButton,
 		      typeMouseButton, NULL, sizeof(button),
@@ -2924,12 +2973,68 @@ OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
     switch (button)
     {
     case kEventMouseButtonSecondary:
+
+	GetEventParameter(event, kEventParamMouseLocation,
+			  typeQDPoint, NULL, sizeof(location),
+			  NULL, &location);
+
 	DisplayContextMenu(event, location, data);
 	break;
+
+    case kEventMouseButtonPrimary:
+
+	GetEventParameter(event, kEventParamWindowRef,
+			  typeWindowRef, NULL, sizeof(window),
+			  NULL, &window);
+	HIViewRef view;
+	HIViewKind kind;
+
+	HIViewGetViewForMouseEvent(HIViewGetRoot(window), event, &view);
+	HIViewGetKind(view, &kind);
+
+	switch (kind.kind)
+	{
+	case kControlKindUserPane:
+	    PostCommandEvent(view);
+	    break;
+
+	default:
+	    return eventNotHandledErr;
+	}
 
     default:
 	return eventNotHandledErr;
     }
+
+    return noErr;
+}
+
+// Post command event
+
+OSStatus PostCommandEvent(HIViewRef view)
+{
+    UInt32 id;
+
+    HIViewGetCommandID(view, &id);
+
+    HICommandExtended command =
+	{kHICommandFromControl,
+	 id, {view}};
+
+    EventRef event;
+
+    CreateEvent(kCFAllocatorDefault, kEventClassCommand,
+		kEventProcessCommand, 0,
+		kEventAttributeUserEvent, &event);
+
+    SetEventParameter(event, kEventParamDirectObject,
+		      typeHICommand, sizeof(command),
+		      &command);
+
+    PostEventToQueue(GetMainEventQueue(), event,
+		     kEventPriorityStandard);
+
+    ReleaseEvent(event);
 
     return noErr;
 }
@@ -2957,10 +3062,14 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 
 	// Copy info
 #ifdef DEBUG
+
+	// Copy info
+
     case 'D':
     case 'd':
 	CopyInfo(event);
 	break;
+
 #endif
 	// Filter
 
@@ -3088,6 +3197,8 @@ OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
 
     PopUpMenuSelect(menu, location.v, location.h, 0);
     ReleaseMenu(menu);
+
+    return noErr;
 }
 
 // Copy display
@@ -3109,21 +3220,21 @@ OSStatus CopyDisplay(EventRef event)
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    double f = display.maxima[i];
+	    float f = display.maxima[i];
 
-	    double cf =
-		-12.0 * (log(audio.reference / f) / log(2.0));
+	    float cf =
+		-12.0 * log2f(audio.reference / f);
 
 	    // Reference freq
 
-	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    float fr = audio.reference * powf(2.0, roundf(cf) / 12.0);
 
 	    int n = round(cf) + kA5Offset;
 
 	    if (n < 0)
 		n = 0;
 
-	    double c = -12.0 * (log(fr / f) / log(2.0));
+	    float c = -12.0 * log2f(fr / f);
 
 	    // Ignore silly values
 
@@ -3176,6 +3287,8 @@ OSStatus CopyDisplay(EventRef event)
     free(text);
     CFRelease(data);
     CFRelease(paste);
+
+    return noErr;
 }
 
 // Reference action proc
@@ -3192,6 +3305,8 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
     GetControlData(view, 0, kControlLittleArrowsIncrementValueTag,
 		   sizeof(step), &step, nil);
 
+    // Check direction
+
     switch (part)
     {
     case kControlUpButtonPart:
@@ -3203,10 +3318,16 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
 	break;
     }
 
+    // Set the value
+
     HIViewSetValue(view, value);
 
-    audio.reference = (double)value / 10.0;
+    // Update the display
+
+    audio.reference = (float)value / 10.0;
     HIViewSetNeedsDisplay(display.view, true);
+
+    // Update the edit text
 
     CFStringRef text =
 	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
@@ -3216,6 +3337,8 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
     HIViewSetText(legend.preferences.reference, text);
     CFRelease(text);
 
+    // Update the preferences
+
     CFNumberRef index =
 	CFNumberCreate(kCFAllocatorDefault,
 		       kCFNumberCFIndexType,
@@ -3224,56 +3347,4 @@ void ReferenceActionProc(HIViewRef view, ControlPartCode part)
     CFPreferencesSetAppValue(CFSTR("Reference"), index,
 			     kCFPreferencesCurrentApplication);
     CFRelease(index);
-}
-
-// FFT
-
-void fftr(complex a[], int n)
-{
-    double norm = sqrt(1.0 / n);
-
-    for (int i = 0, j = 0; i < n; i++)
-    {
-	if (j >= i)
-	{
-	    double tr = a[j].r * norm;
-
-	    a[j].r = a[i].r * norm;
-	    a[j].i = 0.0;
-
-	    a[i].r = tr;
-	    a[i].i = 0.0;
-	}
-
-	int m = n / 2;
-	while (m >= 1 && j >= m)
-	{
-	    j -= m;
-	    m /= 2;
-	}
-	j += m;
-    }
-  
-    for (int mmax = 1, istep = 2 * mmax; mmax < n;
-	 mmax = istep, istep = 2 * mmax)
-    {
-	double delta = (M_PI / mmax);
-	for (int m = 0; m < mmax; m++)
-	{
-	    double w = m * delta;
-	    double wr = cos(w);
-	    double wi = sin(w);
-
-	    for (int i = m; i < n; i += istep)
-	    {
-		int j = i + mmax;
-		double tr = wr * a[j].r - wi * a[j].i;
-		double ti = wr * a[j].i + wi * a[j].r;
-		a[j].r = a[i].r - tr;
-		a[j].i = a[i].i - ti;
-		a[i].r += tr;
-		a[i].i += ti;
-	    }
-	}
-    }
 }
