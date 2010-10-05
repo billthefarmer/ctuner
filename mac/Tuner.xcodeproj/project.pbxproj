@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		23098D47125B8EE300C3EB2E /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23098D46125B8EE300C3EB2E /* Accelerate.framework */; };
 		23250E0211EA22A900755379 /* Tuner.c in Sources */ = {isa = PBXBuildFile; fileRef = 23250E0111EA22A900755379 /* Tuner.c */; };
 		23250E0411EA22EA00755379 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23250E0311EA22EA00755379 /* Carbon.framework */; };
 		23A73F6F124B6715002171D6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23A73F6E124B6715002171D6 /* CoreAudio.framework */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		23098D46125B8EE300C3EB2E /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		23250E0111EA22A900755379 /* Tuner.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = Tuner.c; sourceTree = "<group>"; };
 		23250E0311EA22EA00755379 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		23A73F6E124B6715002171D6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
@@ -31,6 +33,7 @@
 				23250E0411EA22EA00755379 /* Carbon.framework in Frameworks */,
 				23CC96DE124AB13500E84510 /* AudioUnit.framework in Frameworks */,
 				23A73F6F124B6715002171D6 /* CoreAudio.framework in Frameworks */,
+				23098D47125B8EE300C3EB2E /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -44,6 +47,7 @@
 				23250E0311EA22EA00755379 /* Carbon.framework */,
 				23A73F6E124B6715002171D6 /* CoreAudio.framework */,
 				23250E0111EA22A900755379 /* Tuner.c */,
+				23098D46125B8EE300C3EB2E /* Accelerate.framework */,
 				23EB88F611EA20820036F9F1 /* Products */,
 				23EB88F811EA20820036F9F1 /* Info.plist */,
 			);
@@ -119,28 +123,48 @@
 		23EB88E411EA1FB50036F9F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = i386;
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_SSE3_EXTENSIONS = YES;
-				OTHER_CFLAGS = (
-					"-ffast-math",
-					"-march=opteron",
-				);
+				GCC_MODEL_TUNING = G5;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = NO;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-ffast-math";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = Debug;
 		};
 		23EB88E511EA1FB50036F9F1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_ENABLE_SSE3_EXTENSIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = "";
-				OTHER_CFLAGS = (
-					"-ffast-math",
-					"-march=opteron",
-				);
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_PARAMETER = NO;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-ffast-math";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = Release;
 		};
