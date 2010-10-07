@@ -11,15 +11,15 @@ http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/fi
 
   * The basic layout and graphics are done.
   * The audio capture and processing system is working.
-  * Initial version released.
+  * Updated version released.
 
 == Differences ==
 
 There are a number of differences from the Windows version:
 
-  * Clicking on panes to change options doesn't work.
   * The Mac audio system calculates the actual sample rate, so correction is redundant.
   * The volume control is independent from the sound input volume control in System Preferences.
   * The strobe pane animation is jerkier, due to the type of timer available on the Mac.
   * Clicking on the window upsets the audio system momentarily.
   * Use the zoom button to resize the window.
+  * Uses the mac vDSP library for audio analysis.
