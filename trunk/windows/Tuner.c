@@ -110,9 +110,9 @@ enum
      REF_METER = 100,
      MIN_METER = 0,
 
-     MAX_CORRECTION = 110000,
+     MAX_CORRECTION = 101000,
      REF_CORRECTION = 100000,
-     MIN_CORRECTION =  90000};
+     MIN_CORRECTION =  99000};
 
 // Timer values
 
@@ -806,6 +806,9 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    // Quit
 
 	case QUIT_ID:
+	    mixerClose(mixer.hmx);
+	    waveInStop(audio.hwi);
+	    waveInClose(audio.hwi);
 	    PostQuitMessage(0);
 	    break;
 	}
@@ -836,7 +839,9 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
         // Process other messages.
 
     case WM_DESTROY:
-
+	mixerClose(mixer.hmx);
+	waveInStop(audio.hwi);
+	waveInClose(audio.hwi);
 	PostQuitMessage(0);
 	break;
 
@@ -1391,11 +1396,16 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Updown control
 
     case WM_VSCROLL:
-	if ((HWND)lParam == reference.hwnd)
+	switch ((UINT)GetMenu((HWND)lParam))
+	{
+	case REFERENCE_ID:
 	    ChangeReference(wParam, lParam);
+	    break;
 
-	if ((HWND)lParam ==correction.hwnd)
+	case CORRECTION_ID:
 	    ChangeCorrection(wParam, lParam);
+	    break;
+	}
 
 	// Set the focus back to the window
 
@@ -1557,14 +1567,15 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     {
     case BN_CLICKED:
 	audio.filter = !audio.filter;
-
-	SendMessage(filter.hwnd, BM_SETCHECK,
-		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 	break;
 
     default:
 	return FALSE;
     }
+
+    if (filter.hwnd != NULL)
+	SendMessage(filter.hwnd, BM_SETCHECK,
+		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 
     HKEY hkey;
     LONG error;
@@ -1599,16 +1610,17 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
     {
     case BN_CLICKED:
 	display.lock = !display.lock;
-
-	SendMessage(lock.hwnd, BM_SETCHECK,
-		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
-
-	InvalidateRgn(display.hwnd, NULL, TRUE);
 	break;
 
     default:
 	return FALSE;
     }
+
+    InvalidateRgn(display.hwnd, NULL, TRUE);
+
+    if (lock.hwnd != NULL)
+	SendMessage(lock.hwnd, BM_SETCHECK,
+		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
     return TRUE;
 }
@@ -1621,16 +1633,17 @@ BOOL ResizeClicked(WPARAM wParam, LPARAM lParam)
     {
     case BN_CLICKED:
 	window.zoom = !window.zoom;
-
-	SendMessage(resize.hwnd, BM_SETCHECK,
-		    window.zoom? BST_CHECKED: BST_UNCHECKED, 0);
-
-	ResizeWindow(wParam, lParam);
 	break;
 
     default:
 	return FALSE;
     }
+
+    if (resize.hwnd != NULL)
+	SendMessage(resize.hwnd, BM_SETCHECK,
+		    window.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+
+    ResizeWindow(wParam, lParam);
 
     return TRUE;
 }
@@ -1643,15 +1656,17 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
     {
     case BN_CLICKED:
 	display.multiple = !display.multiple;
-
-	SendMessage(multiple.hwnd, BM_SETCHECK,
-		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
-	InvalidateRgn(display.hwnd, NULL, TRUE);
 	break;
 
     default:
 	return FALSE;
     }
+
+    if (multiple.hwnd != NULL)
+	SendMessage(multiple.hwnd, BM_SETCHECK,
+		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
+
+    InvalidateRgn(display.hwnd, NULL, TRUE);
 
     return TRUE;
 }
@@ -1665,7 +1680,7 @@ BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case EN_KILLFOCUS:
-	SendMessage(legend.correction.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
+	GetWindowText(legend.correction.hwnd, s, sizeof(s));
 	audio.correction = atof(s);
 
 	SendMessage(correction.hwnd, UDM_SETPOS32, 0,
@@ -1673,11 +1688,11 @@ BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
 
 	sprintf(s, "Sample rate:  %6.1lf",
 		(double)SAMPLE_RATE / audio.correction);
-	SendMessage(legend.sample.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+	SetWindowText(legend.sample.hwnd, s);
 
 	sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 		(double)SAMPLE_RATE / audio.correction, audio.correction);
-	SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)s);
+	SetWindowText(status.hwnd, s);
 	break;
     }
 }
@@ -1692,15 +1707,15 @@ BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
     audio.correction = (double)value / 100000.0;
 
     sprintf(s, "%6.5lf", audio.correction);
-    SendMessage(legend.correction.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+    SetWindowText(legend.correction.hwnd, s);
 
     sprintf(s, "Sample rate:  %6.1lf",
 	    (double)SAMPLE_RATE / audio.correction);
-    SendMessage(legend.sample.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+    SetWindowText(legend.sample.hwnd, s);
 
     sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 	    (double)SAMPLE_RATE / audio.correction, audio.correction);
-    SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)s);
+    SetWindowText(status.hwnd, s);
 }
 
 // Save Correction
@@ -1929,7 +1944,11 @@ VOID CALLBACK DisplayCallback(PVOID lpParameter, BOOL TimerFired)
 {
     // Refresh strobe
 
-    InvalidateRgn(strobe.hwnd, NULL, TRUE);
+    if (strobe.enable)
+	InvalidateRgn(strobe.hwnd, NULL, TRUE);
+
+    // Update meter
+
     UpdateMeter(&meter);
 }
 
@@ -2252,21 +2271,6 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     // Move the origin back
 
     SetViewportOrgEx(hbdc, 0, 0, NULL);
-
-    // Show T if multiple
-
-    if (display.multiple)
-    {	
-	// Green pen for text
-
-	SetDCPenColor(hbdc, RGB(0, 255, 0));
-
-	MoveToEx(hbdc, 0, height - 7, NULL);
-	LineTo(hbdc, 5, height - 7);
-
-	MoveToEx(hbdc, 2, height - 7, NULL);
-	LineTo(hbdc, 2, height);
-    }
 
     // Copy the bitmap
 
@@ -2778,6 +2782,8 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
+    InvalidateRgn(strobe.hwnd, NULL, TRUE);
+
     if (enable.hwnd != NULL)
 	SendMessage(enable.hwnd, BM_SETCHECK,
 		    strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
@@ -2879,7 +2885,7 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case EN_KILLFOCUS:
-	SendMessage(legend.reference.hwnd, WM_GETTEXT, sizeof(s), (ULONG)s);
+	GetWindowText(legend.reference.hwnd, s, sizeof(s));
 	audio.reference = atof(s);
 
 	SendMessage(reference.hwnd, UDM_SETPOS32, 0,
@@ -2931,7 +2937,7 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
     audio.reference = (double)value / 10.0;
 
     sprintf(s, "%6.2lf", audio.reference);
-    SendMessage(legend.reference.hwnd, WM_SETTEXT, 0, (LPARAM)s);
+    SetWindowText(legend.reference.hwnd, s);
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
 
@@ -3164,7 +3170,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	    sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
 		    (double)SAMPLE_RATE / audio.correction, audio.correction);
-	    SendMessage(status.hwnd, SB_SETTEXT, 0, (LPARAM)s);
+	    SetWindowText(status.hwnd, s);
 	}
 
 	RegCloseKey(hkey);
@@ -3219,10 +3225,9 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     static double xf[RANGE];
 
     static double dxa[RANGE];
-    static double dxf[RANGE];
 
     static double maxima[MAXIMA];
-    static float values[MAXIMA];
+    static float  values[MAXIMA];
 
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
@@ -3286,7 +3291,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     // Copy data to FFT input arrays
 
-    for (int i = 0; i < LENGTH(buffer); i++)
+    for (int i = 0; i < SAMPLES; i++)
     {
 	// Find the magnitude
 
@@ -3306,17 +3311,19 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     // do FFT
 
-    fftr(x, LENGTH(x));
+    fftr(x, SAMPLES);
 
     // Process FFT output
 
-    for (int i = 1; i < LENGTH(xa); i++)
+    for (int i = 1; i < RANGE; i++)
     {
 	double real = x[i].r;
 	double imag = x[i].i;
 
-	xa[i] = sqrt((real * real) + (imag * imag));
+	xa[i] = hypot(real, imag);
+
 #ifdef NOISE
+
 	// Do noise cancellation
 
 	xm[i] = (xa[i] + (xm[i] * 19.0)) / 20.0;
@@ -3325,7 +3332,9 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	    xm[i] = xa[i];
 
 	xd[i] = xa[i] - xm[i];
+
 #endif
+
 	// Do frequency calculation
 
 	double p = atan2(imag, real);
@@ -3358,7 +3367,6 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Calculate differences for finding maxima
 
 	dxa[i] = xa[i] - xa[i - 1];
-	dxf[i] = xf[i] - xf[i - 1];
     }
 
     // Maximum FFT output
@@ -3369,7 +3377,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     // Find maximum value, and list of maxima
 
-    for (int i = 1; i < LENGTH(xa) - 1; i++)
+    for (int i = 1; i < RANGE - 1; i++)
     {
 	if (xa[i] > max)
 	{
@@ -3410,7 +3418,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Cents relative to reference
 
 	double cf =
-	    -12.0 * (log(audio.reference / f) / log(2.0));
+	    -12.0 * log2(audio.reference / f);
 
 	// Reference note
 
@@ -3443,7 +3451,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Cents relative to reference note
 
-	c = -12.0 * (log(fr / f) / log(2.0));
+	c = -12.0 * log2(fr / f);
 
 	// Ignore silly values
 
