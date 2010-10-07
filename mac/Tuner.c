@@ -120,7 +120,7 @@ typedef struct
     float r;
     float x[2];
     float *data;
-    float *maxima;
+    float *values;
 } Spectrum;
 
 Spectrum spectrum;
@@ -1052,6 +1052,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float dxp[kRange];
 
     static float maxima[kMaxima];
+    static float values[kMaxima];
 
     static float fps;
     static float expect;
@@ -1097,7 +1098,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	spectrum.data = xa;
 	spectrum.length = kRange;
-	spectrum.maxima = maxima;
+	spectrum.values = values;
 
 	display.maxima = maxima;
 
@@ -1310,6 +1311,9 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Update spectrum window
 
+	for (int i = 0; i < count; i++)
+	    values[i] = maxima[i] / fps;
+
 	spectrum.count = count;
 
 	if (found)
@@ -1396,6 +1400,10 @@ OSStatus CopyInfo(EventRef event)
 	strcat(text, s);
     }
 
+    // Free memory
+
+    free(range);
+
     Float64 rate;
     size = sizeof(rate);
 
@@ -1415,6 +1423,9 @@ OSStatus CopyInfo(EventRef event)
 			   &size, &rate);
 
     sprintf(s, "Actual sample rate: %6.1lf\n", rate);
+    strcat(text, s);
+
+    sprintf(s, "Audio divisor: %d\n", audio.divisor);
     strcat(text, s);
 
     UInt32 frames;
@@ -1448,6 +1459,8 @@ OSStatus CopyInfo(EventRef event)
     PasteboardPutItemFlavor(paste, (PasteboardItemID)data,
 			    kUTTypeUTF8PlainText, data,
 			    kPasteboardFlavorNoFlags);
+    // Free resources
+
     free(text);
     CFRelease(data);
     CFRelease(paste);
@@ -1857,10 +1870,10 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	{
 	    // Draw line for others that are in range
 
-	    if (spectrum.maxima[i] > spectrum.x[0] &&
-		spectrum.maxima[i] < spectrum.x[1])
+	    if (spectrum.values[i] > spectrum.x[0] &&
+		spectrum.values[i] < spectrum.x[1])
 	    {
-		x = (spectrum.maxima[i] - spectrum.x[0]) * xscale;
+		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
 		CGContextMoveToPoint(context, x, 0);
 		CGContextAddLineToPoint(context, x, -height);
 	    }
@@ -2462,8 +2475,8 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    spectrum.zoom = !spectrum.zoom;
 	    HIViewSetValue(check.zoom, spectrum.zoom);
 	    HIViewSetNeedsDisplay(spectrum.view, true);
-	    CFPreferencesSetAppValue(CFSTR("Zoom"),
-				     spectrum.zoom?
+
+	    CFPreferencesSetAppValue(CFSTR("Zoom"), spectrum.zoom?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
@@ -2474,8 +2487,8 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    strobe.enable = !strobe.enable;
 	    HIViewSetValue(check.strobe, strobe.enable);
 	    HIViewSetNeedsDisplay(strobe.view, true);
-	    CFPreferencesSetAppValue(CFSTR("Strobe"),
-				     strobe.enable?
+
+	    CFPreferencesSetAppValue(CFSTR("Strobe"), strobe.enable?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
@@ -2486,8 +2499,8 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    audio.filter = !audio.filter;
 	    HIViewSetValue(check.filter, audio.filter);
 	    HIViewSetNeedsDisplay(scope.view, true);
-	    CFPreferencesSetAppValue(CFSTR("Filter"),
-				     audio.filter?
+
+	    CFPreferencesSetAppValue(CFSTR("Filter"), audio.filter?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
@@ -2552,6 +2565,7 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    spectrum.zoom = !spectrum.zoom;
 	    HIViewSetValue(check.zoom, spectrum.zoom);
 	    HIViewSetNeedsDisplay(spectrum.view, true);
+
 	    CFPreferencesSetAppValue(CFSTR("Zoom"), spectrum.zoom?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
@@ -2574,6 +2588,7 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    audio.filter = !audio.filter;
 	    HIViewSetValue(check.filter, audio.filter);
 	    HIViewSetNeedsDisplay(scope.view, true);
+
 	    CFPreferencesSetAppValue(CFSTR("Filter"), audio.filter?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
@@ -3077,8 +3092,10 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
     case 'f':
 	audio.filter = !audio.filter;
 	HIViewSetValue(check.filter, audio.filter);
-	CFPreferencesSetAppValue(CFSTR("Filter"),
-				 audio.filter? kCFBooleanTrue: kCFBooleanFalse,
+	HIViewSetNeedsDisplay(scope.view, true);
+
+	CFPreferencesSetAppValue(CFSTR("Filter"), audio.filter?
+				 kCFBooleanTrue: kCFBooleanFalse,
 				 kCFPreferencesCurrentApplication);
 	break;
 
@@ -3105,8 +3122,9 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 	strobe.enable = !strobe.enable;
 	HIViewSetValue(check.strobe, strobe.enable);
 	HIViewSetNeedsDisplay(strobe.view, true);
-	CFPreferencesSetAppValue(CFSTR("Strobe"),
-				 strobe.enable? kCFBooleanTrue: kCFBooleanFalse,
+
+	CFPreferencesSetAppValue(CFSTR("Strobe"), strobe.enable?
+				 kCFBooleanTrue: kCFBooleanFalse,
 				 kCFPreferencesCurrentApplication);
 	break;
 
@@ -3124,10 +3142,11 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
     case 'Z':
     case 'z':
 	spectrum.zoom = !spectrum.zoom;
-	HIViewSetValue(check.strobe, spectrum.zoom);
+	HIViewSetValue(check.zoom, spectrum.zoom);
 	HIViewSetNeedsDisplay(spectrum.view, true);
-	CFPreferencesSetAppValue(CFSTR("Zoom"),
-				 spectrum.zoom? kCFBooleanTrue: kCFBooleanFalse,
+
+	CFPreferencesSetAppValue(CFSTR("Zoom"), spectrum.zoom?
+				 kCFBooleanTrue: kCFBooleanFalse,
 				 kCFPreferencesCurrentApplication);
 	break;
 
