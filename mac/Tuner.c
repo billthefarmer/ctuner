@@ -226,7 +226,7 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
 
-OSStatus DisplayContextMenu(EventRef, Point, void *);
+OSStatus DisplayPopupMenu(EventRef, HIPoint, void *);
 OSStatus DisplayPreferences(EventRef, void *);
 OSStatus PostCommandEvent(HIViewRef);
 OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
@@ -2849,9 +2849,14 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     // Create edit control
 
-    CreateEditUnicodeTextControl(window, &bounds,
-				 CFSTR("440.00"),
+    CFStringRef string =
+	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+				 CFSTR("%5.2lf"), audio.reference);
+
+    CreateEditUnicodeTextControl(window, &bounds, string,
 				 false, NULL, &legend.preferences.reference);
+    CFRelease(string);
+
     // Focus event type spec
 
     EventTypeSpec focusEvents[] =
@@ -2893,7 +2898,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     bounds.right  = 13;
 
     CreateLittleArrowsControl(window, &bounds,
-			      kReferenceValue, kReferenceMin,
+			      audio.reference * 10, kReferenceMin,
 			      kReferenceMax, kReferenceStep,
 			      &arrow.reference);
     //Set action proc
@@ -2977,7 +2982,7 @@ OSStatus FocusEventHandler(EventHandlerCallRef next, EventRef event,
 OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
 			   void *data)
 {
-    Point location;
+    HIPoint location;
     WindowRef window;
     EventMouseButton button;
 
@@ -2990,10 +2995,10 @@ OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
     case kEventMouseButtonSecondary:
 
 	GetEventParameter(event, kEventParamMouseLocation,
-			  typeQDPoint, NULL, sizeof(location),
+			  typeHIPoint, NULL, sizeof(location),
 			  NULL, &location);
 
-	DisplayContextMenu(event, location, data);
+	DisplayPopupMenu(event, location, data);
 	break;
 
     case kEventMouseButtonPrimary:
@@ -3159,7 +3164,7 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 
 // Display context menu
 
-OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
+OSStatus DisplayPopupMenu(EventRef event, HIPoint location, void *data)
 {
     MenuRef menu;
     MenuItemIndex item;
@@ -3214,7 +3219,7 @@ OSStatus DisplayContextMenu(EventRef event, Point location, void *data)
     AppendMenuItemTextWithCFString(menu, CFSTR("Quit"),
                                    0, kHICommandQuit, &item);
 
-    PopUpMenuSelect(menu, location.v, location.h, 0);
+    PopUpMenuSelect(menu, location.y, location.x, 0);
     ReleaseMenu(menu);
 
     return noErr;
