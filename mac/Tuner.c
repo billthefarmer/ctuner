@@ -50,6 +50,7 @@ enum
 enum
     {kOversample = 16,
      kSamples = 16384,
+     kLog2Samples = 14,
      kSamples2 = kSamples / 2,
      kMaxima = 8,
      kFrames = 512,
@@ -222,6 +223,7 @@ OSStatus MouseEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
 OSStatus SetupAudio(void);
+OSStatus DisplayAlert(CFStringRef, CFStringRef);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
@@ -240,7 +242,6 @@ void TimerProc(EventLoopTimerRef, void *);
 void ReferenceActionProc(HIViewRef, ControlPartCode);
 
 void GetPreferences(void);
-void fftr(complex[], int);
 
 // Function main
 
@@ -830,7 +831,8 @@ void GetPreferences()
 
 OSStatus SetupAudio()
 {
-    Component cp;
+    // Specify an output unit
+
     ComponentDescription dc =
 	{kAudioUnitType_Output,
 	 kAudioUnitSubType_HALOutput,
@@ -839,11 +841,26 @@ OSStatus SetupAudio()
 
     // Find an output unit
 
-    cp = FindNextComponent(NULL, &dc);
+    Component cp
+	= FindNextComponent(NULL, &dc);
+
+    if (cp == NULL)
+    {
+	DisplayAlert(CFSTR("FindNextComponent"), 
+		     CFSTR("Can't find an output audio unit"));
+	return -1;
+    }
 
     // Open it
 
-    OpenAComponent(cp, &audio.output);
+    OSStatus status = OpenAComponent(cp, &audio.output);
+
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("OpenAComponent"), 
+		     CFSTR("Can't open an output audio unit"));
+	return status;
+    }
 
     UInt32 enable;
     UInt32 size;
@@ -851,39 +868,76 @@ OSStatus SetupAudio()
     // Enable input
 
     enable = true;
-    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_EnableIO,
-			 kAudioUnitScope_Input,
-			 1, &enable, sizeof(enable));
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioOutputUnitProperty_EnableIO,
+				  kAudioUnitScope_Input,
+				  1, &enable, sizeof(enable));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set an output audio unit property"));
+	return status;
+    }
 
     // Disable output
 
     enable = false;
-    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_EnableIO,
-			 kAudioUnitScope_Output,
-			 0, &enable, sizeof(enable));
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioOutputUnitProperty_EnableIO,
+				  kAudioUnitScope_Output,
+				  0, &enable, sizeof(enable));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		  CFSTR("Can't set an output audio unit property"));
+	return status;
+    }
 
     AudioDeviceID id;
     size = sizeof(id);
 
     // Get the default input device
 
-    AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
-			     &size, &id);
+    status = AudioHardwareGetProperty(kAudioHardwarePropertyDefaultInputDevice,
+				      &size, &id);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioHardwareGetProperty"), 
+		     CFSTR("Can't get the default input device"));
+	return status;
+    }
+
+    // Set the audio unit device
+
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioOutputUnitProperty_CurrentDevice, 
+				  kAudioUnitScope_Global, 0, &id, sizeof(id));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set output audio unit current device"));
+	return status;
+    }
 
     Float64 rate = kSampleRate;
     size = sizeof(rate);
 
-    // Set the sample rate
+    // Set the sample rate, will probably fail
 
-    AudioDeviceSetProperty(id, NULL, 0, true,
-			   kAudioDevicePropertyNominalSampleRate,
-			   sizeof(rate), &rate);
-
+    status = AudioDeviceSetProperty(id, NULL, 0, true,
+				    kAudioDevicePropertyNominalSampleRate,
+				    sizeof(rate), &rate);
     // Get the sample rate
 
-    AudioDeviceGetProperty(id, 0, true,
-			   kAudioDevicePropertyNominalSampleRate,
-			   &size, &rate);
+    status = AudioDeviceGetProperty(id, 0, true,
+				    kAudioDevicePropertyNominalSampleRate,
+				    &size, &rate);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioDeviceGetProperty"), 
+		     CFSTR("Can't get audio device nominal sample rate"));
+	return status;
+    }
 
     // Set the divisor
 
@@ -911,30 +965,64 @@ OSStatus SetupAudio()
 
     audio.sample = rate / audio.divisor;
 
-    // Get the frames
-
-    UInt32 frames;
+    UInt32 frames = kStep * audio.divisor;
     size = sizeof(frames);
 
-    AudioUnitGetProperty(audio.output,
-			 kAudioUnitProperty_MaximumFramesPerSlice,
-			 kAudioUnitScope_Global, 0, &frames, &size);
+    // Set the max frames
+
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioUnitProperty_MaximumFramesPerSlice,
+				  kAudioUnitScope_Global, 0,
+				  &frames, sizeof(frames));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set output audio unit maximum frames"));
+	return status;
+    }
+
+    // Set the buffer size
+
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioDevicePropertyBufferFrameSize,
+				  kAudioUnitScope_Global, 0,
+				  &frames, sizeof(frames));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set output audio unit buffer size"));
+	return status;
+    }
+
+    // Get the frames
+
+    status = AudioUnitGetProperty(audio.output,
+				  kAudioUnitProperty_MaximumFramesPerSlice,
+				  kAudioUnitScope_Global, 0, &frames, &size);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
+		     CFSTR("Can't get output audio unit maximum frames"));
+	return status;
+    }
 
     audio.frames = frames;
-
-    // Set the audio unit device
-
-    AudioUnitSetProperty(audio.output, kAudioOutputUnitProperty_CurrentDevice, 
-                         kAudioUnitScope_Global, 0, &id, sizeof(id));
 
     AudioStreamBasicDescription format;
     size = sizeof(format);
 
     // Get stream format
 
-    AudioUnitGetProperty(audio.output, kAudioUnitProperty_StreamFormat,
-			 kAudioUnitScope_Input, 1,
-			 &format, &size);
+    status = AudioUnitGetProperty(audio.output,
+				  kAudioUnitProperty_StreamFormat,
+				  kAudioUnitScope_Input, 1,
+				  &format, &size);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
+		     CFSTR("Can't get output audio unit stream format"));
+	return status;
+    }
 
     format.mSampleRate = rate;
     format.mBytesPerPacket = kBytesPerPacket;
@@ -943,24 +1031,65 @@ OSStatus SetupAudio()
 
     // Set stream format
 
-    AudioUnitSetProperty(audio.output, kAudioUnitProperty_StreamFormat,
-			 kAudioUnitScope_Output, 1, &format,
-			 sizeof(format));
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioUnitProperty_StreamFormat,
+				  kAudioUnitScope_Output, 1,
+				  &format, sizeof(format));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set output audio unit stream format"));
+	return status;
+    }
 
     AURenderCallbackStruct input =
 	{InputProc, &audio.output};
 
     // Set callback
 
-    AudioUnitSetProperty(audio.output,
-			 kAudioOutputUnitProperty_SetInputCallback,
-			 kAudioUnitScope_Global, 0, &input,
-			 sizeof(input));
+    status = AudioUnitSetProperty(audio.output,
+				  kAudioOutputUnitProperty_SetInputCallback,
+				  kAudioUnitScope_Global, 0,
+				  &input, sizeof(input));
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+		     CFSTR("Can't set output audio unit input callback"));
+	return status;
+    }
 
     // Start the audio unit
 
-    AudioUnitInitialize(audio.output);
+    status = AudioUnitInitialize(audio.output);
+
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioUnitInitialize"), 
+		     CFSTR("Can't initialise output audio unit"));
+	return status;
+    }
+
     AudioOutputUnitStart(audio.output);
+
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioOutputUnitStart"), 
+		     CFSTR("Can't start output audio unit"));
+	return status;
+    }
+
+    return status;
+}
+
+// Show alert
+
+OSStatus DisplayAlert(CFStringRef error, CFStringRef explanation)
+{
+    DialogRef dialog;
+
+    CreateStandardAlert(kAlertStopAlert, error, explanation, NULL, &dialog);
+    SetWindowTitleWithCFString(GetDialogWindow(dialog), CFSTR("Tuner"));
+    RunStandardAlert(dialog, NULL, NULL);
 
     return noErr;
 }
@@ -971,7 +1100,6 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 		   const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
 		   UInt32 inNumberFrames, AudioBufferList *ioData)
 {
-    static long iterations;
     static AudioBufferList abl =
 	{1, {1, 0, NULL}};
 
@@ -989,36 +1117,32 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     // Copy the input data
 
-    memmove(buffer, buffer + audio.frames / audio.divisor,
+    memmove(buffer, buffer + (audio.frames / audio.divisor),
 	    (kSamples - (audio.frames / audio.divisor)) * sizeof(float));
 
     Float32 *data = abl.mBuffers[0].mData;
 
     // Butterworth filter, 3dB/octave
 
-    for (int i = 0; i < audio.frames / audio.divisor; i++)
+    for (int i = 0; i < (audio.frames / audio.divisor); i++)
     {
+    	static float G = 3.023332184e+01;
+    	static float K = 0.9338478249;
 
-	static float G = 3.023332184e+01;
-	static float K = 0.9338478249;
+    	static float xv[2];
+    	static float yv[2];
 
-	static float xv[2];
-	static float yv[2];
+    	xv[0] = xv[1];
+    	xv[1] = data[i * audio.divisor] / G;
 
-	xv[0] = xv[1];
-	xv[1] = data[i * audio.divisor] / G;
+    	yv[0] = yv[1];
+    	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
 
-	yv[0] = yv[1];
-	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
+    	// Choose filtered/unfiltered data
 
-	// Choose filtered/unfiltered data
-
-	buffer[kSamples - (audio.frames / audio.divisor) + i] =
-	    audio.filter? yv[1]: data[i * audio.divisor];
+    	buffer[kSamples - (audio.frames / audio.divisor) + i] =
+    	    audio.filter? yv[1]: data[i * audio.divisor];
     }
-
-    if ((iterations++ % (audio.divisor * 2)) != 0)
-	return status;
 
     // Create an event to post to the main event queue
 
@@ -1054,9 +1178,6 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float maxima[kMaxima];
     static float values[kMaxima];
 
-    static float fps;
-    static float expect;
-
     static float window[kSamples];
     static float input[kSamples];
 
@@ -1067,6 +1188,9 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	{re, im};
 
     static FFTSetup setup;
+
+    static float fps;
+    static float expect;
 
     // Get the event kind
 
@@ -1093,8 +1217,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     if (scope.data == NULL)
     {
-	scope.data = audio.buffer + kSamples - audio.frames;
-	scope.length = audio.frames;
+	scope.data = audio.buffer + kSamples - (audio.frames / audio.divisor);
+	scope.length = audio.frames / audio.divisor;
 
 	spectrum.data = xa;
 	spectrum.length = kRange;
@@ -1111,7 +1235,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Init FFT
 
-	setup = vDSP_create_fftsetup(14, kFFTRadix2);
+	setup = vDSP_create_fftsetup(kLog2Samples, kFFTRadix2);
     }
 
     // Maximum data value
@@ -1143,7 +1267,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     // Do FFT
 
-    vDSP_fft_zrip(setup, &x, 1, 14, kFFTDirection_Forward);
+    vDSP_fft_zrip(setup, &x, 1, kLog2Samples, kFFTDirection_Forward);
 
     // Zero the zeroth part
 
@@ -1428,6 +1552,37 @@ OSStatus CopyInfo(EventRef event)
     sprintf(s, "Audio divisor: %d\n", audio.divisor);
     strcat(text, s);
 
+    // Get frame sizes size
+
+    AudioDeviceGetPropertyInfo(id, 0, true,
+			       kAudioDevicePropertyBufferFrameSizeRange,
+			       &size, NULL);
+    // Allocate memory
+
+    range = malloc(size);
+
+    // Get the frame sizes
+
+    AudioDeviceGetProperty(id, 0, true,
+			   kAudioDevicePropertyBufferFrameSizeRange,
+			   &size, range);
+   
+    strcat(text, "Frame sizes:\n");
+
+    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
+    {
+	sprintf(s, "%d: %6.1lf - %6.1lf\n", i,
+		range[i].mMinimum, range[i].mMaximum);
+
+	strcat(text, s);
+    }
+
+    // Free memory
+
+    free(range);
+
+    // Frames
+
     UInt32 frames;
     size = sizeof(frames);
 
@@ -1437,6 +1592,8 @@ OSStatus CopyInfo(EventRef event)
 
     sprintf(s, "Maximum frames: %ld\n", frames);
     strcat(text, s);
+
+    // Volume
 
     Float32 volume;
 
