@@ -7,15 +7,18 @@
 GCC	= gcc
 WINDRES = windres
 
-all:	Tuner.exe
+all:	Tuner.exe SigGen.exe
 
 Tuner.exe:	Tuner.c Tuner.o
+
+SigGen.exe:	SigGen.c SigGen.o
 
 clean:
 	rm *.exe
 
 %.exe:	%.c
-	$(GCC) -o $* $< $*.o -march=opteron -std=gnu99 -mwindows -lcomctl32 -lwinmm
+	$(GCC) -o $@ $^ -O2 -march=opteron -ffast-math -std=gnu99 \
+		-mwindows -lcomctl32 -lwinmm
 
 %.o:	%.rc
 	$(WINDRES) -o $@ $<
