@@ -1,0 +1,237 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		23D0515D1282D3A900945C0B /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23D051341282D1E400945C0B /* AudioUnit.framework */; };
+		23D0515E1282D3AA00945C0B /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23D051371282D1FC00945C0B /* Carbon.framework */; };
+		23D0515F1282D3AC00945C0B /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23D0513B1282D21100945C0B /* CoreAudio.framework */; };
+		23D051601282D3B100945C0B /* SigGen.c in Sources */ = {isa = PBXBuildFile; fileRef = 23D0513E1282D29900945C0B /* SigGen.c */; };
+		23D051691282D42000945C0B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23D051591282D38400945C0B /* Info.plist */; };
+		23D20E711284A612000F9D98 /* SigGen.icns in Resources */ = {isa = PBXBuildFile; fileRef = 23D20E701284A612000F9D98 /* SigGen.icns */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		23D051341282D1E400945C0B /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = /System/Library/Frameworks/AudioUnit.framework; sourceTree = "<absolute>"; };
+		23D051371282D1FC00945C0B /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
+		23D0513B1282D21100945C0B /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
+		23D0513E1282D29900945C0B /* SigGen.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = SigGen.c; sourceTree = "<group>"; };
+		23D051561282D38400945C0B /* SigGen.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SigGen.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		23D051591282D38400945C0B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Info.plist; sourceTree = "<group>"; };
+		23D20E701284A612000F9D98 /* SigGen.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = SigGen.icns; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		23D051541282D38400945C0B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23D0515D1282D3A900945C0B /* AudioUnit.framework in Frameworks */,
+				23D0515E1282D3AA00945C0B /* Carbon.framework in Frameworks */,
+				23D0515F1282D3AC00945C0B /* CoreAudio.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		23D051251282D11500945C0B = {
+			isa = PBXGroup;
+			children = (
+				23D20E701284A612000F9D98 /* SigGen.icns */,
+				23D0513E1282D29900945C0B /* SigGen.c */,
+				23D0513B1282D21100945C0B /* CoreAudio.framework */,
+				23D051371282D1FC00945C0B /* Carbon.framework */,
+				23D051341282D1E400945C0B /* AudioUnit.framework */,
+				23D051571282D38400945C0B /* Products */,
+				23D051591282D38400945C0B /* Info.plist */,
+			);
+			sourceTree = "<group>";
+		};
+		23D051571282D38400945C0B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				23D051561282D38400945C0B /* SigGen.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		23D051551282D38400945C0B /* SigGen */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23D0515A1282D38500945C0B /* Build configuration list for PBXNativeTarget "SigGen" */;
+			buildPhases = (
+				23D051521282D38400945C0B /* Resources */,
+				23D051531282D38400945C0B /* Sources */,
+				23D051541282D38400945C0B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SigGen;
+			productName = SigGen;
+			productReference = 23D051561282D38400945C0B /* SigGen.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		23D051271282D11500945C0B /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 23D051281282D11500945C0B /* Build configuration list for PBXProject "SigGen" */;
+			hasScannedForEncodings = 0;
+			mainGroup = 23D051251282D11500945C0B;
+			productRefGroup = 23D051571282D38400945C0B /* Products */;
+			projectDirPath = "";
+			targets = (
+				23D051551282D38400945C0B /* SigGen */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		23D051521282D38400945C0B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23D051691282D42000945C0B /* Info.plist in Resources */,
+				23D20E711284A612000F9D98 /* SigGen.icns in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		23D051531282D38400945C0B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				23D051601282D3B100945C0B /* SigGen.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		23D051291282D11500945C0B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = i386;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_LABEL = YES;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Debug;
+		};
+		23D0512A1282D11500945C0B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
+				GCC_WARN_MISSING_PARENTHESES = YES;
+				GCC_WARN_UNUSED_VALUE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-ffast-math";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Release;
+		};
+		23D0515B1282D38500945C0B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_ENABLE_SSE3_EXTENSIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = SigGen;
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		23D0515C1282D38500945C0B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = SigGen;
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		23D051281282D11500945C0B /* Build configuration list for PBXProject "SigGen" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23D051291282D11500945C0B /* Debug */,
+				23D0512A1282D11500945C0B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		23D0515A1282D38500945C0B /* Build configuration list for PBXNativeTarget "SigGen" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23D0515B1282D38500945C0B /* Debug */,
+				23D0515C1282D38500945C0B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 23D051271282D11500945C0B /* Project object */;
+}

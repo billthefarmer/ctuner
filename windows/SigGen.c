@@ -216,7 +216,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // Create the main window.
 
     window.hwnd =
-	CreateWindow(WCLASS, "Signal Generator",
+	CreateWindow(WCLASS, "Audio Signal Generator",
 		     WS_OVERLAPPED | WS_MINIMIZEBOX |
 		     WS_SYSMENU,
 		     CW_USEDEFAULT, CW_USEDEFAULT,
@@ -766,7 +766,6 @@ BOOL DrawScale(HDC hdc, RECT rect, UINT state)
 	}
     }
 
-
     int a[] = {1, 2, 3, 4, 5, 6, 7, 8};
     for (int i = 0; i < LENGTH(a); i++)
     {
@@ -840,9 +839,6 @@ BOOL DrawDisplay(HDC hdc, RECT rect, UINT state)
 
     // Calculate dimensions
 
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-
     int x = rect.left + 8;
     int y = rect.top + 4;
 
@@ -888,8 +884,6 @@ void CharPressed(WPARAM wParam, LPARAM lParam)
     default:
 	return;
     }
-
-    InvalidateRgn(scale.hwnd, NULL, TRUE);
 }
 
 // Key pressed
