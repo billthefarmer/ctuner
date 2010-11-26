@@ -477,7 +477,8 @@ int main(int argc, char *argv[])
 
     // Create meter pane
 
-    CreateUserPaneControl(window, &bounds, 0, &meter.view);
+    CreateUserPaneControl(window, &bounds,
+			  kHIViewFeatureAllowsSubviews, &meter.view);
 
     // Set help tag
 
@@ -514,8 +515,8 @@ int main(int argc, char *argv[])
 
     // Place in the window
 
-    HIViewAddSubview(content, meter.slider);
-    HIViewPlaceInSuperviewAt(meter.slider, 28, 290);
+    HIViewAddSubview(meter.view, meter.slider);
+    HIViewPlaceInSuperviewAt(meter.slider, 8, 28);
 
     // Bounds of preferences button
 
@@ -732,7 +733,6 @@ int main(int argc, char *argv[])
     InstallApplicationEventHandler(NewEventHandlerUPP(AudioEventHandler),
                                    LENGTH(audioEvents), audioEvents,
                                    window, NULL);
-
     // Draw events type spec
 
     EventTypeSpec drawEvents[] =
@@ -770,7 +770,6 @@ int main(int argc, char *argv[])
     InstallEventLoopTimer(GetMainEventLoop(), kTimerDelay, kTimerDelay,
 			  NewEventLoopTimerUPP(TimerProc),
 			  NULL, &display.timer);
-			  
     // Set up audio
 
     SetupAudio();
@@ -1081,7 +1080,7 @@ OSStatus SetupAudio()
     return status;
 }
 
-// Show alert
+// Display alert
 
 OSStatus DisplayAlert(CFStringRef error, CFStringRef explanation)
 {
@@ -2470,10 +2469,6 @@ OSStatus WindowZoomed(EventRef event, void *data)
     WindowRef window;
     HIViewRef content;
 
-    // Font style
-
-    ControlFontStyleRec style;
-
     // Change the zoom value
 
     display.zoom = !display.zoom;
@@ -2490,6 +2485,16 @@ OSStatus WindowZoomed(EventRef event, void *data)
                    kHIViewWindowContentID,
                    &content);
 
+    // Control size
+
+    ControlSize size;
+
+    if (display.zoom)
+	size = kControlSizeNormal;
+
+    else
+	size = kControlSizeSmall;
+
     // Iterate through the views
 
     HIViewRef view = HIViewGetFirstSubview(content);
@@ -2498,7 +2503,6 @@ OSStatus WindowZoomed(EventRef event, void *data)
     {
 	HIRect bounds;
 	HIViewKind kind;
-	ControlSize size;
 
 	// Get the bounds
 
@@ -2511,17 +2515,11 @@ OSStatus WindowZoomed(EventRef event, void *data)
 	// Move the view
 
 	if (display.zoom)
-	{
 	    HIViewMoveBy(view, bounds.origin.x, bounds.origin.y);
-	    size = kControlSizeNormal;
-	}
 
 	else
-	{
 	    HIViewMoveBy(view, -bounds.origin.x / 2,
 			 -bounds.origin.y / 2);
-	    size = kControlSizeSmall;
-	}
 
 	switch (kind.kind)
 	{
@@ -2550,29 +2548,44 @@ OSStatus WindowZoomed(EventRef event, void *data)
 
 	    HIViewGetKind(subview, &kind);
 
-	    // Get the style
-
-	    GetControlData(subview, kControlEntireControl, kControlFontStyleTag,
-			   sizeof(style), &style, NULL);
-
 	    // Move the view
 
 	    if (display.zoom)
-	    {
 		HIViewMoveBy(subview, bounds.origin.x, bounds.origin.y);
-		style.font = kControlFontBigSystemFont;
-	    }
 
 	    else
-	    {
 		HIViewMoveBy(subview, -bounds.origin.x / 2,
 			     -bounds.origin.y / 2);
-		style.font = kControlFontSmallSystemFont;
-	    }
+
+	    // Font style
+
+	    ControlFontStyleRec style;
 
 	    switch (kind.kind)
 	    {
+	    case kControlKindSlider:
+
+		// Set control size
+
+		SetControlData(subview, kControlEntireControl, kControlSizeTag,
+			       sizeof(size), &size);
+		HIViewGetOptimalBounds(subview, &bounds, NULL);
+		HIViewSetFrame(subview, &bounds);
+		break;
+
 	    case kControlKindStaticText:
+
+		// Get the style
+
+		GetControlData(subview, kControlEntireControl,
+			       kControlFontStyleTag,
+			       sizeof(style), &style, NULL);
+
+		if (display.zoom)
+		    style.font = kControlFontBigSystemFont;
+
+		else
+		    style.font = kControlFontSmallSystemFont;
 
 		// Set control font size
 

@@ -2040,13 +2040,13 @@ BOOL DrawScope(HDC hdc, RECT rect)
     for (int i = 1; i < width; i++)
     {
 	dx = scope.data[i] - scope.data[i - 1];
-	if (maxdx > dx)
+	if (maxdx < dx)
 	{
 	    maxdx = dx;
 	    n = i;
 	}
 
-	if (maxdx < 0 && dx > 0)
+	if (maxdx > 0 && dx < 0)
 	    break;
     }
 
@@ -2075,7 +2075,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	if (max < abs(scope.data[n + i]))
 	    max = abs(scope.data[n + i]);
 
-	int y = scope.data[n + i] / yscale;
+	int y = -scope.data[n + i] / yscale;
 	LineTo(hbdc, i, y);
     }
 
