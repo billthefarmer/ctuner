@@ -1881,7 +1881,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 	    double f = display.maxima[i];
 
 	    double cf =
-		-12.0 * (log(audio.reference / f) / log(2.0));
+		-12.0 * log2(audio.reference / f);
 
 	    // Reference freq
 
@@ -1892,7 +1892,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 	    if (n < 0)
 		n = 0;
 
-	    double c = -12.0 * (log(fr / f) / log(2.0));
+	    double c = -12.0 * log2(fr / f);
 
 	    // Ignore silly values
 
@@ -2110,7 +2110,34 @@ BOOL DrawScope(HDC hdc, RECT rect)
 BOOL DrawSpectrum(HDC hdc, RECT rect)
 {
     static HBITMAP bitmap;
+    static HFONT font;
     static HDC hbdc;
+
+    enum
+    {FONT_HEIGHT   = 10};
+
+    // Bold font
+
+    static LOGFONT lf =
+	{0, 0, 0, 0,
+	 FW_BOLD,
+	 FALSE, FALSE, FALSE,
+	 DEFAULT_CHARSET,
+	 OUT_DEFAULT_PRECIS,
+	 CLIP_DEFAULT_PRECIS,
+	 DEFAULT_QUALITY,
+	 DEFAULT_PITCH | FF_DONTCARE,
+	 ""};
+
+    static char s[16];
+
+    // Create fonts
+
+    if (font == NULL)
+    {
+	lf.lfHeight = FONT_HEIGHT;
+	font = CreateFontIndirect(&lf);
+    }
 
     // Draw nice etched edge
 
@@ -2129,6 +2156,12 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	bitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(hbdc, bitmap);
 	SelectObject(hbdc, GetStockObject(DC_PEN));
+
+	// Select font
+
+	SelectObject(hbdc, font);
+	SetTextAlign(hbdc, TA_CENTER | TA_BOTTOM);
+	SetBkMode(hbdc, TRANSPARENT);
     }
 
     // Erase background
@@ -2167,13 +2200,13 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	return TRUE;
     }
 
-    // Green pen for spectrum trace
-
-    SetDCPenColor(hbdc, RGB(0, 255, 0));
-
     // Move the origin
 
     SetViewportOrgEx(hbdc, 0, height - 1, NULL);
+
+    // Green pen for spectrum trace
+
+    SetDCPenColor(hbdc, RGB(0, 255, 0));
 
     static float max;
 
@@ -2217,6 +2250,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	// Yellow pen for frequency trace
 
 	SetDCPenColor(hbdc, RGB(255, 255, 0));
+	SetTextColor(hbdc, RGB(255, 255, 0));
 
 	// Draw line for nearest frequency
 
@@ -2234,6 +2268,22 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 		x = round((spectrum.values[i] - spectrum.x[0]) * xscale);
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
+
+		double f = display.maxima[i];
+		double cf = -12.0 * log2(audio.reference / f);
+
+		// Reference freq
+
+		double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+		double c = -12.0 * log2(fr / f);
+
+		// Ignore silly values
+
+		if (!isfinite(c))
+		    continue;
+
+		sprintf(s, "%+0.0f", c * 100.0);
+		TextOut(hbdc, x, 0, s, strlen(s));
 	    }
 	}
     }
@@ -2401,9 +2451,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	for (int i = 0; i < display.count; i++)
 	{
 	    double f = display.maxima[i];
-
-	    double cf =
-		-12.0 * (log(audio.reference / f) / log(2.0));
+	    double cf = -12.0 * log2(audio.reference / f);
 
 	    // Reference freq
 
@@ -2414,7 +2462,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	    if (n < 0)
 		n = 0;
 
-	    double c = -12.0 * (log(fr / f) / log(2.0));
+	    double c = -12.0 * log2(fr / f);
 
 	    // Ignore silly values
 
