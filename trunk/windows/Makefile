@@ -7,11 +7,9 @@
 GCC	= gcc
 WINDRES = windres
 
-all:	Tuner.exe SigGen.exe
+all:	Tuner.exe
 
 Tuner.exe:	Tuner.c Tuner.o
-
-SigGen.exe:	SigGen.c SigGen.o
 
 clean:
 	rm *.exe
