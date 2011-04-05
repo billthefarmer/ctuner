@@ -23,3 +23,7 @@ There are a number of differences from the Windows version:
   * Clicking on the window upsets the audio system momentarily.
   * Use the zoom button to resize the window.
   * Uses the mac vDSP library for audio analysis.
+
+== Downloads ==
+
+<wiki:gadget url="http://google-code-project-hosting-gadgets.googlecode.com/svn/build/prod/downloads/gcDownloads.xml" up_projectName="ctuner" border="0"/>
