@@ -100,6 +100,15 @@ enum
     {kEventAudioUpdate = 'Updt',
      kEventAudioRate   = 'Rate'};
 
+// Structs
+
+typedef struct
+{
+    float f;
+    float fr;
+    int n;
+} maximum;
+
 // Global data
 
 typedef struct
@@ -130,7 +139,7 @@ typedef struct
 {
     HIViewRef view;
     EventLoopTimerRef timer;
-    float *maxima;
+    maximum *maxima;
     float f;
     float fr;
     float c;
@@ -236,6 +245,8 @@ OSStatus WindowZoomed(EventRef, void *);
 OSStatus CopyDisplay(EventRef);
 OSStatus CopyInfo(EventRef);
 
+OSStatus StrokeRoundRect(CGContextRef, CGRect, float);
+OSStatus CentreTextAtPoint(CGContextRef, float, float, const char *, size_t);
 HIRect DrawEdge(CGContextRef, HIRect);
 
 void TimerProc(EventLoopTimerRef, void *);
@@ -1174,8 +1185,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float dxa[kRange];
     static float dxp[kRange];
 
-    static float maxima[kMaxima];
-    static float values[kMaxima];
+    static maximum maxima[kMaxima];
+    static float   values[kMaxima];
 
     static float window[kSamples];
     static float input[kSamples];
@@ -1350,7 +1361,24 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	if (!display.lock &&
 	    xa[i] > kMin && xa[i] > (max / 2) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
-	    maxima[count++] = xf[i];
+	{
+	    maxima[count].f = xf[i];
+
+	    // Cents relative to reference
+
+	    float cf =
+	    	-12.0 * log2f(audio.reference / xf[i]);
+
+	    // Reference note
+
+	    maxima[count].fr = audio.reference * powf(2.0, round(cf) / 12.0);
+
+	    // Note number
+
+	    maxima[count].n = round(cf) + kA5Offset;
+
+	    count++;
+	}
 
 	if (count == LENGTH(maxima))
 	    break;
@@ -1375,6 +1403,10 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     if (max > kMin)
     {
+	// Frequency
+
+	f = maxima[0].f;
+
 	// Cents relative to reference
 
 	float cf =
@@ -1386,8 +1418,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Lower and upper freq
 
-	fx0 = audio.reference * powf(2.0, (round(cf) - 0.5) / 12.0);
-	fx1 = audio.reference * powf(2.0, (round(cf) + 0.5) / 12.0);
+	fx0 = audio.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
+	fx1 = audio.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 
@@ -1402,10 +1434,10 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	for (int i = 0; i < count; i++)
 	{
-	    if (fabs(maxima[i] - fr) < df)
+	    if (fabs(maxima[i].f - fr) < df)
 	    {
-		df = fabsf(maxima[i] - fr);
-		f = maxima[i];
+		df = fabsf(maxima[i].f - fr);
+		f = maxima[i].f;
 	    }
 	}
 
@@ -1435,7 +1467,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	// Update spectrum window
 
 	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i] / fps;
+	    values[i] = maxima[i].f / fps;
 
 	spectrum.count = count;
 
@@ -1707,49 +1739,13 @@ HIRect DrawEdge(CGContextRef context, HIRect bounds)
 	bounds.size.height /= 2.0;
     }
 
-    int width = bounds.size.width;
-    int height = bounds.size.height;
-
-    CGContextSetShouldAntialias(context, false);
-    CGContextSetLineWidth(context, 1);
+    CGContextSetShouldAntialias(context, true);
+    CGContextSetLineWidth(context, 3);
+    CGContextSetGrayStrokeColor(context, 0.8, 1);
 
     // Draw edge
 
-    CGContextBeginPath(context);
-
-    CGContextMoveToPoint(context, 1, height);
-    CGContextAddLineToPoint(context, 1, 2);
-    CGContextAddLineToPoint(context, width, 2);
-
-    CGContextSetGrayStrokeColor(context, 0.4, 1);
-    CGContextStrokePath(context);
-
-    CGContextBeginPath(context);
-
-    CGContextMoveToPoint(context, 1, height - 1);
-    CGContextAddLineToPoint(context, width - 1, height - 1);
-    CGContextAddLineToPoint(context, width - 1, 2);
-
-    CGContextSetGrayStrokeColor(context, 0.9, 1);
-    CGContextStrokePath(context);
-
-    CGContextBeginPath(context);
-
-    CGContextMoveToPoint(context, 0, height);
-    CGContextAddLineToPoint(context, 0, 1);
-    CGContextAddLineToPoint(context, width, 1);
-
-    CGContextSetGrayStrokeColor(context, 0.6, 1);
-    CGContextStrokePath(context);
-
-    CGContextBeginPath(context);
-
-    CGContextMoveToPoint(context, 0, height);
-    CGContextAddLineToPoint(context, width, height);
-    CGContextAddLineToPoint(context, width, 1);
-
-    CGContextSetGrayStrokeColor(context, 1, 1);
-    CGContextStrokePath(context);
+    StrokeRoundRect(context, bounds, 7);
 
     // Create inset
 
@@ -1757,6 +1753,35 @@ HIRect DrawEdge(CGContextRef context, HIRect bounds)
     CGContextClipToRect(context, inset);
 
     return inset;
+}
+
+OSStatus StrokeRoundRect(CGContextRef context, CGRect rect, float radius)
+{
+    CGPoint point = rect.origin;
+    CGSize size = rect.size;
+
+    CGContextBeginPath(context);
+
+    CGContextMoveToPoint(context, point.x + radius, point.y);
+    CGContextAddLineToPoint(context, point.x + size.width - radius, point.y);
+    CGContextAddArcToPoint(context, point.x + size.width, point.y,
+			   point.x + size.width, point.y + radius, radius);
+    CGContextAddLineToPoint(context, point.x + size.width,
+			    point.y + size.height - radius);
+    CGContextAddArcToPoint(context, point.x + size.width,
+			   point.y + size.height,
+			   point.x + size.width - radius,
+			   point.y + size.height, radius);
+    CGContextAddLineToPoint(context, point.x + radius, point.y + size.height);
+    CGContextAddArcToPoint(context, point.x, point.y + size.height,
+			   point.x, point.y + size.height - radius, radius);
+    CGContextAddLineToPoint(context, point.x, point.y + radius);
+    CGContextAddArcToPoint(context, point.x, point.y, point.x + radius,
+			   point.x, radius);
+
+    CGContextStrokePath(context);
+
+    return noErr;
 }
 
 OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
@@ -1898,6 +1923,11 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 				  EventRef event, void *data)
 {
+    enum
+    {kTextSize = 10};
+
+    static char s[16];
+
     CGContextRef context;
     HIRect bounds, inset;
     HIViewRef view;
@@ -2015,7 +2045,8 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	// Yellow pen for frequency trace
 
 	CGContextSetRGBStrokeColor(context, 1, 1, 0, 1);
-
+	CGContextSetRGBFillColor(context, 1, 1, 0, 1);
+    
 	// Draw line for nearest frequency
 
 	float x = (spectrum.f - spectrum.x[0]) * xscale;
@@ -2036,6 +2067,43 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	}
 
 	CGContextStrokePath(context);
+
+        // Select font
+
+	CGContextSelectFont(context, "Arial Bold", kTextSize,
+			    kCGEncodingMacRoman);
+
+	CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
+	CGContextSetTextDrawingMode(context, kCGTextFill);
+	CGContextSetShouldAntialias(context, true);
+
+    	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Show value for others that are in range
+
+	    if (spectrum.values[i] > spectrum.x[0] &&
+		spectrum.values[i] < spectrum.x[1])
+	    {
+		float f = display.maxima[i].f;
+
+		// Reference freq
+
+		float fr = display.maxima[i].fr;
+
+		float c = -12.0 * log2f(fr / f);
+
+		// Ignore silly values
+
+		if (!isfinite(c))
+		    continue;
+
+		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+
+		sprintf(s, "%+0.0f", c * 100.0);
+		CentreTextAtPoint(context, x, 0,
+				  s, strlen(s));
+	    }
+	}
     }
 
     else
@@ -2069,6 +2137,25 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
 	CGContextStrokePath(context);
     }
+
+    return noErr;
+}
+
+// Centre text at point
+
+OSStatus CentreTextAtPoint(CGContextRef context, float x, float y,
+                           const char * bytes, size_t length)
+{
+    CGContextSetTextDrawingMode(context, kCGTextInvisible);
+    CGContextShowTextAtPoint(context, x, y, bytes, length);
+
+    CGPoint point = CGContextGetTextPosition(context);
+
+    float dx = (point.x - x) / 2.0;
+    float dy = (point.y - y) / 2.0;
+
+    CGContextSetTextDrawingMode(context, kCGTextFill);
+    CGContextShowTextAtPoint(context, x - dx, y - dy, bytes, length);
 
     return noErr;
 }
@@ -2173,16 +2260,13 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    float f = display.maxima[i];
-
-	    float cf =
-		-12.0 * log2f(audio.reference / f);
+	    float f = display.maxima[i].f;
 
 	    // Reference freq
 
-	    float fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    float fr = display.maxima[i].fr;
 
-	    int n = round(cf) + kA5Offset;
+	    int n = display.maxima[i].n;
 
 	    if (n < 0)
 		n = 0;
@@ -3156,22 +3240,34 @@ OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
     WindowRef window;
     EventMouseButton button;
 
+    // Get button
+
     GetEventParameter(event, kEventParamMouseButton,
 		      typeMouseButton, NULL, sizeof(button),
 		      NULL, &button);
 
     switch (button)
     {
+	// Secondary button
+
     case kEventMouseButtonSecondary:
+
+	// Get location
 
 	GetEventParameter(event, kEventParamMouseLocation,
 			  typeHIPoint, NULL, sizeof(location),
 			  NULL, &location);
 
+	// Display menu
+
 	DisplayPopupMenu(event, location, data);
 	break;
 
+	// Primary button
+
     case kEventMouseButtonPrimary:
+
+	// Get window
 
 	GetEventParameter(event, kEventParamWindowRef,
 			  typeWindowRef, NULL, sizeof(window),
@@ -3179,11 +3275,15 @@ OSStatus MouseEventHandler(EventHandlerCallRef next, EventRef event,
 	HIViewRef view;
 	HIViewKind kind;
 
+	// Get view and kind
+
 	HIViewGetViewForMouseEvent(HIViewGetRoot(window), event, &view);
 	HIViewGetKind(view, &kind);
 
 	switch (kind.kind)
 	{
+	    // User pane
+
 	case kControlKindUserPane:
 	    PostCommandEvent(view);
 	    break;
@@ -3205,26 +3305,17 @@ OSStatus PostCommandEvent(HIViewRef view)
 {
     UInt32 id;
 
+    // Get command id
+
     HIViewGetCommandID(view, &id);
 
     HICommandExtended command =
 	{kHICommandFromControl,
 	 id, {view}};
 
-    EventRef event;
+    // Process command
 
-    CreateEvent(kCFAllocatorDefault, kEventClassCommand,
-		kEventProcessCommand, 0,
-		kEventAttributeUserEvent, &event);
-
-    SetEventParameter(event, kEventParamDirectObject,
-		      typeHICommand, sizeof(command),
-		      &command);
-
-    PostEventToQueue(GetMainEventQueue(), event,
-		     kEventPriorityStandard);
-
-    ReleaseEvent(event);
+    ProcessHICommand((HICommand *)&command);
 
     return noErr;
 }
@@ -3414,16 +3505,13 @@ OSStatus CopyDisplay(EventRef event)
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    float f = display.maxima[i];
-
-	    float cf =
-		-12.0 * log2f(audio.reference / f);
+	    float f = display.maxima[i].f;
 
 	    // Reference freq
 
-	    float fr = audio.reference * powf(2.0, roundf(cf) / 12.0);
+	    float fr = display.maxima[i].fr;
 
-	    int n = round(cf) + kA5Offset;
+	    int n = display.maxima[i].n;
 
 	    if (n < 0)
 		n = 0;
