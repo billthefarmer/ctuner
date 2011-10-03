@@ -86,7 +86,8 @@ enum
      OVERSAMPLE = 16,
      SAMPLES = 16384,
      RANGE = SAMPLES * 3 / 8,
-     STEP = SAMPLES / OVERSAMPLE};
+     STEP = SAMPLES / OVERSAMPLE,
+     LORANGE = STEP * 3 / 8};
 
 // Tuner reference values
 
@@ -130,13 +131,22 @@ enum
 enum
     {MEM_SIZE = 1024};
 
-// Global data
+// Structs
 
 typedef struct
 {
     double r;
     double i;
 } complex;
+
+typedef struct
+{
+    double f;
+    double fr;
+    int n;
+} maximum;
+
+// Global data
 
 typedef struct
 {
@@ -200,7 +210,7 @@ typedef struct
     double c;
     int n;
     int count;
-    double *maxima;
+    maximum *maxima;
 } DISPLAY, *DISPLAYP;
 
 DISPLAY display;
@@ -633,7 +643,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    CreateWindow(TRACKBAR_CLASS, NULL,
 			 WS_VISIBLE | WS_CHILD |
 			 TBS_HORZ | TBS_NOTICKS | TBS_TOP,
-			 12, 272, width - 23, 26, hWnd,
+			 12, 272, width - 24, 26, hWnd,
 			 (HMENU)SLIDER_ID, hInst, NULL);
 
 	SendMessage(meter.slider.hwnd, TBM_SETRANGE, TRUE,
@@ -1878,16 +1888,13 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    double f = display.maxima[i];
-
-	    double cf =
-		-12.0 * log2(audio.reference / f);
+	    double f = display.maxima[i].f;
 
 	    // Reference freq
 
-	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    double fr = display.maxima[i].fr;
 
-	    int n = round(cf) + A5_OFFSET;
+	    int n = display.maxima[i].n;
 
 	    if (n < 0)
 		n = 0;
@@ -1940,7 +1947,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 
 // Display callback
 
-VOID CALLBACK DisplayCallback(PVOID lpParameter, BOOL TimerFired)
+VOID CALLBACK DisplayCallback(PVOID lpParam, BOOL TimerFired)
 {
     // Refresh strobe
 
@@ -2269,12 +2276,11 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
 
-		double f = display.maxima[i];
-		double cf = -12.0 * log2(audio.reference / f);
+		double f = display.maxima[i].f;
 
 		// Reference freq
 
-		double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+		double fr = display.maxima[i].fr;
 		double c = -12.0 * log2(fr / f);
 
 		// Ignore silly values
@@ -2450,14 +2456,13 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	for (int i = 0; i < display.count; i++)
 	{
-	    double f = display.maxima[i];
-	    double cf = -12.0 * log2(audio.reference / f);
+	    double f = display.maxima[i].f;
 
 	    // Reference freq
 
-	    double fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    double fr = display.maxima[i].fr;
 
-	    int n = round(cf) + A5_OFFSET;
+	    int n = display.maxima[i].n;
 
 	    if (n < 0)
 		n = 0;
@@ -3272,10 +3277,12 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     static double xp[RANGE];
     static double xf[RANGE];
 
+    static double xs[LORANGE];
+
     static double dxa[RANGE];
 
-    static double maxima[MAXIMA];
-    static float  values[MAXIMA];
+    static maximum maxima[MAXIMA];
+    static float   values[MAXIMA];
 
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
@@ -3337,15 +3344,58 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     double norm = dmax;
     dmax = 0.0;
 
-    // Copy data to FFT input arrays
+    // Copy data to FFT input arrays for low resolution spectrum
 
-    for (int i = 0; i < SAMPLES; i++)
+    for (int i = 0; i < STEP; i++)
     {
 	// Find the magnitude
 
 	if (dmax < fabs(buffer[i]))
 	    dmax = fabs(buffer[i]);
 
+    	// Calculate the window
+
+    	double window =
+    	    0.5 - 0.5 * cos(2.0 * M_PI *
+    			    i / STEP);
+
+    	// Normalise and window the input data
+
+    	x[i].r = (double)(buffer + SAMPLES - STEP)[i] / norm * window;
+    }
+
+    // do FFT for spectrum
+
+    fftr(x, STEP);
+
+    // Process FFT output for spectrum
+
+    for (int i = 1; i < LORANGE; i++)
+    {
+    	double real = x[i].r;
+    	double imag = x[i].i;
+
+    	xs[i] = hypot(real, imag);
+    }
+
+    // Switch spectrum data
+
+    if (spectrum.zoom)
+    {
+    	spectrum.data = xa;
+    	spectrum.length = RANGE;
+    }
+
+    else
+    {
+    	spectrum.data = xs;
+    	spectrum.length = LORANGE;
+    }
+
+    // Copy data to FFT input arrays for tuner
+
+    for (int i = 0; i < SAMPLES; i++)
+    {
 	// Calculate the window
 
 	double window =
@@ -3357,11 +3407,11 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	x[i].r = (double)buffer[i] / norm * window;
     }
 
-    // do FFT
+    // do FFT for tuner
 
     fftr(x, SAMPLES);
 
-    // Process FFT output
+    // Process FFT output for tuner
 
     for (int i = 1; i < RANGE; i++)
     {
@@ -3420,7 +3470,6 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     // Maximum FFT output
 
     double max = 0.0;
-    double f = 0.0;
     int count = 0;
 
     // Find maximum value, and list of maxima
@@ -3428,17 +3477,31 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     for (int i = 1; i < RANGE - 1; i++)
     {
 	if (xa[i] > max)
-	{
 	    max = xa[i];
-	    f = xf[i];
-	}
 
 	// If display not locked, find maxima and add to list
 
 	if (!display.lock &&
-	    xa[i] > MIN && xa[i] > (max / 2) &&
+	    xa[i] > MIN && xa[i] > (max / 4.0) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
-	    maxima[count++] = xf[i];
+	{
+	    maxima[count].f = xf[i];
+
+	    // Cents relative to reference
+
+	    double cf =
+	    	-12.0 * log2(audio.reference / xf[i]);
+
+	    // Reference note
+
+	    maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    // Note number
+
+	    maxima[count].n = round(cf) + A5_OFFSET;
+
+	    count++;
+	}
 
 	if (count == LENGTH(maxima))
 	    break;
@@ -3446,6 +3509,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     // Reference note frequency and lower and upper limits
 
+    double f = 0.0;
     double fr = 0.0;
     double fx0 = 0.0;
     double fx1 = 0.0;
@@ -3463,6 +3527,10 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     if (max > MIN)
     {
+	// Frequency
+
+	f = maxima[0].f;
+
 	// Cents relative to reference
 
 	double cf =
@@ -3490,10 +3558,10 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	for (int i = 0; i < count; i++)
 	{
-	    if (fabs(maxima[i] - fr) < df)
+	    if (fabs(maxima[i].f - fr) < df)
 	    {
-		df = fabs(maxima[i] - fr);
-		f = maxima[i];
+		df = fabs(maxima[i].f - fr);
+		f = maxima[i].f;
 	    }
 	}
 
@@ -3524,7 +3592,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Update spectrum window
 
 	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i] / fps * audio.correction;
+	    values[i] = maxima[i].f / fps * audio.correction;
 
 	spectrum.count = count;
 
