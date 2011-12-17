@@ -2907,6 +2907,9 @@ BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
 
 BOOL VolumeChange(WPARAM wParam, LPARAM lParam)
 {
+    if (mixer.pmxc == NULL)
+	return FALSE;
+
     if (lParam == mixer.pmxcd->dwControlID)
     {
 	// Get the value
@@ -3077,20 +3080,55 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    break;
 	}
 
+	// Mixer line types
+
+	DWORD types[] =
+	    {MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE,
+	     MIXERLINE_COMPONENTTYPE_SRC_AUXILIARY,
+	     MIXERLINE_COMPONENTTYPE_SRC_PCSPEAKER,
+	     MIXERLINE_COMPONENTTYPE_SRC_TELEPHONE,
+	     MIXERLINE_COMPONENTTYPE_SRC_SYNTHESIZER,
+	     MIXERLINE_COMPONENTTYPE_SRC_COMPACTDISC,
+	     MIXERLINE_COMPONENTTYPE_SRC_UNDEFINED,
+	     MIXERLINE_COMPONENTTYPE_SRC_DIGITAL,
+	     MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT,
+	     MIXERLINE_COMPONENTTYPE_SRC_ANALOG,
+	     MIXERLINE_COMPONENTTYPE_SRC_LINE};
+
 	// Get mixer line info
 
-	mxl.dwComponentType = MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE;
+	for (int i = 0; i < LENGTH(types); i++)
+	{
+	    // Try a component type
 
-	mmr = mixerGetLineInfo((HMIXEROBJ)mixer.hmx, &mxl,
-			       MIXER_GETLINEINFOF_COMPONENTTYPE);
+	    mxl.dwComponentType = types[i];
 
-	if (mmr != MMSYSERR_NOERROR)
+	    // Get the info
+
+	    mmr = mixerGetLineInfo((HMIXEROBJ)mixer.hmx, &mxl,
+				   MIXER_GETLINEINFOF_COMPONENTTYPE);
+
+	    // Try again if error
+
+	    if (mmr != MMSYSERR_NOERROR)
+		continue;
+
+	    // Check if line is active
+
+	    if (mxl.fdwLine & MIXERLINE_LINEF_ACTIVE)
+	    {
+		mixer.pmxl = &mxl;
+		break;
+	    }
+	}
+
+	// No mixer line
+
+	if (mixer.pmxl == NULL)
 	{
 	    EnableWindow(volume.hwnd, FALSE);
 	    break;
 	}
-
-	mixer.pmxl = &mxl;
 
 	// Get a volume control
 
@@ -3268,6 +3306,9 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 void WaveInData(WPARAM wParam, LPARAM lParam)
 {
+    enum
+    {TIMER_COUNT = 16};
+
     // Create buffers for processing the audio data
 
     static double buffer[SAMPLES];
@@ -3542,8 +3583,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Lower and upper freq
 
-	fx0 = audio.reference * pow(2.0, (round(cf) - 0.5) / 12.0);
-	fx1 = audio.reference * pow(2.0, (round(cf) + 0.5) / 12.0);
+	fx0 = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
+	fx1 = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 
@@ -3607,6 +3648,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
     }
 
+    static long timer;
+
     if (found)
     {
 	// If display not locked
@@ -3633,7 +3676,48 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Update display
 
 	InvalidateRgn(display.hwnd, NULL, TRUE);
+
+	// Reset count;
+
+	timer = 0;
     }
+
+    else
+    {
+	// If display not locked
+
+	if (!display.lock)
+	{
+
+	    if (timer == TIMER_COUNT)
+	    {
+		display.f = 0.0;
+		display.fr = 0.0;
+		display.c = 0.0;
+		display.n = 0;
+		display.count = 0;
+
+		// Update meter
+
+		meter.c = 0.0;
+
+		// Update strobe
+
+		strobe.c = 0.0;
+
+		// Update spectrum
+
+		spectrum.f = 0.0;
+		spectrum.r = 0.0;
+	    }
+
+	    // Update display
+
+	    InvalidateRgn(display.hwnd, NULL, TRUE);
+	}
+    }
+
+    timer++;
 }
 
 // Real to complex FFT, ignores imaginary values in input array
