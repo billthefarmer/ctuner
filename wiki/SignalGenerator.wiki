@@ -9,4 +9,4 @@ Signal Generator written in Java for use with tuner. This may be used to calibra
 
 Needs Java installed from http://www.java.com/en.
 
-See [audiotools.googlecode.com Audio Tools] for an alternative signal generator.
+See [http://audiotools.googlecode.com Audio Tools] for an alternative signal generator.
