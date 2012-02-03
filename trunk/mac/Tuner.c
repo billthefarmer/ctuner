@@ -29,7 +29,7 @@
 
 // Macros
 
-#define LENGTH(a) (sizeof(a) / sizeof(a[0]))
+#define Length(a) (sizeof(a) / sizeof(a[0]))
 
 #define kMin        0.5
 #define kScale   2048.0
@@ -54,14 +54,14 @@ enum
      kSamples2 = kSamples / 2,
      kMaxima = 8,
      kFrames = 512,
-     kRange = kSamples * 5 / 16,
+     kRange = kSamples * 3 / 8,
      kStep = kSamples / kOversample};
 
 // Tuner reference values
 
 enum
     {kA5Reference = 440,
-     kA5Offset    = 60,
+     kC5Offset    = 57,
      kOctave      = 12};
 
 // Slider values
@@ -128,7 +128,8 @@ typedef struct
     bool zoom;
     float f;
     float r;
-    float x[2];
+    float l;
+    float h;
     float *data;
     float *values;
 } Spectrum;
@@ -232,7 +233,7 @@ OSStatus MouseEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
 
 OSStatus SetupAudio(void);
-OSStatus DisplayAlert(CFStringRef, CFStringRef);
+OSStatus DisplayAlert(CFStringRef, CFStringRef, OSStatus);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
@@ -700,7 +701,7 @@ int main(int argc, char *argv[])
     // Install event handler
 
     InstallWindowEventHandler(window, NewEventHandlerUPP(WindowEventHandler),
-                              LENGTH(windowEvents), windowEvents,
+                              Length(windowEvents), windowEvents,
                               NULL, NULL);
 
     // Command events type spec
@@ -711,7 +712,7 @@ int main(int argc, char *argv[])
     // Install event handler
 
     InstallApplicationEventHandler(NewEventHandlerUPP(CommandEventHandler),
-                                   LENGTH(commandEvents), commandEvents,
+                                   Length(commandEvents), commandEvents,
                                    window, NULL);
     // Mouse events type spec
 
@@ -721,7 +722,7 @@ int main(int argc, char *argv[])
     // Install event handler
 
     InstallWindowEventHandler(window, NewEventHandlerUPP(MouseEventHandler),
-			      LENGTH(mouseEvents), mouseEvents,
+			      Length(mouseEvents), mouseEvents,
 			      window, NULL);
     // Text events type spec
 
@@ -731,7 +732,7 @@ int main(int argc, char *argv[])
     // Install event handler
 
     InstallApplicationEventHandler(NewEventHandlerUPP(TextEventHandler),
-                                   LENGTH(textEvents), textEvents,
+                                   Length(textEvents), textEvents,
                                    window, NULL);
     // Audio events type spec
 
@@ -742,7 +743,7 @@ int main(int argc, char *argv[])
     // Install event handler
 
     InstallApplicationEventHandler(NewEventHandlerUPP(AudioEventHandler),
-                                   LENGTH(audioEvents), audioEvents,
+                                   Length(audioEvents), audioEvents,
                                    window, NULL);
     // Draw events type spec
 
@@ -753,27 +754,27 @@ int main(int argc, char *argv[])
 
     InstallControlEventHandler(scope.view,
 			       NewEventHandlerUPP(ScopeDrawEventHandler),
-			       LENGTH(drawEvents), drawEvents,
+			       Length(drawEvents), drawEvents,
 			       scope.view, NULL);
 
     InstallControlEventHandler(spectrum.view,
 			       NewEventHandlerUPP(SpectrumDrawEventHandler),
-			       LENGTH(drawEvents), drawEvents,
+			       Length(drawEvents), drawEvents,
 			       spectrum.view, NULL);
 
     InstallControlEventHandler(display.view,
 			       NewEventHandlerUPP(DisplayDrawEventHandler),
-			       LENGTH(drawEvents), drawEvents,
+			       Length(drawEvents), drawEvents,
 			       display.view, NULL);
 
     InstallControlEventHandler(strobe.view,
 			       NewEventHandlerUPP(StrobeDrawEventHandler),
-			       LENGTH(drawEvents), drawEvents,
+			       Length(drawEvents), drawEvents,
 			       strobe.view, NULL);
 
     InstallControlEventHandler(meter.view,
 			       NewEventHandlerUPP(MeterDrawEventHandler),
-			       LENGTH(drawEvents), drawEvents,
+			       Length(drawEvents), drawEvents,
 			       meter.view, NULL);
 
     // Set up timer
@@ -857,7 +858,8 @@ OSStatus SetupAudio()
     if (cp == NULL)
     {
 	DisplayAlert(CFSTR("FindNextComponent"), 
-		     CFSTR("Can't find an output audio unit"));
+		     CFSTR("Can't find an output audio unit"),
+		     0);
 	return -1;
     }
 
@@ -868,7 +870,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("OpenAComponent"), 
-		     CFSTR("Can't open an output audio unit"));
+		     CFSTR("Can't open an output audio unit"),
+		     status);
 	return status;
     }
 
@@ -885,7 +888,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set an output audio unit property"));
+		     CFSTR("Can't set an output audio unit property"),
+		     status);
 	return status;
     }
 
@@ -899,7 +903,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		  CFSTR("Can't set an output audio unit property"));
+		     CFSTR("Can't set an output audio unit property"),
+		     status);
 	return status;
     }
 
@@ -913,7 +918,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioHardwareGetProperty"), 
-		     CFSTR("Can't get the default input device"));
+		     CFSTR("Can't get the default input device"),
+		     status);
 	return status;
     }
 
@@ -925,7 +931,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set output audio unit current device"));
+		     CFSTR("Can't set output audio unit current device"),
+		     status);
 	return status;
     }
 
@@ -945,7 +952,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioDeviceGetProperty"), 
-		     CFSTR("Can't get audio device nominal sample rate"));
+		     CFSTR("Can't get audio device nominal sample rate"),
+		     status);
 	return status;
     }
 
@@ -987,20 +995,21 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set output audio unit maximum frames"));
+		     CFSTR("Can't set output audio unit maximum frames"),
+		     status);
 	return status;
     }
 
     // Set the buffer size
 
-    status = AudioUnitSetProperty(audio.output,
-				  kAudioDevicePropertyBufferFrameSize,
-				  kAudioUnitScope_Global, 0,
-				  &frames, sizeof(frames));
+    status = AudioDeviceSetProperty(id, NULL, 0, true,
+				    kAudioDevicePropertyBufferFrameSize,
+				    sizeof(frames), &frames);
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set output audio unit buffer size"));
+	DisplayAlert(CFSTR("AudioDeviceSetProperty"), 
+		     CFSTR("Can't set audio device buffer size"),
+		     status);
 	return status;
     }
 
@@ -1012,7 +1021,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
-		     CFSTR("Can't get output audio unit maximum frames"));
+		     CFSTR("Can't get output audio unit maximum frames"),
+		     status);
 	return status;
     }
 
@@ -1030,7 +1040,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
-		     CFSTR("Can't get output audio unit stream format"));
+		     CFSTR("Can't get output audio unit stream format"),
+		     status);
 	return status;
     }
 
@@ -1048,7 +1059,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set output audio unit stream format"));
+		     CFSTR("Can't set output audio unit stream format"),
+		     status);
 	return status;
     }
 
@@ -1064,7 +1076,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
-		     CFSTR("Can't set output audio unit input callback"));
+		     CFSTR("Can't set output audio unit input callback"),
+		     status);
 	return status;
     }
 
@@ -1075,16 +1088,18 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioUnitInitialize"), 
-		     CFSTR("Can't initialise output audio unit"));
+		     CFSTR("Can't initialise output audio unit"),
+		     status);
 	return status;
     }
 
-    AudioOutputUnitStart(audio.output);
+    status = AudioOutputUnitStart(audio.output);
 
     if (status != noErr)
     {
 	DisplayAlert(CFSTR("AudioOutputUnitStart"), 
-		     CFSTR("Can't start output audio unit"));
+		     CFSTR("Can't start output audio unit"),
+		     status);
 	return status;
     }
 
@@ -1093,11 +1108,47 @@ OSStatus SetupAudio()
 
 // Display alert
 
-OSStatus DisplayAlert(CFStringRef error, CFStringRef explanation)
+OSStatus DisplayAlert(CFStringRef error, CFStringRef explanation,
+		      OSStatus status)
 {
     DialogRef dialog;
 
-    CreateStandardAlert(kAlertStopAlert, error, explanation, NULL, &dialog);
+    if (status == 0)
+	CreateStandardAlert(kAlertStopAlert, error, explanation, NULL, &dialog);
+
+    else
+    {
+	CFStringRef exp;
+
+	if (status > 0)
+	{
+	    char s[8];
+
+	    CFStringRef stat = UTCreateStringForOSType(status);
+	    CFStringGetCString(stat, s, sizeof(s), kCFStringEncodingMacRoman);
+	    CFRelease(stat);
+    
+	    exp =
+		CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+					 CFSTR("%s: '%s' (0x%x)"),
+					 CFStringGetCStringPtr(explanation,
+					     kCFStringEncodingMacRoman),
+					 s, status);
+	}
+
+	else
+	{
+	    exp =
+		CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
+					 CFSTR("%s: %d (0x%x)"),
+					 CFStringGetCStringPtr(explanation,
+					     kCFStringEncodingMacRoman),
+					 status, status);
+	}
+
+	CreateStandardAlert(kAlertStopAlert, error, exp, NULL, &dialog);
+    }
+
     SetWindowTitleWithCFString(GetDialogWindow(dialog), CFSTR("Tuner"));
     RunStandardAlert(dialog, NULL, NULL);
 
@@ -1113,10 +1164,14 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     static AudioBufferList abl =
 	{1, {1, 0, NULL}};
 
-    static float buffer[kSamples];
+    // Initialise data structs
+
+    static Float32 buffer[kSamples];
 
     if (audio.buffer == NULL)
 	audio.buffer = buffer;
+
+    // Render data
 
     OSStatus status
 	= AudioUnitRender(*(AudioUnit *)inRefCon, ioActionFlags,
@@ -1175,6 +1230,9 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 OSStatus AudioEventHandler(EventHandlerCallRef next,
 			   EventRef event, void *data)
 {
+  enum
+  {kTimerCount = 16};
+
     // Arrays for processing input
 
     static float xa[kRange];
@@ -1375,20 +1433,20 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	    // Note number
 
-	    maxima[count].n = round(cf) + kA5Offset;
+	    maxima[count].n = round(cf) + kC5Offset;
 
 	    count++;
 	}
 
-	if (count == LENGTH(maxima))
+	if (count == Length(maxima))
 	    break;
     }
 
     // Reference note frequency and lower and upper limits
 
     float fr = 0.0;
-    float fx0 = 0.0;
-    float fx1 = 0.0;
+    float fl = 0.0;
+    float fh = 0.0;
 
     // Note number
 
@@ -1403,6 +1461,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     if (max > kMin)
     {
+	found = true;
+
 	// Frequency
 
 	f = maxima[0].f;
@@ -1418,15 +1478,15 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Lower and upper freq
 
-	fx0 = audio.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
-	fx1 = audio.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
+	fl = audio.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
+	fh = audio.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 
-	n = round(cf) + kA5Offset;
+	n = round(cf) + kC5Offset;
 
 	if (n < 0)
-	    n = 0;
+	    found = false;
 
 	// Find nearest maximum to reference note
 
@@ -1452,8 +1512,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Ignore if not within 50 cents of reference note
 
-	if (fabsf(c) < 0.5)
-	    found = true;
+	if (fabsf(c) > 0.5)
+	    found = false;
     }
 
     // If display not locked
@@ -1475,12 +1535,14 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	{
 	    spectrum.f = f  / fps;
 	    spectrum.r = fr / fps;
-	    spectrum.x[0] = fx0 / fps;
-	    spectrum.x[1] = fx1 / fps;
+	    spectrum.l = fl / fps;
+	    spectrum.h = fh / fps;
 	}
 
 	HIViewSetNeedsDisplay(spectrum.view, true);
     }
+
+    static long timer;
 
     if (found)
     {
@@ -1508,7 +1570,50 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	    strobe.c = c;
 	}
+
+	// Reset count;
+
+	timer = 0;
     }
+
+    else
+    {
+	// If display not locked
+
+	if (!display.lock)
+	{
+
+	    if (timer == kTimerCount)
+	    {
+		display.f = 0.0;
+		display.fr = 0.0;
+		display.c = 0.0;
+		display.n = 0;
+		display.count = 0;
+
+		// Update display
+
+		HIViewSetNeedsDisplay(display.view, true);
+
+		// Update meter
+
+		meter.c = 0.0;
+
+		// Update strobe
+
+		strobe.c = 0.0;
+
+		// Update spectrum
+
+		spectrum.f = 0.0;
+		spectrum.r = 0.0;
+		spectrum.l = 0.0;
+		spectrum.h = 0.0;
+	    }
+	}
+    }
+
+    timer++;
 
     return noErr;
 }
@@ -2018,11 +2123,11 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
     {
 	// Calculate scale
 
-	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
+	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
 
 	// Draw trace
 
-	for (int i = floorf(spectrum.x[0]); i <= ceilf(spectrum.x[1]); i++)
+	for (int i = floorf(spectrum.l); i <= ceilf(spectrum.h); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
@@ -2032,7 +2137,7 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 		    max = value;
 
 		float y = -value * yscale;
-		float x = ((float)i - spectrum.x[0]) * xscale; 
+		float x = ((float)i - spectrum.l) * xscale; 
 
 		CGContextAddLineToPoint(context, x, y);
 	    }
@@ -2049,7 +2154,7 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
     
 	// Draw line for nearest frequency
 
-	float x = (spectrum.f - spectrum.x[0]) * xscale;
+	float x = (spectrum.f - spectrum.l) * xscale;
 	CGContextMoveToPoint(context, x, 0);
 	CGContextAddLineToPoint(context, x, -height);
 
@@ -2057,10 +2162,10 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	{
 	    // Draw line for others that are in range
 
-	    if (spectrum.values[i] > spectrum.x[0] &&
-		spectrum.values[i] < spectrum.x[1])
+	    if (spectrum.values[i] > spectrum.l &&
+		spectrum.values[i] < spectrum.h)
 	    {
-		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+		x = (spectrum.values[i] - spectrum.l) * xscale;
 		CGContextMoveToPoint(context, x, 0);
 		CGContextAddLineToPoint(context, x, -height);
 	    }
@@ -2081,8 +2186,8 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	{
 	    // Show value for others that are in range
 
-	    if (spectrum.values[i] > spectrum.x[0] &&
-		spectrum.values[i] < spectrum.x[1])
+	    if (spectrum.values[i] > spectrum.l &&
+		spectrum.values[i] < spectrum.h)
 	    {
 		float f = display.maxima[i].f;
 
@@ -2097,7 +2202,7 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 		if (!isfinite(c))
 		    continue;
 
-		x = (spectrum.values[i] - spectrum.x[0]) * xscale;
+		x = (spectrum.values[i] - spectrum.l) * xscale;
 
 		sprintf(s, "%+0.0f", c * 100.0);
 		CentreTextAtPoint(context, x, 0,
@@ -2169,8 +2274,8 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
      kTextSizeSmall  = 12};
 
     static char *notes[] =
-	{"A", "Bb", "B", "C", "C#", "D",
-	 "Eb", "E", "F", "F#", "G", "Ab"};
+	{"C", "C#", "D", "Eb", "E", "F",
+	 "F#", "G", "Ab", "A", "Bb", "B"};
 
     static char s[64];
 
@@ -2232,7 +2337,7 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 	{
 	    // Display note
 
-	    sprintf(s, "%3s%d", notes[display.n % LENGTH(notes)],
+	    sprintf(s, "%3s%d", notes[display.n % Length(notes)],
 		    display.n / 12);
 	    CGContextShowTextAtPoint(context, 0, kTextSizeSmall,
 				     s, strlen(s));
@@ -2280,7 +2385,7 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
 	    // Display note
 
-	    sprintf(s, "%3s%d", notes[n % LENGTH(notes)], n / 12);
+	    sprintf(s, "%3s%d", notes[n % Length(notes)], n / 12);
 	    CGContextShowTextAtPoint(context, 0, (i + 1) * kTextSizeSmall,
 				     s, strlen(s));
 	    // Display cents
@@ -2315,9 +2420,14 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
 	int y = kTextSizeLarge;
 
-	sprintf(s, "%4s%d  ", notes[display.n % LENGTH(notes)],
-		display.n / 12); 
+	sprintf(s, "%4s", notes[display.n % Length(notes)]);
 	CGContextShowTextAtPoint(context, 0, y, s, strlen(s));
+
+	CGContextSetFontSize(context, kTextSizeMedium);
+	sprintf(s, "%d", display.n / 12); 
+	CGContextShowText(context, s, strlen(s));
+
+	CGContextSetFontSize(context, kTextSizeLarge);
 
 	sprintf(s, "%+6.2lf¢  ", display.c * 100.0);
 	CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
@@ -3120,7 +3230,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
 
     InstallControlEventHandler(legend.preferences.reference,
 			       NewEventHandlerUPP(FocusEventHandler),
-			       LENGTH(focusEvents), focusEvents,
+			       Length(focusEvents), focusEvents,
 			       NULL, NULL);
     // Set control data
 
@@ -3491,8 +3601,8 @@ OSStatus DisplayPopupMenu(EventRef event, HIPoint location, void *data)
 OSStatus CopyDisplay(EventRef event)
 {
     static char *notes[] =
-	{"A", "Bb", "B", "C", "C#", "D",
-	 "Eb", "E", "F", "F#", "G", "Ab"};
+	{"C", "C#", "D", "Eb", "E", "F",
+	 "F#", "G", "Ab", "A", "Bb", "B"};
 
     char s[64];
     char *text = malloc(4096);
@@ -3526,7 +3636,7 @@ OSStatus CopyDisplay(EventRef event)
 	    // Print the text
 
 	    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
-		    notes[n % LENGTH(notes)], n / 12,
+		    notes[n % Length(notes)], n / 12,
 		    c * 100.0, fr, f, f - fr);
 
 	    // Copy to the memory
@@ -3544,7 +3654,7 @@ OSStatus CopyDisplay(EventRef event)
 	// Print the values
 
 	sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
-		notes[display.n % LENGTH(notes)], display.n / 12,
+		notes[display.n % Length(notes)], display.n / 12,
 		display.c * 100.0, display.fr, display.f,
 		display.f - display.fr);
 
