@@ -40,7 +40,8 @@
 // Audio in values
 
 enum
-    {kSampleRate       = 11025,
+    {kSampleRate1      = 11025,
+     kSampleRate2      = 12000,
      kBytesPerPacket   = 4,
      kBytesPerFrame    = 4,
      kChannelsPerFrame = 1};
@@ -208,6 +209,7 @@ Arrow arrow;
 typedef struct
 {
     AudioUnit output;
+    AudioDeviceID id;
     float *buffer;
     bool filter;
     int divisor;
@@ -857,7 +859,7 @@ OSStatus SetupAudio()
 
     if (cp == NULL)
     {
-	DisplayAlert(CFSTR("FindNextComponent"), 
+	DisplayAlert(CFSTR("FindNextComponent"),
 		     CFSTR("Can't find an output audio unit"),
 		     0);
 	return -1;
@@ -936,22 +938,80 @@ OSStatus SetupAudio()
 	return status;
     }
 
-    Float64 rate = kSampleRate;
-    size = sizeof(rate);
+    // Get nominal sample rates size
 
-    // Set the sample rate, will probably fail
+    status =
+	AudioDeviceGetPropertyInfo(id, 0, true,
+	   kAudioDevicePropertyAvailableNominalSampleRates,
+				   &size, NULL);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioDeviceGetPropertyInfo"),
+		     CFSTR("Can't get audio device sample rates size"),
+		     status);
+	return status;
+    }
 
-    status = AudioDeviceSetProperty(id, NULL, 0, true,
-				    kAudioDevicePropertyNominalSampleRate,
-				    sizeof(rate), &rate);
+    // Get nominal sample rates
+
+    AudioValueRange *rates = malloc(size);
+
+    status = AudioDeviceGetProperty(id, 0, true,
+		    kAudioDevicePropertyAvailableNominalSampleRates,
+				    &size, rates);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioDeviceGetProperty"),
+		     CFSTR("Can't get audio device sample rates"),
+		     status);
+	return status;
+    }
+
+    // See if we can change the sample rate
+
+    bool inrange = false;
+    Float64 rate;
+
+    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
+    {
+	if ((rates[i].mMinimum <= kSampleRate1) &&
+	    (rates[i].mMaximum >= kSampleRate1))
+	{
+	    inrange = true;
+	    rate = kSampleRate1;
+	    break;
+	}
+
+	if ((rates[i].mMinimum <= kSampleRate2) &&
+	    (rates[i].mMaximum >= kSampleRate2))
+	{
+	    inrange = true;
+	    rate = kSampleRate2;
+	    break;
+	}
+    }
+
+    // Free rates range
+
+    free(rates);
+
+    // Set the sample rate, if in range
+
+    if (inrange)
+	status = AudioDeviceSetProperty(id, NULL, 0, true,
+					kAudioDevicePropertyNominalSampleRate,
+					sizeof(rate), &rate);
+    Float64 nominal;
+    size = sizeof(nominal);
+
     // Get the sample rate
 
     status = AudioDeviceGetProperty(id, 0, true,
 				    kAudioDevicePropertyNominalSampleRate,
-				    &size, &rate);
+				    &size, &nominal);
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioDeviceGetProperty"), 
+	DisplayAlert(CFSTR("AudioDeviceGetProperty"),
 		     CFSTR("Can't get audio device nominal sample rate"),
 		     status);
 	return status;
@@ -959,14 +1019,18 @@ OSStatus SetupAudio()
 
     // Set the divisor
 
-    audio.divisor = round(rate / kSampleRate);
+    audio.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
+
+    // Set the rate
+
+    audio.sample = nominal / audio.divisor;
 
     // Set the status text
 
     CFStringRef text =
 	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
 				 CFSTR("Sample rate: %6.1lf\n"),
-				 rate / audio.divisor);
+				 audio.sample);
 
     HIViewSetText(legend.status.sample, text);
     CFRelease(text);
@@ -974,17 +1038,33 @@ OSStatus SetupAudio()
     text =
 	CFStringCreateWithFormat(kCFAllocatorDefault, NULL,
 				 CFSTR("Actual rate: %6.1lf\n"),
-				 rate / audio.divisor);
+				 audio.sample);
 
     HIViewSetText(legend.status.actual, text);
     CFRelease(text);
 
-    // Set the rate
+    // Get the buffer size range
 
-    audio.sample = rate / audio.divisor;
+    AudioValueRange sizes;
+    size = sizeof(sizes);
+
+    status = AudioDeviceGetProperty(id, 0, true,
+		kAudioDevicePropertyBufferFrameSizeRange,
+				    &size, &sizes);
+    if (status != noErr)
+    {
+	DisplayAlert(CFSTR("AudioDeviceGetProperty"),
+		     CFSTR("Can't get audio device frame sizes"),
+		     status);
+	return status;
+    }
 
     UInt32 frames = kStep * audio.divisor;
     size = sizeof(frames);
+
+    while (!((sizes.mMaximum >= frames) &&
+	     (sizes.mMinimum <= frames)))
+	frames /= 2;
 
     // Set the max frames
 
@@ -994,7 +1074,7 @@ OSStatus SetupAudio()
 				  &frames, sizeof(frames));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set output audio unit maximum frames"),
 		     status);
 	return status;
@@ -1045,7 +1125,7 @@ OSStatus SetupAudio()
 	return status;
     }
 
-    format.mSampleRate = rate;
+    format.mSampleRate = nominal;
     format.mBytesPerPacket = kBytesPerPacket;
     format.mBytesPerFrame = kBytesPerFrame;
     format.mChannelsPerFrame = kChannelsPerFrame;
@@ -1183,7 +1263,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     // Copy the input data
 
     memmove(buffer, buffer + (audio.frames / audio.divisor),
-	    (kSamples - (audio.frames / audio.divisor)) * sizeof(float));
+	    (kSamples - (audio.frames / audio.divisor)) * sizeof(Float32));
 
     Float32 *data = abl.mBuffers[0].mData;
 
@@ -1205,7 +1285,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     	// Choose filtered/unfiltered data
 
-    	buffer[kSamples - (audio.frames / audio.divisor) + i] =
+    	buffer[(kSamples - (audio.frames / audio.divisor)) + i] =
     	    audio.filter? yv[1]: data[i * audio.divisor];
     }
 
@@ -1295,7 +1375,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	display.maxima = maxima;
 
 	fps = audio.sample / (float)kSamples;
-	expect = 2.0 * M_PI * (float)kStep / (float)kSamples;
+	expect = 2.0 * M_PI * (float)(audio.frames / audio.divisor) /
+			(float)kSamples;
 
 	// Init Hamming window
 
@@ -1618,9 +1699,9 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     return noErr;
 }
 
-// Copy info
-
 #ifdef DEBUG
+
+// Copy info
 
 OSStatus CopyInfo(EventRef event)
 {
@@ -3451,7 +3532,6 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 	CopyDisplay(event);
 	break;
 
-	// Copy info
 #ifdef DEBUG
 
 	// Copy info
