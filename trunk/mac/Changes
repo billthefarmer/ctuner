@@ -1,4 +1,12 @@
+Update sample rate and buffer size code 19-Feb-12
+
+Change reference note, update error dialogs 03-Feb-12
+
+Change display reset algorithm 18-Dec-11
+
 Change peak selection algorithm 02-Oct-11
+
+Add legend to spectrum 12-Jan-11
 
 Add error dialogs 30-Oct-10
 
