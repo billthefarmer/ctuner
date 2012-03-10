@@ -93,7 +93,7 @@ enum
 
 enum
     {A5_REFNCE = 440,
-     A5_OFFSET = 60};
+     C5_OFFSET = 57};
 
 // Slider values
 
@@ -118,7 +118,8 @@ enum
 // Timer values
 
 enum
-    {STROBE_DELAY = 100};
+    {METER_DELAY  = 100,
+     STROBE_DELAY = 100};
 
 // Window size
 
@@ -145,6 +146,14 @@ typedef struct
     double fr;
     int n;
 } maximum;
+
+typedef struct
+{
+    float f;
+    float r;
+    float l;
+    float h;
+} value;
 
 // Global data
 
@@ -191,10 +200,11 @@ typedef struct
     BOOL zoom;
     float f;
     float r;
-    float x[2];
+    float l;
+    float h;
     int count;
     double *data;
-    float *values;
+    value *values;
 } SPECTRUM, *SPECTRUMP;
 
 SPECTRUM spectrum;
@@ -202,7 +212,6 @@ SPECTRUM spectrum;
 typedef struct
 {
     HWND hwnd;
-    HANDLE timer;
     BOOL multiple;
     BOOL lock;
     double f;
@@ -251,6 +260,7 @@ typedef struct
     HWND hwnd;
     double c;
     TOOL slider;
+    HANDLE timer;
 } METER, *METERP;
 
 METER meter;
@@ -260,7 +270,8 @@ typedef struct
     HWND hwnd;
     double c;
     BOOL enable;
-} STROBE, STROBEP;
+    HANDLE timer;
+} STROBE, *STROBEP;
 
 STROBE strobe;
 
@@ -295,13 +306,14 @@ LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK PopupProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK ResizeProc(HWND, LPARAM);
 BOOL RegisterMainClass(HINSTANCE);
-VOID GetStatus(VOID);
+VOID GetSavedStatus(VOID);
 BOOL ResizeWindow(WPARAM, LPARAM);
 BOOL DrawItem(WPARAM, LPARAM);
 BOOL DrawStrobe(HDC, RECT);
 BOOL DrawScope(HDC, RECT);
 BOOL DrawSpectrum(HDC, RECT);
 BOOL DrawDisplay(HDC, RECT);
+BOOL DrawLock(HDC, int, int);
 BOOL DrawMeter(HDC, RECT);
 BOOL DisplayContextMenu(HWND, POINTS);
 BOOL DisplayOptions(WPARAM, LPARAM);
@@ -309,6 +321,7 @@ BOOL DisplayOptionsMenu(HWND, POINTS);
 BOOL DisplayClicked(WPARAM, LPARAM);
 BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
+BOOL MeterClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL ResizeClicked(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
@@ -325,10 +338,13 @@ BOOL CopyDisplay(WPARAM, LPARAM);
 BOOL ChangeCorrection(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 BOOL SaveCorrection(WPARAM, LPARAM);
+VOID UpdateStatusBar(VOID);
+VOID CALLBACK MeterCallback(PVOID, BOOL);
+VOID CALLBACK StrobeCallback(PVOID, BOOL);
+VOID TooltipShow(WPARAM, LPARAM);
+VOID TooltipPop(WPARAM, LPARAM);
 DWORD WINAPI AudioThread(LPVOID);
 VOID WaveInData(WPARAM, LPARAM);
-VOID UpdateMeter(METERP);
-VOID CALLBACK DisplayCallback(PVOID, BOOL);
 VOID fftr(complex[], int);
 
 // Application entry point.
@@ -355,7 +371,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
     // Get saved status
 
-    GetStatus();
+    GetSavedStatus();
 
     // Create the main window.
 
@@ -416,7 +432,7 @@ BOOL RegisterMainClass(HINSTANCE hInst)
     return RegisterClass(&wc);
 }
 
-void GetStatus()
+VOID GetSavedStatus()
 {
     HKEY hkey;
     LONG error;
@@ -428,7 +444,11 @@ void GetStatus()
     strobe.enable = TRUE;
     audio.filter = TRUE;
 
-    // Open key
+    // Reference initial value
+
+    audio.reference = A5_REFNCE;
+
+    // Open user key
 
     error = RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			 KEY_READ, &hkey);
@@ -470,6 +490,31 @@ void GetStatus()
 
 	if (error == ERROR_SUCCESS)
 	    audio.reference = value / 10.0;
+
+	// Close key
+
+	RegCloseKey(hkey);
+    }
+
+    // Correction initial value
+
+    audio.correction = 1.0;
+
+    // Open local machine key
+
+    error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\CTuner", 0,
+			 KEY_READ, &hkey);
+
+    if (error == ERROR_SUCCESS)
+    {
+	// Correction
+
+	error = RegQueryValueEx(hkey, "Correction", NULL, NULL,
+				(LPBYTE)&value, (LPDWORD)&size);
+	// Update value
+
+	if (error == ERROR_SUCCESS)
+	    audio.correction = value / 100000.0;
 
 	// Close key
 
@@ -632,7 +677,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add meter to tooltip
 
 	tooltip.info.uId = (UINT_PTR)meter.hwnd;
-	tooltip.info.lpszText = "Cents";
+	tooltip.info.lpszText = "Cents, click to lock";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -680,7 +725,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	status.hwnd =
 	    CreateWindow(STATUSCLASSNAME,
-			 " Sample rate: 11025.0\t"
+			 " Reference: 440.00Hz\t"
 			 "\tCorrection: 1.00000 ",
 			 WS_VISIBLE | WS_CHILD,
 			 0, 0, 0, 0, hWnd,
@@ -690,12 +735,22 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	audio.thread = CreateThread(NULL, 0, AudioThread, hWnd, 0, &audio.id);
 
-	// Start display timer
+	// Start meter timer
 
-	CreateTimerQueueTimer(&display.timer, NULL,
-			      (WAITORTIMERCALLBACK)DisplayCallback,
+	CreateTimerQueueTimer(&meter.timer, NULL,
+			      (WAITORTIMERCALLBACK)MeterCallback,
+			      &meter.hwnd, METER_DELAY, METER_DELAY,
+			      WT_EXECUTEDEFAULT);
+
+	// Start strobe timer
+
+	CreateTimerQueueTimer(&meter.timer, NULL,
+			      (WAITORTIMERCALLBACK)StrobeCallback,
 			      &strobe.hwnd, STROBE_DELAY, STROBE_DELAY,
 			      WT_EXECUTEDEFAULT);
+	// Update status bar
+
+	UpdateStatusBar();
 	break;
 
 	// Colour static text
@@ -771,6 +826,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    StrobeClicked(wParam, lParam);
 	    break;
 
+	    // Meter
+
+	case METER_ID:
+	    MeterClicked(wParam, lParam);
+	    break;
+
 	    // Zoom control
 
 	case ZOOM_ID:
@@ -844,6 +905,23 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
     case MM_MIXM_CONTROL_CHANGE:
 	VolumeChange(wParam, lParam);
+	break;
+
+	// Notify
+
+    case WM_NOTIFY:
+	switch (((LPNMHDR)lParam)->code)
+	{
+	    // Tooltip
+
+	case TTN_SHOW:
+	    TooltipShow(wParam, lParam);
+	    break;
+
+	case TTN_POP:
+	    TooltipPop(wParam, lParam);
+	    break;
+	}
 	break;
 
         // Process other messages.
@@ -1700,9 +1778,7 @@ BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
 		(double)SAMPLE_RATE / audio.correction);
 	SetWindowText(legend.sample.hwnd, s);
 
-	sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
-		(double)SAMPLE_RATE / audio.correction, audio.correction);
-	SetWindowText(status.hwnd, s);
+	UpdateStatusBar();
 	break;
     }
 }
@@ -1723,8 +1799,17 @@ BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
 	    (double)SAMPLE_RATE / audio.correction);
     SetWindowText(legend.sample.hwnd, s);
 
-    sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
-	    (double)SAMPLE_RATE / audio.correction, audio.correction);
+    UpdateStatusBar();
+}
+
+// Update status bar
+
+VOID UpdateStatusBar()
+{
+    static char s[64];
+
+    sprintf(s, " Reference: %5.2lfHz\t\tCorrection: %6.5lf ",
+	    audio.reference, audio.correction);
     SetWindowText(status.hwnd, s);
 }
 
@@ -1854,8 +1939,8 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     static char s[64];
 
     static char *notes[] =
-	{"A", "Bb", "B", "C", "C#", "D",
-	 "Eb", "E", "F", "F#", "G", "Ab"};
+	{"C", "C#", "D", "Eb", "E", "F",
+	 "F#", "G", "Ab", "A", "Bb", "B"};
 
     // Open clipboard
 
@@ -1945,24 +2030,12 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
-// Display callback
+// Meter callback
 
-VOID CALLBACK DisplayCallback(PVOID lpParam, BOOL TimerFired)
+VOID CALLBACK MeterCallback(PVOID lpParam, BOOL TimerFired)
 {
-    // Refresh strobe
+    METERP meter = (METERP)lpParam;
 
-    if (strobe.enable)
-	InvalidateRgn(strobe.hwnd, NULL, TRUE);
-
-    // Update meter
-
-    UpdateMeter(&meter);
-}
-
-// Update meter
-
-VOID UpdateMeter(METERP meter)
-{
     static float mc;
 
     // Do calculation
@@ -1974,6 +2047,18 @@ VOID UpdateMeter(METERP meter)
     // Update meter
 
     SendMessage(meter->slider.hwnd, TBM_SETPOS, TRUE, value);
+}
+
+// Strobe callback
+
+VOID CALLBACK StrobeCallback(PVOID lpParam, BOOL TimerFired)
+{
+    STROBEP strobe = (STROBEP)lpParam;
+
+    // Update strobe
+
+    if (strobe->enable)
+    	InvalidateRgn(strobe->hwnd, NULL, TRUE);
 }
 
 // Draw scope
@@ -2233,9 +2318,9 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     {
 	// Calculate scale
 
-	float xscale = ((float)width / (spectrum.r - spectrum.x[0])) / 2.0;
+	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
 
-	for (int i = floor(spectrum.x[0]); i <= ceil(spectrum.x[1]); i++)
+	for (int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
@@ -2245,7 +2330,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 		    max = value;
 
 		int y = -round(value * yscale);
-		int x = round(((float)i - spectrum.x[0]) * xscale); 
+		int x = round(((float)i - spectrum.l) * xscale); 
 
 		LineTo(hbdc, x, y);
 	    }
@@ -2261,7 +2346,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	// Draw line for nearest frequency
 
-	int x = round((spectrum.f - spectrum.x[0]) * xscale);
+	int x = round((spectrum.f - spectrum.l) * xscale);
 	MoveToEx(hbdc, x, 0, NULL);
 	LineTo(hbdc, x, -height);
 
@@ -2269,10 +2354,10 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	{
 	    // Draw line for others that are in range
 
-	    if (spectrum.values[i] > spectrum.x[0] &&
-		spectrum.values[i] < spectrum.x[1])
+	    if (spectrum.values[i].f > spectrum.l &&
+		spectrum.values[i].f < spectrum.h)
 	    {
-		x = round((spectrum.values[i] - spectrum.x[0]) * xscale);
+		x = round((spectrum.values[i].f - spectrum.l) * xscale);
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
 
@@ -2352,8 +2437,8 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
      MEDIUM_HEIGHT = 28};
 
     static char *notes[] =
-	{"A", "Bb", "B", "C", "C#", "D",
-	 "Eb", "E", "F", "F#", "G", "Ab"};
+	{"C", "C#", "D", "Eb", "E", "F",
+	 "F#", "G", "Ab", "A", "Bb", "B"};
 
     // Bold font
 
@@ -2411,19 +2496,15 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	{0, 0, width, height};
     FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
 
-    // Select text colour
-
-    if (display.lock)
-	SetTextColor(hbdc, RGB(64, 128, 128));
-
-    else
-	SetTextColor(hbdc, RGB(0, 0, 0));
-
     if (display.multiple)
     {
 	// Select font
 
 	SelectObject(hbdc, font);
+
+	// Set text align
+
+	SetTextAlign(hbdc, TA_TOP);
 
 	if (display.count == 0)
 	{
@@ -2512,20 +2593,40 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	// Display coordinates
 
-	int y = 0;
+	int y = 32;
+
+	// Get text rect
+
+	RECT rect = {0};
+
+	sprintf(s, "%4s", notes[display.n % LENGTH(notes)]);
+	DrawText(hbdc, s, strlen(s), &rect, DT_CALCRECT);
+
+	// Set text align
+
+	SetTextAlign(hbdc, TA_BASELINE);
 
 	// Display note
 
-	sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
-		display.n / 12); 
 	TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Select medium font
+
+	SelectObject(hbdc, medium);
+
+	sprintf(s, "%d", display.n / 12);
+	TextOut(hbdc, rect.right + 8, y, s, strlen(s));
+
+	// Select large font
+
+	SelectObject(hbdc, large);
 
 	// Display cents
 
 	sprintf(s, "%+6.2lf¢", display.c * 100.0);
 	TextOut(hbdc, width / 2, y, s, strlen(s));
 
-	y = LARGE_HEIGHT;
+	y += MEDIUM_HEIGHT;
 
 	// Select medium font
 
@@ -2545,8 +2646,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	// Display reference
 
-	sprintf(s, "%9.2lfHz", (audio.reference == 0)?
-		A5_REFNCE: audio.reference);
+	sprintf(s, "%9.2lfHz", audio.reference);
 	TextOut(hbdc, 8, y, s, strlen(s));
 
 	// Display frequency difference
@@ -2555,11 +2655,53 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	TextOut(hbdc, width / 2, y, s, strlen(s));
     }
 
+    // Show lock
+
+    if (display.lock)
+	DrawLock(hbdc, 0, height);
+
     // Copy the bitmap
 
     BitBlt(hdc, rect.left, rect.top, width, height,
 	   hbdc, 0, 0, SRCCOPY);
 
+    return TRUE;
+}
+
+// Draw lock
+
+BOOL DrawLock(HDC hdc, int x, int y)
+{
+    POINT point;
+    POINT body[] =
+	{{2, -3}, {8, -3}, {8, -8}, {2, -8}, {2, -3}};
+
+    SetViewportOrgEx(hdc, x, y, &point);
+
+    Polyline(hdc, body, LENGTH(body));
+
+    MoveToEx(hdc, 3, -8, NULL);
+    LineTo(hdc, 3, -11);
+
+    MoveToEx(hdc, 7, -8, NULL);
+    LineTo(hdc, 7, -11);
+
+    MoveToEx(hdc, 4, -11, NULL);
+    LineTo(hdc, 7, -11);
+
+    SetPixel(hdc, 3, -11, RGB(255, 170, 85));
+    SetPixel(hdc, 6, -10, RGB(255, 170, 85));
+
+    SetPixel(hdc, 4, -10, RGB(85, 170, 255));
+    SetPixel(hdc, 7, -11, RGB(85, 170, 255));
+
+    SetPixel(hdc, 7, -7, RGB(255, 170, 85));
+    SetPixel(hdc, 7, -4, RGB(255, 170, 85));
+
+    SetPixel(hdc, 3, -7, RGB(85, 170, 255));
+    SetPixel(hdc, 3, -4, RGB(85, 170, 255));
+
+    SetViewportOrgEx(hdc, point.x, point.y, NULL);
     return TRUE;
 }
 
@@ -2654,6 +2796,16 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	    LineTo(hbdc, -x + j * width / 55, 20);
 	}
     }
+
+    // Draw + and - signs
+
+    MoveToEx(hbdc, -(width / 2) + 6, 17, NULL);
+    LineTo(hbdc, -(width / 2) + 11, 17);
+
+    MoveToEx(hbdc, (width / 2) - 6, 17, NULL);
+    LineTo(hbdc, (width / 2) - 11, 17);
+    MoveToEx(hbdc, (width / 2) - 8, 15, NULL);
+    LineTo(hbdc, (width / 2) - 8, 20);
 
     // Move origin back
 
@@ -2868,6 +3020,13 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+// Meter clicked
+
+BOOL MeterClicked(WPARAM wParam, LPARAM lParam)
+{
+    return DisplayClicked(wParam, lParam);
+}
+
 // Change Volume
 
 BOOL ChangeVolume(WPARAM wParam, LPARAM lParam)
@@ -2954,6 +3113,8 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
 
+    UpdateStatusBar();
+
     HKEY hkey;
     LONG error;
 
@@ -2997,6 +3158,8 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 
     InvalidateRgn(display.hwnd, NULL, TRUE);
 
+    UpdateStatusBar();
+
     HKEY hkey;
     LONG error;
 
@@ -3022,6 +3185,50 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
     }
 
     return TRUE;
+}
+
+// Tooltip show
+
+VOID TooltipShow(WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR pnmh = (LPNMHDR)lParam;
+
+    switch (GetDlgCtrlID((HWND)pnmh->idFrom))
+    {
+    case VOLUME_ID:
+	SetWindowText(status.hwnd, " Microphone volume");
+	break;
+
+    case SCOPE_ID:
+	SetWindowText(status.hwnd, " Scope, click to filter audio");
+	break;
+
+    case SPECTRUM_ID:
+	SetWindowText(status.hwnd, " Spectrum, click to zoom");
+	break;
+
+    case DISPLAY_ID:
+	SetWindowText(status.hwnd, " Display, click to lock");
+	break;
+
+    case STROBE_ID:
+	SetWindowText(status.hwnd, " Strobe, click to disable/enable");
+	break;
+
+    case METER_ID:
+    case SLIDER_ID:
+	SetWindowText(status.hwnd, " Cents, click to lock");
+	break;
+    }
+}
+
+// Tooltip pop
+
+VOID TooltipPop(WPARAM wParam, LPARAM lParam)
+{
+    LPNMHDR pnmh = (LPNMHDR)lParam;
+
+    UpdateStatusBar();
 }
 
 // Audio thread
@@ -3237,35 +3444,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
     // Set up correction value
 
-    audio.correction = 1.0;
-
-    // Check for a stored value
-
-    HKEY hkey;
-    LONG error;
-    DWORD value;
-    int size = sizeof(value);
-
-    error = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\CTuner", 0,
-			 KEY_READ, &hkey);
-
-    if (error == ERROR_SUCCESS)
-    {
-	error = RegQueryValueEx(hkey, "Correction", NULL, NULL,
-				(LPBYTE)&value, (LPDWORD)&size);
-
-	if (error == ERROR_SUCCESS)
-	{
-	    audio.correction = value / 100000.0;
-	    static char s[64];
-
-	    sprintf(s, " Sample rate: %6.1lf\t\tCorrection: %6.5lf ",
-		    (double)SAMPLE_RATE / audio.correction, audio.correction);
-	    SetWindowText(status.hwnd, s);
-	}
-
-	RegCloseKey(hkey);
-    }
+    if (audio.correction == 0)
+	audio.correction = 1.0;
 
     // Create a message loop for processing thread messages
 
@@ -3304,7 +3484,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
     return msg.wParam;
 }
 
-void WaveInData(WPARAM wParam, LPARAM lParam)
+VOID WaveInData(WPARAM wParam, LPARAM lParam)
 {
     enum
     {TIMER_COUNT = 16};
@@ -3323,7 +3503,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     static double dxa[RANGE];
 
     static maximum maxima[MAXIMA];
-    static float   values[MAXIMA];
+    static value   values[MAXIMA];
 
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
@@ -3365,7 +3545,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Choose filtered/unfiltered data
 
-	buffer[SAMPLES - STEP + i] =
+	buffer[(SAMPLES - STEP) + i] =
 	    audio.filter? yv[1]: (double)data[i];
     }
 
@@ -3511,11 +3691,13 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
     // Maximum FFT output
 
     double max = 0.0;
+
     int count = 0;
+    int limit = RANGE - 1;
 
     // Find maximum value, and list of maxima
 
-    for (int i = 1; i < RANGE - 1; i++)
+    for (int i = 1; i < limit; i++)
     {
 	if (xa[i] > max)
 	    max = xa[i];
@@ -3539,10 +3721,17 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	    // Note number
 
-	    maxima[count].n = round(cf) + A5_OFFSET;
+	    maxima[count].n = round(cf) + C5_OFFSET;
+
+	    // Set limit to octave above
+
+	    if (limit > i * 2)
+		limit = i * 2 - 1;
 
 	    count++;
 	}
+
+	// Check count
 
 	if (count == LENGTH(maxima))
 	    break;
@@ -3552,8 +3741,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     double f = 0.0;
     double fr = 0.0;
-    double fx0 = 0.0;
-    double fx1 = 0.0;
+    double fl = 0.0;
+    double fh = 0.0;
 
     // Note number
 
@@ -3568,6 +3757,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
     if (max > MIN)
     {
+	found = TRUE;
+
 	// Frequency
 
 	f = maxima[0].f;
@@ -3583,15 +3774,15 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Lower and upper freq
 
-	fx0 = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
-	fx1 = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
+	fl = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
+	fh = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 
-	n = round(cf) + A5_OFFSET;
+	n = round(cf) + C5_OFFSET;
 
 	if (n < 0)
-	    n = 0;
+	    found = FALSE;
 
 	// Find nearest maximum to reference note
 
@@ -3617,8 +3808,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Ignore if not within 50 cents of reference note
 
-	if (fabs(c) < 0.5)
-	    found = TRUE;
+	if (fabs(c) > 0.5)
+	    found = FALSE;
     }
 
     // If display not locked
@@ -3633,7 +3824,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	// Update spectrum window
 
 	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i].f / fps * audio.correction;
+	    values[i].f = maxima[i].f / fps * audio.correction;
 
 	spectrum.count = count;
 
@@ -3641,8 +3832,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	{
 	    spectrum.f = f  / fps * audio.correction;
 	    spectrum.r = fr / fps * audio.correction;
-	    spectrum.x[0] = fx0 / fps * audio.correction;
-	    spectrum.x[1] = fx1 / fps * audio.correction;
+	    spectrum.l = fl / fps * audio.correction;
+	    spectrum.h = fh / fps * audio.correction;
 	}
 
 	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
@@ -3689,7 +3880,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 	if (!display.lock)
 	{
 
-	    if (timer == TIMER_COUNT)
+	    if (timer > TIMER_COUNT)
 	    {
 		display.f = 0.0;
 		display.fr = 0.0;
@@ -3709,6 +3900,8 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 		spectrum.f = 0.0;
 		spectrum.r = 0.0;
+		spectrum.l = 0.0;
+		spectrum.h = 0.0;
 	    }
 
 	    // Update display
@@ -3722,7 +3915,7 @@ void WaveInData(WPARAM wParam, LPARAM lParam)
 
 // Real to complex FFT, ignores imaginary values in input array
 
-void fftr(complex a[], int n)
+VOID fftr(complex a[], int n)
 {
     double norm = sqrt(1.0 / n);
 
