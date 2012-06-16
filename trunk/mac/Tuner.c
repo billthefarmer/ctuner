@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
     // Insert the menu
 
     InsertMenu(menu, 0);
-    ReleaseMenu(menu);
+    DisposeMenu(menu);
 
     // Create a standard window menu
 
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
     // Insert the menu
 
     InsertMenu(menu, 0);
-    ReleaseMenu(menu);
+    DisposeMenu(menu);
 
     // Show and position the window
 
@@ -3671,7 +3671,7 @@ OSStatus DisplayPopupMenu(EventRef event, HIPoint location, void *data)
                                    0, kHICommandQuit, &item);
 
     PopUpMenuSelect(menu, location.y, location.x, 0);
-    ReleaseMenu(menu);
+    DisposeMenu(menu);
 
     return noErr;
 }
