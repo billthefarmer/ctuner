@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Copyright 2011 Bill Farmer</string>
+	<string>Copyright 2012 Bill Farmer</string>
 	<key>CFBundleIconFile</key>
 	<string>Tuner</string>
 	<key>CFBundleIdentifier</key>
@@ -19,10 +19,10 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.96</string>
+	<string>1.00</string>
 	<key>CFBundleSignature</key>
 	<string>TUNR</string>
 	<key>CFBundleVersion</key>
-	<string>Version 0.96</string>
+	<string>Version 1.00</string>
 </dict>
 </plist>
