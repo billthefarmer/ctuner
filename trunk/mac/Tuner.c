@@ -18,244 +18,31 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] tiscali [dot] co [dot] uk.
+//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <Carbon/Carbon.h>
-#include <AudioUnit/AudioUnit.h>
-#include <CoreAudio/CoreAudio.h>
-#include <Accelerate/Accelerate.h>
-
-// Macros
-
-#define Length(a) (sizeof(a) / sizeof(a[0]))
-
-#define kMin        0.5
-#define kScale   2048.0
-#define kTimerDelay 0.1
-
-#define DEBUG
-
-// Audio in values
-
-enum
-    {kSampleRate1      = 11025,
-     kSampleRate2      = 12000,
-     kBytesPerPacket   = 4,
-     kBytesPerFrame    = 4,
-     kChannelsPerFrame = 1};
-
-// Audio processing values
-
-enum
-    {kOversample = 16,
-     kSamples = 16384,
-     kLog2Samples = 14,
-     kSamples2 = kSamples / 2,
-     kMaxima = 8,
-     kFrames = 512,
-     kRange = kSamples * 3 / 8,
-     kStep = kSamples / kOversample};
-
-// Tuner reference values
-
-enum
-    {kA5Reference = 440,
-     kC5Offset    = 57,
-     kOctave      = 12};
-
-// Slider values
-
-enum
-    {kVolumeMax  = 100,
-     kVolumeMin  = 0,
-     kVolumeStep = 10,
-
-     kMeterMax   = 200,
-     kMeterValue = 100,
-     kMeterMin   = 0};
-
-// Arrows values
-
-enum
-    {kReferenceMax   = 4500,
-     kReferenceValue = 4400,
-     kReferenceMin   = 4300,
-     kReferenceStep  = 1};
-
-// Command IDs
-
-enum
-    {kCommandVolume     = 'Volm',
-     kCommandReference  = 'Rfnc',
-     kCommandStrobe     = 'Strb',
-     kCommandMultiple   = 'Mult',
-     kCommandZoom       = 'Zoom',
-     kCommandLock       = 'Lock',
-     kCommandFilter     = 'Fltr'};
-
-// Audio event constants
-
-enum
-    {kEventAudioUpdate = 'Updt',
-     kEventAudioRate   = 'Rate'};
-
-// Structs
-
-typedef struct
-{
-    float f;
-    float fr;
-    int n;
-} maximum;
+#include "Tuner.h"
 
 // Global data
 
-typedef struct
-{
-    HIViewRef view;
-    float *data;
-    int length;
-} Scope;
-
 Scope scope;
-
-typedef struct
-{
-    HIViewRef view;
-    int length;
-    int count;
-    bool zoom;
-    float f;
-    float r;
-    float l;
-    float h;
-    float *data;
-    float *values;
-} Spectrum;
 
 Spectrum spectrum;
 
-typedef struct
-{
-    HIViewRef view;
-    EventLoopTimerRef timer;
-    maximum *maxima;
-    float f;
-    float fr;
-    float c;
-    bool lock;
-    bool zoom;
-    bool multiple;
-    int count;
-    int n;
-} Display;
-
 Display display;
-
-typedef struct
-{
-    HIViewRef view;
-    float c;
-    bool enable;
-} Strobe;
 
 Strobe strobe;
 
-typedef struct
-{
-    HIViewRef view;
-    HIViewRef slider; 
-    float c;
-} Meter;
-
 Meter meter;
-
-typedef struct
-{
-    struct
-    {
-	HIViewRef sample;
-	HIViewRef actual;
-    } status;
-
-    struct
-    {
-	HIViewRef reference;
-    } preferences;
-} Legend;
 
 Legend legend;
 
-typedef struct
-{
-    HIViewRef zoom;
-    HIViewRef lock;
-    HIViewRef strobe;
-    HIViewRef filter;
-    HIViewRef multiple;
-} Check;
-
 Check check;
-
-typedef struct
-{
-    HIViewRef reference;
-} Arrow;
 
 Arrow arrow;
 
-typedef struct
-{
-    AudioUnit output;
-    AudioDeviceID id;
-    float *buffer;
-    bool filter;
-    int divisor;
-    int frames;
-    float sample;
-    float reference;
-} Audio;
-
 Audio audio;
-
-// Function prototypes.
-
-OSStatus ScopeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus SpectrumDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus DisplayDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus StrobeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus MeterDrawEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus WindowEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus CommandEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus AudioEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus FocusEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus MouseEventHandler(EventHandlerCallRef, EventRef, void *);
-OSStatus TextEventHandler(EventHandlerCallRef, EventRef, void *);
-
-OSStatus SetupAudio(void);
-OSStatus DisplayAlert(CFStringRef, CFStringRef, OSStatus);
-OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
-		   const AudioTimeStamp *, UInt32, UInt32,
-		   AudioBufferList *);
-
-OSStatus DisplayPopupMenu(EventRef, HIPoint, void *);
-OSStatus DisplayPreferences(EventRef, void *);
-OSStatus PostCommandEvent(HIViewRef);
-OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
-OSStatus WindowZoomed(EventRef, void *);
-OSStatus CopyDisplay(EventRef);
-OSStatus CopyInfo(EventRef);
-
-OSStatus StrokeRoundRect(CGContextRef, CGRect, float);
-OSStatus CentreTextAtPoint(CGContextRef, float, float, const char *, size_t);
-HIRect DrawEdge(CGContextRef, HIRect);
-
-void TimerProc(EventLoopTimerRef, void *);
-void ReferenceActionProc(HIViewRef, ControlPartCode);
-
-void GetPreferences(void);
 
 // Function main
 
@@ -497,7 +284,7 @@ int main(int argc, char *argv[])
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Cents");
+	CFSTR("Cents meter");
     HMSetControlHelpContent(meter.view, &help);
 
     // Place in the window
@@ -524,13 +311,15 @@ int main(int argc, char *argv[])
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Cents");
+	CFSTR("Cents meter");
     HMSetControlHelpContent(meter.slider, &help);
 
     // Place in the window
 
     HIViewAddSubview(meter.view, meter.slider);
     HIViewPlaceInSuperviewAt(meter.slider, 8, 28);
+
+    HIViewSetZOrder(meter.slider, kHIViewZOrderAbove, meter.view);
 
     // Bounds of preferences button
 
@@ -871,7 +660,7 @@ OSStatus SetupAudio()
 
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("OpenAComponent"), 
+	DisplayAlert(CFSTR("OpenAComponent"),
 		     CFSTR("Can't open an output audio unit"),
 		     status);
 	return status;
@@ -889,7 +678,7 @@ OSStatus SetupAudio()
 				  1, &enable, sizeof(enable));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set an output audio unit property"),
 		     status);
 	return status;
@@ -904,7 +693,7 @@ OSStatus SetupAudio()
 				  0, &enable, sizeof(enable));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set an output audio unit property"),
 		     status);
 	return status;
@@ -932,7 +721,7 @@ OSStatus SetupAudio()
 				  kAudioUnitScope_Global, 0, &id, sizeof(id));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set output audio unit current device"),
 		     status);
 	return status;
@@ -1087,7 +876,7 @@ OSStatus SetupAudio()
 				    sizeof(frames), &frames);
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioDeviceSetProperty"), 
+	DisplayAlert(CFSTR("AudioDeviceSetProperty"),
 		     CFSTR("Can't set audio device buffer size"),
 		     status);
 	return status;
@@ -1100,7 +889,7 @@ OSStatus SetupAudio()
 				  kAudioUnitScope_Global, 0, &frames, &size);
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitGetProperty"),
 		     CFSTR("Can't get output audio unit maximum frames"),
 		     status);
 	return status;
@@ -1119,7 +908,7 @@ OSStatus SetupAudio()
 				  &format, &size);
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitGetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitGetProperty"),
 		     CFSTR("Can't get output audio unit stream format"),
 		     status);
 	return status;
@@ -1138,7 +927,7 @@ OSStatus SetupAudio()
 				  &format, sizeof(format));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set output audio unit stream format"),
 		     status);
 	return status;
@@ -1155,7 +944,7 @@ OSStatus SetupAudio()
 				  &input, sizeof(input));
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitSetProperty"), 
+	DisplayAlert(CFSTR("AudioUnitSetProperty"),
 		     CFSTR("Can't set output audio unit input callback"),
 		     status);
 	return status;
@@ -1167,7 +956,7 @@ OSStatus SetupAudio()
 
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioUnitInitialize"), 
+	DisplayAlert(CFSTR("AudioUnitInitialize"),
 		     CFSTR("Can't initialise output audio unit"),
 		     status);
 	return status;
@@ -1177,7 +966,7 @@ OSStatus SetupAudio()
 
     if (status != noErr)
     {
-	DisplayAlert(CFSTR("AudioOutputUnitStart"), 
+	DisplayAlert(CFSTR("AudioOutputUnitStart"),
 		     CFSTR("Can't start output audio unit"),
 		     status);
 	return status;
@@ -1319,6 +1108,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float xp[kRange];
     static float xq[kRange];
     static float xf[kRange];
+    static float xs[kRange];
 
     static float dxa[kRange];
     static float dxp[kRange];
@@ -2382,26 +2172,11 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 
     inset = DrawEdge(context, bounds);
 
-    int width = inset.size.width;
+    int width  = inset.size.width;
+    int height = inset.size.height;
 
     CGContextTranslateCTM(context, 2, 4);
     CGContextSetLineWidth(context, 1);
-
-    // Grey text if locked
-
-    if (display.lock)
-    {
-	CGContextSetRGBStrokeColor(context, 0.25, 0.5, 0.5, 1);
-	CGContextSetRGBFillColor(context, 0.25, 0.5, 0.5, 1);	
-    }
-
-    // Black text
-
-    else
-    {
-	CGContextSetGrayStrokeColor(context, 0, 1);
-	CGContextSetGrayFillColor(context, 0, 1);
-    }
 
     CGContextSetShouldAntialias(context, true);
     CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
@@ -2531,6 +2306,44 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 	sprintf(s, "%+8.2lfHz  ", display.f - display.fr);
 	CGContextShowTextAtPoint(context, width / 2, y, s, strlen(s));
     }
+
+    // Draw lock if locked
+
+    if (display.lock)
+	DrawLock(context, 0, height);
+
+    return noErr;
+}
+
+// Draw lock
+
+OSStatus DrawLock(CGContextRef context, int x, int y)
+{
+    // Translate context
+
+    CGContextTranslateCTM(context, x, y);
+    CGContextSetShouldAntialias(context, false);
+    CGContextSetGrayStrokeColor(context, 0, 1);
+    CGContextSetLineWidth(context, 1);
+
+    // Draw rect
+
+    CGContextStrokeRect(context, CGRectMake(2, -10, 6, 6));
+
+    // Draw hasp
+
+    CGContextBeginPath(context);
+
+    CGContextMoveToPoint(context, 3, -10);
+    CGContextAddLineToPoint(context, 3, -12);
+
+    CGContextMoveToPoint(context, 7, -10);
+    CGContextAddLineToPoint(context, 7, -12);
+
+    CGContextMoveToPoint(context, 4, -13);
+    CGContextAddLineToPoint(context, 6, -13);
+
+    CGContextStrokePath(context);
 
     return noErr;
 }
