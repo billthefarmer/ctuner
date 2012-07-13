@@ -68,11 +68,7 @@ enum
 // Slider values
 
 enum
-    {kVolumeMax  = 100,
-     kVolumeMin  = 0,
-     kVolumeStep = 10,
-
-     kMeterMax   = 200,
+    {kMeterMax   = 200,
      kMeterValue = 100,
      kMeterMin   = 0};
 
@@ -87,8 +83,7 @@ enum
 // Command IDs
 
 enum
-    {kCommandVolume     = 'Volm',
-     kCommandReference  = 'Rfnc',
+    {kCommandReference  = 'Rfnc',
      kCommandStrobe     = 'Strb',
      kCommandMultiple   = 'Mult',
      kCommandZoom       = 'Zoom',
@@ -223,7 +218,6 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 OSStatus DisplayPopupMenu(EventRef, HIPoint, void *);
 OSStatus DisplayPreferences(EventRef, void *);
 OSStatus PostCommandEvent(HIViewRef);
-OSStatus ChangeVolume(EventRef, HICommandExtended, UInt32);
 OSStatus WindowZoomed(EventRef, void *);
 OSStatus CopyDisplay(EventRef);
 OSStatus CopyInfo(EventRef);

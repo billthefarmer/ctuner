@@ -18,209 +18,29 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] tiscali [dot] co [dot] uk.
+//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#define _WIN32_IE    0x0501
-#define _WIN32_WINNT 0x0500
-
-#include <math.h>
-#include <stdio.h>
-#include <windows.h>
-#include <commctrl.h>
-
-// Macros
-
-#define LENGTH(a) (sizeof(a) / sizeof(a[0]))
-
-#define WCLASS "MainWClass"
-#define PCLASS "PopupClass"
-
-#define OCTAVE 12
-#define MIN   0.5
-
-#undef NOISE
+#include "Tuner.h"
 
 // Global handle
 
 HINSTANCE hInst;
 
-// Tool ids
-
-enum
-    {SCOPE_ID = 101,
-     SPECTRUM_ID,
-     DISPLAY_ID,
-     STROBE_ID,
-     VOLUME_ID,
-     STATUS_ID,
-     SLIDER_ID,
-     METER_ID,
-     QUIT_ID,
-     ZOOM_ID,
-     TEXT_ID,
-     SAVE_ID,
-     LOCK_ID,
-     CLOSE_ID,
-     RESIZE_ID,
-     FILTER_ID,
-     ENABLE_ID,
-     OPTIONS_ID,
-     MULTIPLE_ID,
-     REFERENCE_ID,
-     CORRECTION_ID};
-
-// Wave in values
-
-enum
-    {SAMPLE_RATE = 11025L,
-     BITS_PER_SAMPLE = 16,
-     BLOCK_ALIGN = 2,
-     CHANNELS = 1};
-
-// Audio processing values
-
-enum
-    {MAXIMA = 8,
-     OVERSAMPLE = 16,
-     SAMPLES = 16384,
-     RANGE = SAMPLES * 3 / 8,
-     STEP = SAMPLES / OVERSAMPLE,
-     LORANGE = STEP * 3 / 8};
-
-// Tuner reference values
-
-enum
-    {A5_REFNCE = 440,
-     C5_OFFSET = 57};
-
-// Slider values
-
-enum
-    {MAX_VOL  = 100,
-     MIN_VOL  = 0,
-     STEP_VOL = 10,
-
-     MAX_REF  = 4500,
-     REF_REF  = 4400,
-     MIN_REF  = 4300,
-     STEP_REF = 10,
-
-     MAX_METER = 200,
-     REF_METER = 100,
-     MIN_METER = 0,
-
-     MAX_CORRECTION = 101000,
-     REF_CORRECTION = 100000,
-     MIN_CORRECTION =  99000};
-
-// Timer values
-
-enum
-    {METER_DELAY  = 100,
-     STROBE_DELAY = 100};
-
-// Window size
-
-enum
-    {WIDTH  = 320,
-     HEIGHT = 396};
-
-// Memory size
-
-enum
-    {MEM_SIZE = 1024};
-
-// Structs
-
-typedef struct
-{
-    double r;
-    double i;
-} complex;
-
-typedef struct
-{
-    double f;
-    double fr;
-    int n;
-} maximum;
-
-typedef struct
-{
-    float f;
-    float r;
-    float l;
-    float h;
-} value;
-
 // Global data
-
-typedef struct
-{
-    HWND hwnd;
-    BOOL zoom;
-    RECT rwnd;
-    RECT rclt;
-} WINDOW, *WINDOWP;
 
 WINDOW window;
 
-typedef struct
-{
-    HWND hwnd;
-} TOOL, *TOOLP;
-
 TOOL status;
-
-typedef struct
-{
-    HWND hwnd;
-    TOOLINFO info;
-} TOOLTIP, *TOOLTIPP;
 
 TOOLTIP tooltip;
 
 TOOL volume;
 
-typedef struct
-{
-    HWND hwnd;
-    UINT length;
-    short *data;
-} SCOPE, *SCOPEP;
-
 SCOPE scope;
 
-typedef struct
-{
-    HWND hwnd;
-    UINT length;
-    BOOL zoom;
-    float f;
-    float r;
-    float l;
-    float h;
-    int count;
-    double *data;
-    value *values;
-} SPECTRUM, *SPECTRUMP;
-
 SPECTRUM spectrum;
-
-typedef struct
-{
-    HWND hwnd;
-    BOOL multiple;
-    BOOL lock;
-    double f;
-    double fr;
-    double c;
-    int n;
-    int count;
-    maximum *maxima;
-} DISPLAY, *DISPLAYP;
 
 DISPLAY display;
 
@@ -236,116 +56,17 @@ TOOL multiple;
 TOOL reference;
 TOOL correction;
 
-typedef struct
-{
-    TOOL options;
-    TOOL save;
-    TOOL close;
-    TOOL quit;
-} BUTTON, *BUTTONP;
-
 BUTTON button;
-
-typedef struct
-{
-    TOOL sample;
-    TOOL reference;
-    TOOL correction;
-} LEGEND, *LEGENDP;
 
 LEGEND legend;
 
-typedef struct
-{
-    HWND hwnd;
-    double c;
-    TOOL slider;
-    HANDLE timer;
-} METER, *METERP;
-
 METER meter;
-
-typedef struct
-{
-    HWND hwnd;
-    double c;
-    BOOL enable;
-    HANDLE timer;
-} STROBE, *STROBEP;
 
 STROBE strobe;
 
-typedef struct
-{
-    DWORD id;
-    BOOL filter;
-    HWAVEIN hwi;
-    HANDLE thread;
-    double correction;
-    double reference;
-} AUDIO, *AUDIOP;
-
 AUDIO audio;
 
-typedef struct
-{
-    HMIXER hmx;
-    MIXERLINE *pmxl;
-    MIXERCONTROL *pmxc;
-    MIXERLINECONTROLS *pmxlc;
-    MIXERCONTROLDETAILS *pmxcd;
-    MIXERCONTROLDETAILS_UNSIGNED *pmxcdu;
-} MIXER, *MIXERP;
-
 MIXER mixer;
-
-// Function prototypes.
-
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
-LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK PopupProc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK ResizeProc(HWND, LPARAM);
-BOOL RegisterMainClass(HINSTANCE);
-VOID GetSavedStatus(VOID);
-BOOL ResizeWindow(WPARAM, LPARAM);
-BOOL DrawItem(WPARAM, LPARAM);
-BOOL DrawStrobe(HDC, RECT);
-BOOL DrawScope(HDC, RECT);
-BOOL DrawSpectrum(HDC, RECT);
-BOOL DrawDisplay(HDC, RECT);
-BOOL DrawLock(HDC, int, int);
-BOOL DrawMeter(HDC, RECT);
-BOOL DisplayContextMenu(HWND, POINTS);
-BOOL DisplayOptions(WPARAM, LPARAM);
-BOOL DisplayOptionsMenu(HWND, POINTS);
-BOOL DisplayClicked(WPARAM, LPARAM);
-BOOL SpectrumClicked(WPARAM, LPARAM);
-BOOL StrobeClicked(WPARAM, LPARAM);
-BOOL MeterClicked(WPARAM, LPARAM);
-BOOL FilterClicked(WPARAM, LPARAM);
-BOOL ResizeClicked(WPARAM, LPARAM);
-BOOL ScopeClicked(WPARAM, LPARAM);
-BOOL LockClicked(WPARAM, LPARAM);
-BOOL ZoomClicked(WPARAM, LPARAM);
-BOOL MultipleClicked(WPARAM, LPARAM);
-BOOL EnableClicked(WPARAM, LPARAM);
-BOOL EditReference(WPARAM, LPARAM);
-BOOL EditCorrection(WPARAM, LPARAM);
-BOOL ChangeVolume(WPARAM, LPARAM);
-BOOL VolumeChange(WPARAM, LPARAM);
-BOOL CharPressed(WPARAM, LPARAM);
-BOOL CopyDisplay(WPARAM, LPARAM);
-BOOL ChangeCorrection(WPARAM, LPARAM);
-BOOL ChangeReference(WPARAM, LPARAM);
-BOOL SaveCorrection(WPARAM, LPARAM);
-VOID UpdateStatusBar(VOID);
-VOID CALLBACK MeterCallback(PVOID, BOOL);
-VOID CALLBACK StrobeCallback(PVOID, BOOL);
-VOID TooltipShow(WPARAM, LPARAM);
-VOID TooltipPop(WPARAM, LPARAM);
-DWORD WINAPI AudioThread(LPVOID);
-VOID WaveInData(WPARAM, LPARAM);
-VOID fftr(complex[], int);
 
 // Application entry point.
 
@@ -1918,8 +1639,6 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 
     case 'M':
     case 'm':
-    case 'T':
-    case 't':
 	MultipleClicked(wParam, lParam);
 	break;
 
@@ -1994,7 +1713,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 	    // Print the text
 
 	    sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
-		    notes[n % LENGTH(notes)], n / 12,
+		    notes[n % Length(notes)], n / 12,
 		    c * 100.0, fr, f, f - fr);
 
 	    // Copy to the memory
@@ -2012,7 +1731,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 	// Print the values
 
 	sprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
-		notes[display.n % LENGTH(notes)], display.n / 12,
+		notes[display.n % Length(notes)], display.n / 12,
 		display.c * 100.0, display.fr, display.f,
 		display.f - display.fr);
 
@@ -2510,7 +2229,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	{
 	    // Display note
 
-	    sprintf(s, "%4s%d", notes[display.n % LENGTH(notes)],
+	    sprintf(s, "%4s%d", notes[display.n % Length(notes)],
 		    display.n / 12);
 	    TextOut(hbdc, 0, 0, s, strlen(s));
 
@@ -2557,7 +2276,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	    // Display note
 
-	    sprintf(s, "%4s%d", notes[n % LENGTH(notes)], n / 12);
+	    sprintf(s, "%4s%d", notes[n % Length(notes)], n / 12);
 	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display cents
@@ -2599,7 +2318,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	RECT rect = {0};
 
-	sprintf(s, "%4s", notes[display.n % LENGTH(notes)]);
+	sprintf(s, "%4s", notes[display.n % Length(notes)]);
 	DrawText(hbdc, s, strlen(s), &rect, DT_CALCRECT);
 
 	// Set text align
@@ -2678,7 +2397,7 @@ BOOL DrawLock(HDC hdc, int x, int y)
 
     SetViewportOrgEx(hdc, x, y, &point);
 
-    Polyline(hdc, body, LENGTH(body));
+    Polyline(hdc, body, Length(body));
 
     MoveToEx(hdc, 3, -8, NULL);
     LineTo(hdc, 3, -11);
@@ -3258,6 +2977,8 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	return mmr;
     }
 
+    // Check for volume control
+
     do
     {
 	// Mixer structures
@@ -3304,7 +3025,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
 	// Get mixer line info
 
-	for (int i = 0; i < LENGTH(types); i++)
+	for (int i = 0; i < Length(types); i++)
 	{
 	    // Try a component type
 
@@ -3396,7 +3117,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	 {(LPSTR)data[2], sizeof(data[2]), 0, 0, 0, 0},
 	 {(LPSTR)data[3], sizeof(data[3]), 0, 0, 0, 0}};
 
-    for (int i = 0; i < LENGTH(hdrs); i++)
+    for (int i = 0; i < Length(hdrs); i++)
     {
 	// Prepare a waveform audio input header
 
@@ -3500,7 +3221,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
     static double xs[LORANGE];
 
-    static double dxa[RANGE];
+    static double dx[RANGE];
 
     static maximum maxima[MAXIMA];
     static value   values[MAXIMA];
@@ -3685,7 +3406,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Calculate differences for finding maxima
 
-	dxa[i] = xa[i] - xa[i - 1];
+	dx[i] = xa[i] - xa[i - 1];
     }
 
     // Maximum FFT output
@@ -3697,7 +3418,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
     // Find maximum value, and list of maxima
 
-    for (int i = 1; i < limit; i++)
+    for (int i = 2; i < limit; i++)
     {
 	if (xa[i] > max)
 	    max = xa[i];
@@ -3706,7 +3427,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	if (!display.lock &&
 	    xa[i] > MIN && xa[i] > (max / 4.0) &&
-	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
+	    dx[i] > 0.0 && dx[i + 1] < 0.0)
 	{
 	    maxima[count].f = xf[i];
 
@@ -3733,7 +3454,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Check count
 
-	if (count == LENGTH(maxima))
+	if (count == Length(maxima))
 	    break;
     }
 

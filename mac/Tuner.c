@@ -27,21 +27,13 @@
 // Global data
 
 Scope scope;
-
 Spectrum spectrum;
-
 Display display;
-
 Strobe strobe;
-
 Meter meter;
-
 Legend legend;
-
 Check check;
-
 Arrow arrow;
-
 Audio audio;
 
 // Function main
@@ -50,7 +42,6 @@ int main(int argc, char *argv[])
 {
     WindowRef window;
     HIViewRef content;
-    HIViewRef slider;
     HIViewRef button;
     HIViewRef group;
 
@@ -134,51 +125,10 @@ int main(int argc, char *argv[])
                    kHIViewWindowContentID,
                    &content);
 
-    // Bounds of slider
-
-    bounds.bottom = 72;
-    bounds.right  = 16;
-
-    // Create slider
-
-    CreateSliderControl(window, &bounds, kVolumeMax, kVolumeMin, kVolumeMax,
-                        kControlSliderPointsDownOrRight, 0, false,
-			NULL, &slider);
-
-    // Control size
-
-    ControlSize small = kControlSizeSmall;
-
-    // Set control size
-
-    SetControlData(slider, kControlEntireControl, kControlSizeTag,
-		   sizeof(small), &small);
-
-    // Set command ID
-
-    HIViewSetCommandID(slider, kCommandVolume);
-
-    // Set help tag
-
-    HMHelpContentRec help =
-	{kMacHelpVersion,
-	 {0, 0, 0, 0},
-	 kHMInsideLeftCenterAligned,
-	 {{kHMCFStringContent,
-	   CFSTR("Volume, click to adjust")},
-	  {kHMNoContent, NULL}}};
-
-    HMSetControlHelpContent(slider, &help);
-
-    // Place in the window
-
-    HIViewAddSubview(content, slider);
-    HIViewPlaceInSuperviewAt(slider, 20, 20);
-
     // Bounds of scope
 
     bounds.bottom = 32;
-    bounds.right  = 256;
+    bounds.right  = 280;
 
     // Create scope pane
 
@@ -190,19 +140,25 @@ int main(int argc, char *argv[])
 
     // Set help tag
 
-    help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Scope, click to filter audio");
+    HMHelpContentRec help =
+	{kMacHelpVersion,
+	 {0, 0, 0, 0},
+	 kHMInsideLeftCenterAligned,
+	 {{kHMCFStringContent,
+	   CFSTR("Scope, click to filter audio")},
+	  {kHMNoContent, NULL}}};
+
     HMSetControlHelpContent(scope.view, &help);
 
     // Place in the window
 
     HIViewAddSubview(content, scope.view);
-    HIViewPlaceInSuperviewAt(scope.view, 44, 20);
+    HIViewPlaceInSuperviewAt(scope.view, 20, 20);
 
     // Bounds of spectrum
 
     bounds.bottom = 32;
-    bounds.right  = 256;
+    bounds.right  = 280;
 
     // Create spectrum pane
 
@@ -221,7 +177,7 @@ int main(int argc, char *argv[])
     // Place in the window
 
     HIViewAddSubview(content, spectrum.view);
-    HIViewPlaceInSuperviewAt(spectrum.view, 44, 60);
+    HIViewPlaceInSuperviewAt(spectrum.view, 20, 60);
 
     // Bounds of display
 
@@ -302,6 +258,9 @@ int main(int argc, char *argv[])
     CreateSliderControl(window, &bounds, kMeterValue, kMeterMin, kMeterMax,
                         kControlSliderPointsUpOrLeft, 0, false,
 			NULL, &meter.slider);
+    // Control size
+
+    ControlSize small = kControlSizeSmall;
 
     // Set control size
 
@@ -1108,7 +1067,6 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float xp[kRange];
     static float xq[kRange];
     static float xf[kRange];
-    static float xs[kRange];
 
     static float dxa[kRange];
     static float dxp[kRange];
@@ -1598,16 +1556,6 @@ OSStatus CopyInfo(EventRef event)
 			 kAudioUnitScope_Global, 0, &frames, &size);
 
     sprintf(s, "Maximum frames: %ld\n", frames);
-    strcat(text, s);
-
-    // Volume
-
-    Float32 volume;
-
-    AudioUnitGetParameter(audio.output, kHALOutputParam_Volume,
-			  kAudioUnitScope_Input, 1, &volume);
-
-    sprintf(s, "Volume: %lf\n", volume);
     strcat(text, s);
 
     // Create a pasteboard
@@ -2721,12 +2669,6 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 
 	switch (command.commandID)
 	{
-	    // Volume
-
-	case kCommandVolume:
-	    ChangeVolume(event, command, value);
-	    break;
-
 	    // Zoom
 
 	case kCommandZoom:
@@ -2894,22 +2836,6 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 
 	}
     }
-
-    return noErr;
-}
-
-// Change volume
-
-OSStatus ChangeVolume(EventRef event,
-		      HICommandExtended command,
-		      UInt32 value)
-{
-    Float32 volume;
-
-    volume = (float)value / (float)kVolumeMax;
-
-    AudioUnitSetParameter(audio.output, kHALOutputParam_Volume,
-			  kAudioUnitScope_Input, 1, volume, 0);
 
     return noErr;
 }

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 42;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -12,7 +12,7 @@
 		23250E0411EA22EA00755379 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23250E0311EA22EA00755379 /* Carbon.framework */; };
 		23A73F6F124B6715002171D6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23A73F6E124B6715002171D6 /* CoreAudio.framework */; };
 		23CC96DE124AB13500E84510 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */; };
-		23D5C9CB11F0660C003699B8 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 23EB88F811EA20820036F9F1 /* Info.plist */; };
+		23D20E7F1284A804000F9D98 /* Tuner.icns in Resources */ = {isa = PBXBuildFile; fileRef = 23D20E7E1284A804000F9D98 /* Tuner.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,8 +21,10 @@
 		23250E0311EA22EA00755379 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		23A73F6E124B6715002171D6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
 		23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = /System/Library/Frameworks/AudioUnit.framework; sourceTree = "<absolute>"; };
+		23D20E7E1284A804000F9D98 /* Tuner.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Tuner.icns; sourceTree = "<group>"; };
 		23EB88F511EA20820036F9F1 /* Tuner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tuner.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		23EB88F811EA20820036F9F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = Info.plist; sourceTree = "<group>"; };
+		23EB88F811EA20820036F9F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A9E92C8D15A99F09005949BA /* Tuner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tuner.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,13 +45,10 @@
 		23EB88E011EA1FB50036F9F1 = {
 			isa = PBXGroup;
 			children = (
-				23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */,
-				23250E0311EA22EA00755379 /* Carbon.framework */,
-				23A73F6E124B6715002171D6 /* CoreAudio.framework */,
-				23250E0111EA22A900755379 /* Tuner.c */,
-				23098D46125B8EE300C3EB2E /* Accelerate.framework */,
+				A9E92C8B15A99E34005949BA /* Sources */,
+				A9E92C8C15A99E44005949BA /* Resources */,
+				A9E92C8915A99DEC005949BA /* Frameworks */,
 				23EB88F611EA20820036F9F1 /* Products */,
-				23EB88F811EA20820036F9F1 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -59,6 +58,35 @@
 				23EB88F511EA20820036F9F1 /* Tuner.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A9E92C8915A99DEC005949BA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				23C6BF3F11EA23D7006177F5 /* AudioUnit.framework */,
+				23250E0311EA22EA00755379 /* Carbon.framework */,
+				23A73F6E124B6715002171D6 /* CoreAudio.framework */,
+				23098D46125B8EE300C3EB2E /* Accelerate.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A9E92C8B15A99E34005949BA /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A9E92C8D15A99F09005949BA /* Tuner.h */,
+				23250E0111EA22A900755379 /* Tuner.c */,
+			);
+			name = Sources;
+			sourceTree = "<group>";
+		};
+		A9E92C8C15A99E44005949BA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				23EB88F811EA20820036F9F1 /* Info.plist */,
+				23D20E7E1284A804000F9D98 /* Tuner.icns */,
+			);
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -86,11 +114,20 @@
 /* Begin PBXProject section */
 		23EB88E211EA1FB50036F9F1 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0430;
+			};
 			buildConfigurationList = 23EB88E311EA1FB50036F9F1 /* Build configuration list for PBXProject "Tuner" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
 			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
 			mainGroup = 23EB88E011EA1FB50036F9F1;
 			productRefGroup = 23EB88F611EA20820036F9F1 /* Products */;
 			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				23EB88F411EA20820036F9F1 /* Tuner */,
 			);
@@ -102,7 +139,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				23D5C9CB11F0660C003699B8 /* Info.plist in Resources */,
+				23D20E7F1284A804000F9D98 /* Tuner.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -123,11 +160,10 @@
 		23EB88E411EA1FB50036F9F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = i386;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_ENABLE_SSE3_EXTENSIONS = YES;
-				GCC_MODEL_TUNING = G5;
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
@@ -137,8 +173,9 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				OTHER_CFLAGS = "-ffast-math";
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -146,14 +183,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = (
-					ppc,
 					i386,
+					ppc,
 				);
+				CLANG_X86_VECTOR_INSTRUCTIONS = default;
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
-				GCC_ENABLE_SSE3_EXTENSIONS = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = "";
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_CHECK_SWITCH_STATEMENTS = YES;
@@ -163,54 +199,42 @@
 				GCC_WARN_UNUSED_PARAMETER = NO;
 				GCC_WARN_UNUSED_VALUE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.4;
 				OTHER_CFLAGS = "-ffast-math";
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
 		23EB88FA11EA20830036F9F1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				OTHER_LDFLAGS = (
-					"-framework",
-					Carbon,
-				);
-				PREBINDING = NO;
 				PRODUCT_NAME = Tuner;
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = app;
-				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
 		23EB88FB11EA20830036F9F1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					"$(ARCHS_STANDARD_32_BIT)",
+					ppc,
+				);
 				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
-				OTHER_LDFLAGS = (
-					"-framework",
-					Carbon,
-				);
-				PREBINDING = NO;
 				PRODUCT_NAME = Tuner;
+				SDKROOT = macosx;
 				WRAPPER_EXTENSION = app;
-				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
