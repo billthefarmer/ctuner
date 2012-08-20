@@ -15,7 +15,7 @@ clean:
 	rm *.exe
 
 %.exe:	%.c
-	$(GCC) -o $@ $^ -O2 -march=opteron -ffast-math -std=gnu99 \
+	$(GCC) -o $@ $^ -O2 -march=core2 -ffast-math -std=gnu99 \
 		-mwindows -lcomctl32 -lwinmm
 
 %.o:	%.rc

@@ -60,6 +60,7 @@ enum
      ZOOM_ID,
      TEXT_ID,
      SAVE_ID,
+     DOWN_ID,
      LOCK_ID,
      CLOSE_ID,
      RESIZE_ID,
@@ -85,8 +86,7 @@ enum
      OVERSAMPLE = 16,
      SAMPLES = 16384,
      RANGE = SAMPLES * 3 / 8,
-     STEP = SAMPLES / OVERSAMPLE,
-     LORANGE = STEP * 3 / 8};
+     STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
 
@@ -125,11 +125,6 @@ enum
 enum
     {WIDTH  = 320,
      HEIGHT = 396};
-
-// Memory size
-
-enum
-    {MEM_SIZE = 1024};
 
 // Structs
 
@@ -186,6 +181,7 @@ typedef struct
 {
     HWND hwnd;
     UINT length;
+    UINT expand;
     BOOL zoom;
     float f;
     float r;
@@ -244,6 +240,7 @@ typedef struct
 {
     DWORD id;
     BOOL filter;
+    BOOL downsample;
     HWAVEIN hwi;
     HANDLE thread;
     double correction;
@@ -288,6 +285,8 @@ BOOL ResizeClicked(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
 BOOL LockClicked(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
+BOOL ExpandClicked(WPARAM, LPARAM);
+BOOL ContractClicked(WPARAM, LPARAM);
 BOOL MultipleClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditReference(WPARAM, LPARAM);
@@ -296,6 +295,7 @@ BOOL ChangeVolume(WPARAM, LPARAM);
 BOOL VolumeChange(WPARAM, LPARAM);
 BOOL CharPressed(WPARAM, LPARAM);
 BOOL CopyDisplay(WPARAM, LPARAM);
+BOOL DownClicked(WPARAM, LPARAM);
 BOOL ChangeCorrection(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 BOOL SaveCorrection(WPARAM, LPARAM);

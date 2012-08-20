@@ -48,6 +48,7 @@ TOOL group;
 TOOL zoom;
 TOOL text;
 TOOL lock;
+TOOL down;
 TOOL resize;
 TOOL filter;
 TOOL enable;
@@ -164,6 +165,7 @@ VOID GetSavedStatus()
 
     strobe.enable = TRUE;
     audio.filter = TRUE;
+    spectrum.expand = 1;
 
     // Reference initial value
 
@@ -571,6 +573,12 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    FilterClicked(wParam, lParam);
 	    break;
 
+	    // Downsample control
+
+	case DOWN_ID:
+	    DownClicked(wParam, lParam);
+	    break;
+
 	    // Lock control
 
 	case LOCK_ID:
@@ -819,6 +827,8 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 	       MF_STRING, ENABLE_ID, "Display strobe");
     AppendMenu(menu, audio.filter? MF_STRING | MF_CHECKED:
 	       MF_STRING, FILTER_ID, "Audio filter");
+    AppendMenu(menu, audio.downsample? MF_STRING | MF_CHECKED:
+	       MF_STRING, DOWN_ID, "Downsample");
     AppendMenu(menu, display.lock? MF_STRING | MF_CHECKED:
 	       MF_STRING, LOCK_ID, "Lock display");
     AppendMenu(menu, window.zoom? MF_STRING | MF_CHECKED:
@@ -973,22 +983,22 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
-	// Create lock tickbox
+	// Create downsample tickbox
 
-	lock.hwnd =
-	    CreateWindow(WC_BUTTON, "Lock display:",
+	down.hwnd =
+	    CreateWindow(WC_BUTTON, "Downsample:",
 			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
 			 BS_CHECKBOX,
 			 width / 2 + 10, 54, 124, 24,
-			 hWnd, (HMENU)LOCK_ID, hInst, NULL);
+			 hWnd, (HMENU)DOWN_ID, hInst, NULL);
 
-	SendMessage(lock.hwnd, BM_SETCHECK,
-		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+	SendMessage(down.hwnd, BM_SETCHECK,
+		    audio.downsample? BST_CHECKED: BST_UNCHECKED, 0);
 
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)lock.hwnd;
-	tooltip.info.lpszText = "Lock display, "
+	tooltip.info.lpszText = "Downsample, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1015,22 +1025,22 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
 
-	// Create multiple tickbox
+	// Create lock tickbox
 
-	multiple.hwnd =
-	    CreateWindow(WC_BUTTON, "Multiple notes:",
+	lock.hwnd =
+	    CreateWindow(WC_BUTTON, "Lock display:",
 			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
 			 BS_CHECKBOX,
 			 width / 2 + 10, 88, 124, 24,
-			 hWnd, (HMENU)MULTIPLE_ID, hInst, NULL);
+			 hWnd, (HMENU)LOCK_ID, hInst, NULL);
 
-	SendMessage(multiple.hwnd, BM_SETCHECK,
-		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
+	SendMessage(lock.hwnd, BM_SETCHECK,
+		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
 	// Add tickbox to tooltip
 
-	tooltip.info.uId = (UINT_PTR)multiple.hwnd;
-	tooltip.info.lpszText = "Display multiple notes, "
+	tooltip.info.uId = (UINT_PTR)lock.hwnd;
+	tooltip.info.lpszText = "Lock display, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1039,10 +1049,10 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Create text
 
 	text.hwnd =
-	    CreateWindow(WC_STATIC, "Reference:",
+	    CreateWindow(WC_STATIC, "Ref:",
 			 WS_VISIBLE | WS_CHILD |
 			 SS_LEFT,
-			 20, 126, 72, 20, hWnd,
+			 20, 126, 32, 20, hWnd,
 			 (HMENU)TEXT_ID, hInst, NULL);
 
 	// Create edit control
@@ -1053,7 +1063,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    CreateWindow(WC_EDIT, s,
 			 WS_VISIBLE | WS_CHILD |
 			 WS_BORDER,
-			 100, 124, 82, 20, hWnd,
+			 62, 124, 82, 20, hWnd,
 			 (HMENU)REFERENCE_ID, hInst, NULL);
 
 	// Add edit to tooltip
@@ -1081,6 +1091,27 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	tooltip.info.uId = (UINT_PTR)reference.hwnd;
 	tooltip.info.lpszText = "Reference, "
+	    "click to change";
+
+	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+		    (LPARAM) &tooltip.info);
+
+	// Create multiple tickbox
+
+	multiple.hwnd =
+	    CreateWindow(WC_BUTTON, "Multiple notes:",
+			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+			 BS_CHECKBOX,
+			 width / 2 + 10, 122, 124, 24,
+			 hWnd, (HMENU)MULTIPLE_ID, hInst, NULL);
+
+	SendMessage(multiple.hwnd, BM_SETCHECK,
+		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
+
+	// Add tickbox to tooltip
+
+	tooltip.info.uId = (UINT_PTR)multiple.hwnd;
+	tooltip.info.lpszText = "Display multiple notes, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1269,6 +1300,16 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    SetFocus(hWnd);
 	    break;
 
+	    // Downsample
+
+	case DOWN_ID:
+	    DownClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+
+	    SetFocus(hWnd);
+	    break;
+
 	    // Lock control
 
 	case LOCK_ID:
@@ -1411,6 +1452,64 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     }
 }
 
+// Down clicked
+
+BOOL DownClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	audio.downsample = !audio.downsample;
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    if (down.hwnd != NULL)
+	SendMessage(down.hwnd, BM_SETCHECK,
+		    audio.downsample? BST_CHECKED: BST_UNCHECKED, 0);
+    return TRUE;
+}
+
+// Expand clicked
+
+BOOL ExpandClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	if (spectrum.expand < 16)
+	    spectrum.expand *= 2;
+
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Contract clicked
+
+BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	if (spectrum.expand > 1)
+	    spectrum.expand /= 2;
+
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 // Lock clicked
 
 BOOL LockClicked(WPARAM wParam, LPARAM lParam)
@@ -1430,7 +1529,6 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
     if (lock.hwnd != NULL)
 	SendMessage(lock.hwnd, BM_SETCHECK,
 		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
-
     return TRUE;
 }
 
@@ -1600,6 +1698,13 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 	CopyDisplay(wParam, lParam);
 	break;
 
+	// Downsample
+
+    case 'D':
+    case 'd':
+	DownClicked(wParam, lParam);
+	break;
+
 	// Filter
 
     case 'F':
@@ -1648,6 +1753,18 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
     case 'z':
 	ZoomClicked(wParam, lParam);
 	break;
+
+	// Expand
+
+    case '+':
+	ExpandClicked(wParam, lParam);
+	break;
+
+	// Contract
+
+    case '-':
+	ContractClicked(wParam, lParam);
+	break;
     }
 }
 
@@ -1655,6 +1772,11 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 
 BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 {
+    // Memory size
+
+    enum
+    {MEM_SIZE = 1024};
+
     static char s[64];
 
     static char *notes[] =
@@ -1785,7 +1907,32 @@ VOID CALLBACK StrobeCallback(PVOID lpParam, BOOL TimerFired)
 BOOL DrawScope(HDC hdc, RECT rect)
 {
     static HBITMAP bitmap;
+    static HFONT font;
     static HDC hbdc;
+
+    enum
+    {FONT_HEIGHT   = 10};
+
+    // Bold font
+
+    static LOGFONT lf =
+	{0, 0, 0, 0,
+	 FW_BOLD,
+	 FALSE, FALSE, FALSE,
+	 DEFAULT_CHARSET,
+	 OUT_DEFAULT_PRECIS,
+	 CLIP_DEFAULT_PRECIS,
+	 DEFAULT_QUALITY,
+	 DEFAULT_PITCH | FF_DONTCARE,
+	 ""};
+
+    // Create font
+
+    if (font == NULL)
+    {
+	lf.lfHeight = FONT_HEIGHT;
+	font = CreateFontIndirect(&lf);
+    }
 
     // Draw nice etched edge
 
@@ -1804,6 +1951,12 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	bitmap = CreateCompatibleBitmap(hdc, width, height);
 	SelectObject(hbdc, bitmap);
 	SelectObject(hbdc, GetStockObject(DC_PEN));
+
+	// Select font
+
+	SelectObject(hbdc, font);
+	SetTextAlign(hbdc, TA_LEFT | TA_BOTTOM);
+	SetBkMode(hbdc, TRANSPARENT);
     }
 
     // Erase background
@@ -1898,14 +2051,10 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     if (audio.filter)
     {
-	MoveToEx(hbdc, 0, height - 7, NULL);
-	LineTo(hbdc, 0, height);
+	// Yellow text
 
-	MoveToEx(hbdc, 0, height - 7, NULL);
-	LineTo(hbdc, 4, height - 7);
-
-	MoveToEx(hbdc, 0, height - 4, NULL);
-	LineTo(hbdc, 3, height - 4);
+	SetTextColor(hbdc, RGB(255, 255, 0));
+	TextOut(hbdc, 0, height + 1, "F", 1);
     }
 
     // Copy the bitmap
@@ -1942,7 +2091,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     static char s[16];
 
-    // Create fonts
+    // Create font
 
     if (font == NULL)
     {
@@ -1971,7 +2120,6 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	// Select font
 
 	SelectObject(hbdc, font);
-	SetTextAlign(hbdc, TA_CENTER | TA_BOTTOM);
 	SetBkMode(hbdc, TRANSPARENT);
     }
 
@@ -2062,21 +2210,18 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	SetDCPenColor(hbdc, RGB(255, 255, 0));
 	SetTextColor(hbdc, RGB(255, 255, 0));
+	SetTextAlign(hbdc, TA_CENTER | TA_BOTTOM);
 
-	// Draw line for nearest frequency
-
-	int x = round((spectrum.f - spectrum.l) * xscale);
-	MoveToEx(hbdc, x, 0, NULL);
-	LineTo(hbdc, x, -height);
+	// Draw lines for each frequency
 
 	for (int i = 0; i < spectrum.count; i++)
 	{
-	    // Draw line for others that are in range
+	    // Draw line for each that are in range
 
 	    if (spectrum.values[i].f > spectrum.l &&
 		spectrum.values[i].f < spectrum.h)
 	    {
-		x = round((spectrum.values[i].f - spectrum.l) * xscale);
+		int x = round((spectrum.values[i].f - spectrum.l) * xscale);
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
 
@@ -2093,14 +2238,15 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 		    continue;
 
 		sprintf(s, "%+0.0f", c * 100.0);
-		TextOut(hbdc, x, 0, s, strlen(s));
+		TextOut(hbdc, x, 2, s, strlen(s));
 	    }
 	}
     }
 
     else
     {
-	float xscale = (float)spectrum.length / (float)width;
+	float xscale = ((float)spectrum.length /
+			(float)spectrum.expand) / (float)width;
 
 	for (int x = 0; x < width; x++)
 	{
@@ -2126,6 +2272,54 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	    LineTo(hbdc, x, y);
 	}
+
+	// Yellow pen for frequency trace
+
+	SetDCPenColor(hbdc, RGB(255, 255, 0));
+	SetTextColor(hbdc, RGB(255, 255, 0));
+	SetTextAlign(hbdc, TA_CENTER | TA_BOTTOM);
+
+	// Draw lines for each frequency
+
+	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Draw line for each
+
+	    int x = round(spectrum.values[i].f / xscale);
+	    MoveToEx(hbdc, x, 0, NULL);
+	    LineTo(hbdc, x, -height);
+
+	    double f = display.maxima[i].f;
+
+	    // Reference freq
+
+	    double fr = display.maxima[i].fr;
+	    double c = -12.0 * log2(fr / f);
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    sprintf(s, "%+0.0f", c * 100.0);
+	    TextOut(hbdc, x, 2, s, strlen(s));
+	}
+
+	SetTextAlign(hbdc, TA_LEFT | TA_BOTTOM);
+
+	if (spectrum.expand > 1)
+	{
+	    sprintf(s, "x%d", spectrum.expand);
+	    TextOut(hbdc, 0, 2, s, strlen(s));
+	}
+    }
+
+    // D for downsample
+
+    if (audio.downsample)
+    {
+	SetTextAlign(hbdc, TA_LEFT | TA_BOTTOM);
+	TextOut(hbdc, 0, 10 - height, "D", 1);
     }
 
     // Move the origin back
@@ -3219,7 +3413,10 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     static double xp[RANGE];
     static double xf[RANGE];
 
-    static double xs[LORANGE];
+    static double x2[RANGE / 2];
+    static double x3[RANGE / 3];
+    static double x4[RANGE / 4];
+    static double x5[RANGE / 5];
 
     static double dx[RANGE];
 
@@ -3286,58 +3483,15 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     double norm = dmax;
     dmax = 0.0;
 
-    // Copy data to FFT input arrays for low resolution spectrum
-
-    for (int i = 0; i < STEP; i++)
-    {
-	// Find the magnitude
-
-	if (dmax < fabs(buffer[i]))
-	    dmax = fabs(buffer[i]);
-
-    	// Calculate the window
-
-    	double window =
-    	    0.5 - 0.5 * cos(2.0 * M_PI *
-    			    i / STEP);
-
-    	// Normalise and window the input data
-
-    	x[i].r = (double)(buffer + SAMPLES - STEP)[i] / norm * window;
-    }
-
-    // do FFT for spectrum
-
-    fftr(x, STEP);
-
-    // Process FFT output for spectrum
-
-    for (int i = 1; i < LORANGE; i++)
-    {
-    	double real = x[i].r;
-    	double imag = x[i].i;
-
-    	xs[i] = hypot(real, imag);
-    }
-
-    // Switch spectrum data
-
-    if (spectrum.zoom)
-    {
-    	spectrum.data = xa;
-    	spectrum.length = RANGE;
-    }
-
-    else
-    {
-    	spectrum.data = xs;
-    	spectrum.length = LORANGE;
-    }
-
     // Copy data to FFT input arrays for tuner
 
     for (int i = 0; i < SAMPLES; i++)
     {
+    	// Find the magnitude
+
+    	if (dmax < fabs(buffer[i]))
+    	    dmax = fabs(buffer[i]);
+
 	// Calculate the window
 
 	double window =
@@ -3409,23 +3563,94 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	dx[i] = xa[i] - xa[i - 1];
     }
 
+    // Downsample
+
+    if (audio.downsample)
+    {
+	// x2 = xa << 2
+
+	for (int i = 0; i < Length(x2); i++)
+	{
+	    x2[i] = 0.0;
+
+	    for (int j = 0; j < 2; j++)
+		x2[i] += xa[(i * 2) + j] / 2.0;
+	}
+
+	// x3 = xa << 3
+
+	for (int i = 0; i < Length(x3); i++)
+	{
+	    x3[i] = 0.0;
+
+	    for (int j = 0; j < 3; j++)
+		x3[i] += xa[(i * 3) + j] / 3.0;
+	}
+
+	// x4 = xa << 4
+
+	for (int i = 0; i < Length(x4); i++)
+	{
+	    x4[i] = 0.0;
+
+	    for (int j = 0; j < 4; j++)
+		x2[i] += xa[(i * 4) + j] / 4.0;
+	}
+
+	// x5 = xa << 5
+
+	for (int i = 0; i < Length(x5); i++)
+	{
+	    x5[i] = 0.0;
+
+	    for (int j = 0; j < 5; j++)
+		x5[i] += xa[(i * 5) + j] / 5.0;
+	}
+
+	// Add downsamples
+
+	for (int i = 1; i < Length(xa); i++)
+	{
+	    if (i < Length(x2))
+		xa[i] += x2[i];
+
+	    if (i < Length(x3))
+		xa[i] += x3[i];
+
+	    if (i < Length(x4))
+		xa[i] += x4[i];
+
+	    if (i < Length(x5))
+		xa[i] += x5[i];
+
+	    // Recalculate differences
+
+	    dx[i] = xa[i] - xa[i - 1];
+	}
+    }
+
+
     // Maximum FFT output
 
     double max = 0.0;
+    double f = 0.0;
 
     int count = 0;
     int limit = RANGE - 1;
 
     // Find maximum value, and list of maxima
 
-    for (int i = 2; i < limit; i++)
+    for (int i = 1; i < limit; i++)
     {
 	if (xa[i] > max)
+	{
 	    max = xa[i];
+	    f = xf[i];
+	}
 
 	// If display not locked, find maxima and add to list
 
-	if (!display.lock &&
+	if (!display.lock && count < Length(maxima) &&
 	    xa[i] > MIN && xa[i] > (max / 4.0) &&
 	    dx[i] > 0.0 && dx[i + 1] < 0.0)
 	{
@@ -3446,21 +3671,15 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	    // Set limit to octave above
 
-	    if (limit > i * 2)
+	    if (!audio.downsample && (limit > i * 2))
 		limit = i * 2 - 1;
 
 	    count++;
 	}
-
-	// Check count
-
-	if (count == Length(maxima))
-	    break;
-    }
+   }
 
     // Reference note frequency and lower and upper limits
 
-    double f = 0.0;
     double fr = 0.0;
     double fl = 0.0;
     double fh = 0.0;
@@ -3482,7 +3701,8 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Frequency
 
-	f = maxima[0].f;
+	if (!audio.downsample)
+	    f = maxima[0].f;
 
 	// Cents relative to reference
 

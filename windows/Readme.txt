@@ -39,11 +39,13 @@ Options
 The zoom and strobe tick boxes may be used to turn the zoom and strobe
 display off and on. The audio filter tick box controls a 3dB/octave
 audio filter on the input. This is intended to make it easier to tune
-low notes by reducing the level of harmonics. The display lock tick
-box may be used to lock the display. The resize tick box may be used
-to resize the display. The multiple tick box may be used to display
-multiple tuning values. The text box and up/down arrows may be used to
-adjust the reference.
+low notes by reducing the level of harmonics. The downsample tick box
+controls a downsampling algorithm that enhanced the fundamental
+frequency in the input. It also generates spurious subharmonics that
+should be ignored. The display lock tick box may be used to lock the
+display. The resize tick box may be used to resize the display. The
+multiple tick box may be used to display multiple tuning values. The
+text box and up/down arrows may be used to adjust the reference.
 
 Some audio input devices appear to have inaccurate clocks. Out of
 three laptops I have tested, two were up to 0.7% out. The correction
