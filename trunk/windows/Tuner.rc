@@ -6,8 +6,8 @@ Tuner ICON "Tuner.ico"
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "Tuner.manifest"
 
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION    	1,0,2,0
-PRODUCTVERSION 	1,0,2,0
+FILEVERSION    	1,0,3,0
+PRODUCTVERSION 	1,0,3,0
 FILEFLAGSMASK  	VS_FFI_FILEFLAGSMASK
 FILEFLAGS      	0x0L
 FILEOS         	VOS__WINDOWS32
@@ -20,12 +20,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "Bill Farmer"
             VALUE "FileDescription",  "Musical Instrument Tuner"
-            VALUE "FileVersion",      "1.0.2"
+            VALUE "FileVersion",      "1.0.3"
             VALUE "InternalName",     "Tuner"
-            VALUE "LegalCopyright",   "Copyright (C) 2011 Bill Farmer"
+            VALUE "LegalCopyright",   "Copyright (C) 2012 Bill Farmer"
             VALUE "OriginalFilename", "Tuner.exe"
             VALUE "ProductName",      "Tuner"
-            VALUE "ProductVersion",   "1.0.2"
+            VALUE "ProductVersion",   "1.0.3"
         END
     END
     BLOCK "VarFileInfo"

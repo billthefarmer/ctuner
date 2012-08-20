@@ -551,6 +551,7 @@ void GetPreferences()
     Boolean flag;
 
     strobe.enable = true;
+    spectrum.expand = 1;
     audio.reference = kA5Reference;
 
     // Zoom
@@ -576,6 +577,14 @@ void GetPreferences()
 					   &found);
     if (found)
 	audio.filter = flag;
+
+    // Downsample
+
+    flag = CFPreferencesGetAppBooleanValue(CFSTR("Downsample"),
+					   kCFPreferencesCurrentApplication,
+					   &found);
+    if (found)
+	audio.downsample = flag;
 
     CFIndex value;
 
@@ -1068,6 +1077,11 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
     static float xq[kRange];
     static float xf[kRange];
 
+    static float x2[kRange / 2];
+    static float x3[kRange / 3];
+    static float x4[kRange / 4];
+    static float x5[kRange / 5];
+
     static float dxa[kRange];
     static float dxp[kRange];
 
@@ -1228,24 +1242,92 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
     memmove(xp, xq, kRange * sizeof(float));
 
+    // Downsample
+
+    if (audio.downsample)
+    {
+	// x2 = xa << 2
+
+	for (int i = 0; i < Length(x2); i++)
+	{
+	    x2[i] = 0.0;
+
+	    for (int j = 0; j < 2; j++)
+		x2[i] += xa[(i * 2) + j] / 2.0;
+	}
+
+	// x3 = xa << 3
+
+	for (int i = 0; i < Length(x3); i++)
+	{
+	    x3[i] = 0.0;
+
+	    for (int j = 0; j < 3; j++)
+		x3[i] += xa[(i * 3) + j] / 3.0;
+	}
+
+	// x4 = xa << 4
+
+	for (int i = 0; i < Length(x4); i++)
+	{
+	    x4[i] = 0.0;
+
+	    for (int j = 0; j < 4; j++)
+		x2[i] += xa[(i * 4) + j] / 4.0;
+	}
+
+	// x5 = xa << 5
+
+	for (int i = 0; i < Length(x5); i++)
+	{
+	    x5[i] = 0.0;
+
+	    for (int j = 0; j < 5; j++)
+		x5[i] += xa[(i * 5) + j] / 5.0;
+	}
+
+	// Add downsamples
+
+	for (int i = 0; i < Length(xa); i++)
+	{
+	    if (i < Length(x2))
+		xa[i] += x2[i];
+
+	    if (i < Length(x3))
+		xa[i] += x3[i];
+
+	    if (i < Length(x4))
+		xa[i] += x4[i];
+
+	    if (i < Length(x5))
+		xa[i] += x5[i];
+
+	    // Calculate differences for finding maxima
+
+	    dxa[i] = xa[i] - xa[i - 1];
+
+	}
+    }
+
     // Maximum FFT output
 
     float  max;
     UInt32 imax;
 
-    int count = 0;
-	
     vDSP_maxmgvi(xa, 1, &max, &imax, kRange);
 
     float f = xf[imax];
 
+    int count = 0;
+    int limit = kRange - 1;
+
     // Find maximum value, and list of maxima
 
-    for (int i = 1; i < kRange - 1; i++)
+    for (int i = 1; i < limit; i++)
     {
 	// If display not locked, find maxima and add to list
 
-	if (!display.lock &&
+	if (!display.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 2) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	{
@@ -1264,11 +1346,13 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	    maxima[count].n = round(cf) + kC5Offset;
 
+	    // Set limit to octave above
+
+	    if (!audio.downsample && (limit > i * 2))
+		limit = i * 2 - 1;
+
 	    count++;
 	}
-
-	if (count == Length(maxima))
-	    break;
     }
 
     // Reference note frequency and lower and upper limits
@@ -1294,7 +1378,8 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 
 	// Frequency
 
-	f = maxima[0].f;
+	if (!audio.downsample)
+	    f = maxima[0].f;
 
 	// Cents relative to reference
 
@@ -1711,6 +1796,9 @@ OSStatus StrokeRoundRect(CGContextRef context, CGRect rect, float radius)
 OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 			       EventRef event, void *data)
 {
+    enum
+    {kTextSize = 10};
+
     CGContextRef context;
     HIRect bounds, inset;
     HIViewRef view;
@@ -1825,21 +1913,28 @@ OSStatus ScopeDrawEventHandler(EventHandlerCallRef next,
 	CGContextAddLineToPoint(context, i, y);
     }
 
+    CGContextStrokePath(context);
+
     // Show F if filtered
 
     if (audio.filter)
     {
-	CGContextMoveToPoint(context, 0, height / 2 - 7);
-	CGContextAddLineToPoint(context, 0, height);
+	// Yellow text
 
-	CGContextMoveToPoint(context, 0, height / 2 - 7);
-	CGContextAddLineToPoint(context, 4, height / 2 - 7);
+	CGContextSetRGBStrokeColor(context, 1, 1, 0, 1);
+	CGContextSetRGBFillColor(context, 1, 1, 0, 1);
 
-	CGContextMoveToPoint(context, 0, height / 2 - 4);
-	CGContextAddLineToPoint(context, 3, height / 2 - 4);
+        // Select font
+
+	CGContextSelectFont(context, "Arial Bold", kTextSize,
+			    kCGEncodingMacRoman);
+
+	CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
+	CGContextSetTextDrawingMode(context, kCGTextFill);
+	CGContextSetShouldAntialias(context, true);
+
+	CGContextShowTextAtPoint(context, 0, height / 2 - 2, "F", 1);
     }
-
-    CGContextStrokePath(context);
 
     return noErr;
 }
@@ -1970,21 +2065,18 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
 	CGContextSetRGBStrokeColor(context, 1, 1, 0, 1);
 	CGContextSetRGBFillColor(context, 1, 1, 0, 1);
-    
-	// Draw line for nearest frequency
+	CGContextBeginPath(context);
 
-	float x = (spectrum.f - spectrum.l) * xscale;
-	CGContextMoveToPoint(context, x, 0);
-	CGContextAddLineToPoint(context, x, -height);
+	// Draw line for nearest frequency
 
 	for (int i = 0; i < spectrum.count; i++)
 	{
-	    // Draw line for others that are in range
+	    // Draw line for values that are in range
 
 	    if (spectrum.values[i] > spectrum.l &&
 		spectrum.values[i] < spectrum.h)
 	    {
-		x = (spectrum.values[i] - spectrum.l) * xscale;
+		float x = (spectrum.values[i] - spectrum.l) * xscale;
 		CGContextMoveToPoint(context, x, 0);
 		CGContextAddLineToPoint(context, x, -height);
 	    }
@@ -2003,7 +2095,7 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 
     	for (int i = 0; i < spectrum.count; i++)
 	{
-	    // Show value for others that are in range
+	    // Show value for values that are in range
 
 	    if (spectrum.values[i] > spectrum.l &&
 		spectrum.values[i] < spectrum.h)
@@ -2021,18 +2113,18 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 		if (!isfinite(c))
 		    continue;
 
-		x = (spectrum.values[i] - spectrum.l) * xscale;
+		float x = (spectrum.values[i] - spectrum.l) * xscale;
 
 		sprintf(s, "%+0.0f", c * 100.0);
-		CentreTextAtPoint(context, x, 0,
-				  s, strlen(s));
+		CentreTextAtPoint(context, x, -1, s, strlen(s));
 	    }
 	}
     }
 
     else
     {
-	float xscale = (float)spectrum.length / (float)width;
+	float xscale = ((float)spectrum.length /
+			(float)spectrum.expand) / (float)width;
 
 	for (int x = 0; x < width; x++)
 	{
@@ -2060,7 +2152,65 @@ OSStatus SpectrumDrawEventHandler(EventHandlerCallRef next,
 	}
 
 	CGContextStrokePath(context);
+
+	// Yellow pen for frequency trace
+
+	CGContextSetRGBStrokeColor(context, 1, 1, 0, 1);
+	CGContextSetRGBFillColor(context, 1, 1, 0, 1);
+	CGContextBeginPath(context);
+
+	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Draw line for values
+
+	    float x = spectrum.values[i] / xscale;
+	    CGContextMoveToPoint(context, x, 0);
+	    CGContextAddLineToPoint(context, x, -height);
+	}
+
+	CGContextStrokePath(context);
+
+        // Select font
+
+	CGContextSelectFont(context, "Arial Bold", kTextSize,
+			    kCGEncodingMacRoman);
+
+	CGContextSetTextMatrix(context, CGAffineTransformMakeScale(1, -1));
+	CGContextSetTextDrawingMode(context, kCGTextFill);
+	CGContextSetShouldAntialias(context, true);
+
+    	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Show value for values
+
+	    float f = display.maxima[i].f;
+
+	    // Reference freq
+
+	    float fr = display.maxima[i].fr;
+
+	    float c = -12.0 * log2f(fr / f);
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    float x = spectrum.values[i] / xscale;
+
+	    sprintf(s, "%+0.0f", c * 100.0);
+	    CentreTextAtPoint(context, x, -1, s, strlen(s));
+	}
+
+	if (spectrum.expand > 1)
+	{
+	    sprintf(s, "x%d", spectrum.expand);
+	    CGContextShowTextAtPoint(context, 0, -1, s, strlen(s));
+	}
     }
+
+    if (audio.downsample)
+	CGContextShowTextAtPoint(context, 0, 8 - height, "D", 1);
 
     return noErr;
 }
@@ -2705,6 +2855,18 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 				     kCFPreferencesCurrentApplication);
 	    break;
 
+	    // Downsample
+
+	case kCommandDownsample:
+	    audio.downsample = !audio.downsample;
+	    HIViewSetValue(check.downsample, audio.downsample);
+	    HIViewSetNeedsDisplay(scope.view, true);
+
+	    CFPreferencesSetAppValue(CFSTR("Downsample"), audio.downsample?
+				     kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
+
 	    // Lock
 
 	case kCommandLock:
@@ -2790,6 +2952,18 @@ OSStatus CommandEventHandler(EventHandlerCallRef next, EventRef event,
 	    HIViewSetNeedsDisplay(scope.view, true);
 
 	    CFPreferencesSetAppValue(CFSTR("Filter"), audio.filter?
+				     kCFBooleanTrue: kCFBooleanFalse,
+				     kCFPreferencesCurrentApplication);
+	    break;
+
+	    // Downsample
+
+	case kCommandDownsample:
+	    audio.downsample = !audio.downsample;
+	    HIViewSetValue(check.downsample, audio.downsample);
+	    HIViewSetNeedsDisplay(scope.view, true);
+
+	    CFPreferencesSetAppValue(CFSTR("Downsample"), audio.downsample?
 				     kCFBooleanTrue: kCFBooleanFalse,
 				     kCFPreferencesCurrentApplication);
 	    break;
@@ -2964,13 +3138,32 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Set help tag
 
     help.content[kHMMinimumContentIndex].u.tagCFString =
-	CFSTR("Audip filter, click to change");
+	CFSTR("Audio filter, click to change");
     HMSetControlHelpContent(check.filter, &help);
 
     // Place in group box
 
     HIViewAddSubview(group, check.filter);
     HIViewPlaceInSuperviewAt(check.filter, 16, 40);
+
+    // Create  check box
+
+    CreateCheckBoxControl(window, &bounds, CFSTR("Downsample"),
+			  audio.downsample, true, &check.downsample);
+    // Set command ID
+
+    HIViewSetCommandID(check.downsample, kCommandDownsample);
+
+    // Set help tag
+
+    help.content[kHMMinimumContentIndex].u.tagCFString =
+	CFSTR("Downsample, click to change");
+    HMSetControlHelpContent(check.downsample, &help);
+
+    // Place in group box
+
+    HIViewAddSubview(group, check.downsample);
+    HIViewPlaceInSuperviewAt(check.downsample, 140, 40);
 
     // Create  check box
 
@@ -2989,7 +3182,7 @@ OSStatus DisplayPreferences(EventRef event, void *data)
     // Place in group box
 
     HIViewAddSubview(group, check.lock);
-    HIViewPlaceInSuperviewAt(check.lock, 140, 40);
+    HIViewPlaceInSuperviewAt(check.lock, 140, 64);
 
     // Create  check box
 
@@ -3271,16 +3464,17 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 	CopyDisplay(event);
 	break;
 
-#ifdef DEBUG
-
-	// Copy info
-
     case 'D':
     case 'd':
-	CopyInfo(event);
+	audio.downsample = !audio.downsample;
+	HIViewSetValue(check.downsample, audio.downsample);
+	HIViewSetNeedsDisplay(scope.view, true);
+
+	CFPreferencesSetAppValue(CFSTR("Downsample"), audio.downsample?
+				 kCFBooleanTrue: kCFBooleanFalse,
+				 kCFPreferencesCurrentApplication);
 	break;
 
-#endif
 	// Filter
 
     case 'F':
@@ -3294,6 +3488,16 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 				 kCFPreferencesCurrentApplication);
 	break;
 
+#ifdef DEBUG
+
+	// Copy info
+
+    case 'I':
+    case 'i':
+	CopyInfo(event);
+	break;
+
+#endif
 	// Lock
 
     case 'L':
@@ -3345,6 +3549,18 @@ OSStatus TextEventHandler(EventHandlerCallRef next, EventRef event,
 				 kCFPreferencesCurrentApplication);
 	break;
 
+    case '+':
+	if (spectrum.expand < 16)
+	    spectrum.expand *= 2;
+
+	break;
+
+    case '-':
+	if (spectrum.expand > 1)
+	    spectrum.expand /= 2;
+
+	break;
+
     default:
 	return eventNotHandledErr;
     }
@@ -3380,6 +3596,12 @@ OSStatus DisplayPopupMenu(EventRef event, HIPoint location, void *data)
     AppendMenuItemTextWithCFString(menu, CFSTR("Audio filter"),
                                    0, kCommandFilter, &item);
     CheckMenuItem(menu, item, audio.filter);
+
+    // Downsample
+
+    AppendMenuItemTextWithCFString(menu, CFSTR("Downsample"),
+                                   0, kCommandDownsample, &item);
+    CheckMenuItem(menu, item, audio.downsample);
 
     // Lock
 

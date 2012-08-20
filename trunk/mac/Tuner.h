@@ -88,6 +88,7 @@ enum
      kCommandMultiple   = 'Mult',
      kCommandZoom       = 'Zoom',
      kCommandLock       = 'Lock',
+     kCommandDownsample = 'Down',
      kCommandFilter     = 'Fltr'};
 
 // Audio event constants
@@ -116,6 +117,7 @@ typedef struct
 {
     HIViewRef view;
     int length;
+    int expand;
     int count;
     bool zoom;
     float f;
@@ -176,6 +178,7 @@ typedef struct
     HIViewRef strobe;
     HIViewRef filter;
     HIViewRef multiple;
+    HIViewRef downsample;
 } Check;
 
 typedef struct
@@ -187,10 +190,11 @@ typedef struct
 {
     AudioUnit output;
     AudioDeviceID id;
-    float *buffer;
+    bool downsample;
     bool filter;
     int divisor;
     int frames;
+    float *buffer;
     float sample;
     float reference;
 } Audio;
