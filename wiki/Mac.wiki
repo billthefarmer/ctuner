@@ -38,5 +38,3 @@ There are a number of differences from the Windows version:
 == Downloads ==
 
 <wiki:gadget url="http://google-code-project-hosting-gadgets.googlecode.com/svn/build/prod/downloads/gcDownloads.xml" up_projectName="ctuner" border="0"/>
-
-http://billthefarmer.users.sourceforge.net/piwik/piwik.php?idsite=4&rec=1&action_name=Wiki/Mac&dummy=dummy.png
