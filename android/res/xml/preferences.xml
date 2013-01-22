@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+  <CheckBoxPreference
+      android:key="pref_filter"
+      android:title="@string/pref_filter"
+      android:summary="@string/pref_filter_summ"
+      android:defaultValue="true" />
+  <CheckBoxPreference
+      android:key="pref_down"
+      android:title="@string/pref_down"
+      android:summary="@string/pref_down_summ"
+      android:defaultValue="false" />
+  <CheckBoxPreference
+      android:key="pref_zoom"
+      android:title="@string/pref_zoom"
+      android:summary="@string/pref_zoom_summ"
+      android:defaultValue="true" />
+  <CheckBoxPreference
+      android:key="pref_multiple"
+      android:title="@string/pref_multiple"
+      android:summary="@string/pref_multiple_summ"
+      android:defaultValue="false" />
+  <EditTextPreference
+      android:key="pref_ref"
+      android:title="@string/pref_ref"
+      android:summary="@string/pref_ref_summ"
+      android:numeric="decimal"
+      android:defaultValue="440.00" />
+</PreferenceScreen>
