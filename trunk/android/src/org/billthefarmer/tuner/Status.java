@@ -34,6 +34,8 @@ import android.view.View;
 
 public class Status extends View
 {
+    MainActivity.Audio audio;
+
     int size;
     int width;
     int height;
@@ -47,15 +49,7 @@ public class Status extends View
 	super(context, attrs);
     }
 
-    public void update(int s, Object o)
-    {
-	size = s;
-	object = o;
-
-	invalidate();
-    }
-
-    public void onSizeChanged(int w, int h, int oldw, int oldh)
+    protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
 	width = w;
 	height = h;
@@ -67,7 +61,7 @@ public class Status extends View
     }
 
     @SuppressLint("DefaultLocale")
-	public void onDraw(Canvas canvas)
+    protected void onDraw(Canvas canvas)
     {
 	rect.inset(1, 1);
 

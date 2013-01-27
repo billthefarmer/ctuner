@@ -30,14 +30,11 @@ import android.graphics.Paint.Style;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 
+// Class Display
+
 public class Display extends TunerView
 {
-    int n;
-    float c;
-    float df;
-    float f;
-    float fr;
-    float r;
+    protected MainActivity.Audio audio;
 
     int large;
     int medium;
@@ -54,20 +51,7 @@ public class Display extends TunerView
 	super(context, attrs);
     }
 
-    public void setValues(int note, float cents, float diff,
-			  float freq, float ref, float reff)
-    {
-	n = note;
-	c = cents;
-	df = diff;
-	f = freq;
-	fr = ref;
-	r = reff;
-
-	invalidate();
-    }
-
-    public void onSizeChanged(int w, int h, int oldw, int oldh)
+    protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
     	super.onSizeChanged(w, h, oldw, oldh);
     	
@@ -86,7 +70,7 @@ public class Display extends TunerView
     	}
     }
 
-    public void onDraw(Canvas canvas)
+    protected void onDraw(Canvas canvas)
     {
     	super.onDraw(canvas);
 
@@ -111,10 +95,10 @@ public class Display extends TunerView
     	canvas.translate(0, medium);
     	paint.setTextSize(medium);
     	paint.setTypeface(Typeface.DEFAULT);
-    	canvas.drawText("0000.00Hz", margin, 0, paint);
+    	canvas.drawText("0.00Hz", margin, 0, paint);
     	
-    	dx = paint.measureText("0000.00Hz");
-    	canvas.drawText("0000.00Hz", width - dx - margin, 0, paint);
+    	dx = paint.measureText("0.00Hz");
+    	canvas.drawText("0.00Hz", width - dx - margin, 0, paint);
 
     	canvas.translate(0, medium);
     	paint.setTextSize(medium);

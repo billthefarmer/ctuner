@@ -29,7 +29,9 @@ import android.util.AttributeSet;
 
 public class Strobe extends TunerView
 {
-    public Strobe(Context context, AttributeSet attrs)
+	MainActivity.Audio audio;
+
+	public Strobe(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
     }

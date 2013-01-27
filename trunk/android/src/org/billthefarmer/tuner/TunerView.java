@@ -43,11 +43,11 @@ public class TunerView extends View
     RectF clipRect;
     RectF outlineRect;
 
-    MainActivity act;
+    protected MainActivity mainActivity;
 
     // Constructor
 
-    public TunerView(Context context, AttributeSet attrs)
+    protected TunerView(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
 
@@ -56,7 +56,7 @@ public class TunerView extends View
 
     // On Size Changed
 
-    public void onSizeChanged(int w, int h, int oldw, int oldh)
+    protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
 	// Save the new width and height
 
@@ -72,7 +72,7 @@ public class TunerView extends View
 
     // On Draw
 
-    public void onDraw(Canvas canvas)
+    protected void onDraw(Canvas canvas)
     {
 	// Set up the paint and draw the outline
 

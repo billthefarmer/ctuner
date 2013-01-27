@@ -4,7 +4,7 @@
         android:id="@+id/settings"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
-        android:onClick="settings"
+        android:onClick="onSettingsClick"
         android:title="@string/settings"
         android:icon="@drawable/ic_action_settings" />
 

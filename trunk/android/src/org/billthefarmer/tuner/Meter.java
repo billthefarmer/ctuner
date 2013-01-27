@@ -41,6 +41,8 @@ import android.util.AttributeSet;
 
 public class Meter extends TunerView
 {
+    MainActivity.Audio audio;
+
     LinearGradient gradient;
     Matrix matrix;
     RectF barRect;
@@ -57,22 +59,9 @@ public class Meter extends TunerView
 	super(context, attrs);
     }
 
-    // Update
-
-    public void update(float c)
-    {
-	// Do meter lag
-
-	cents = cents * 0.9f + c * 0.1f;
-
-	// Queue a redraw
-
-	invalidate();
-    }
-
     // OnSizeChanged
 
-    public void onSizeChanged(int w, int h, int oldw, int oldh)
+    protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
     	super.onSizeChanged(w, h, oldw, oldh);
 
@@ -123,7 +112,7 @@ public class Meter extends TunerView
     // OnDraw
 
     @SuppressLint("DefaultLocale")
-	public void onDraw(Canvas canvas)
+    protected void onDraw(Canvas canvas)
     {
     	super.onDraw(canvas);
 
