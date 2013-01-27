@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<string-array name="pref_sample_rate_entries">
+	    <item>8000</item>
+	    <item>11025</item>
+	    <item>16000</item>
+	    <item>22050</item>
+	    <item>44100</item>
+	</string-array>
+	<string-array name="pref_sample_rate_entry_values">
+	    <item>8000</item>
+	    <item>11025</item>
+	    <item>16000</item>
+	    <item>22050</item>
+	    <item>44100</item>
+	</string-array>
+
+</resources>

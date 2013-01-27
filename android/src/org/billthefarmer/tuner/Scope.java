@@ -30,13 +30,74 @@ import android.util.AttributeSet;
 
 public class Scope extends Graticule
 {
+    protected MainActivity.Audio audio;
+
+    static int max;
+
     public Scope(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
     }
 
-    public void onDraw(Canvas canvas)
+    @Override
+    protected void onDraw(Canvas canvas)
     {
 	super.onDraw(canvas);
+
+	// Check for data
+
+	if (audio.data == null)
+	    return;
+
+	// Initialise sync
+
+	int maxdx = 0;
+	int dx = 0;
+	int n = 0;
+
+	for (int i = 1; i < audio.data.length; i++)
+	{
+	    dx = audio.data[i] - audio.data[i - 1];
+	    if (maxdx < dx)
+	    {
+		maxdx = dx;
+		n = i;
+	    }
+
+	    if (maxdx > 0 && dx < 0)
+		break;
+	}
+
+	// Color green
+
+	paint.setStrokeWidth(1);
+	paint.setColor(0xff00ff00);
+
+	// Translate camvas
+
+	canvas.translate(0, height / 2);
+
+	if (max < 4096)
+	    max = 4096;
+
+	float yscale = max / (height / 2);
+
+	max = 0;
+
+	float oldx = 0;
+	float oldy = 0;
+
+	for (int i = 0; i <= Math.min(width, audio.data.length - n); i++)
+	{
+	    if (max < Math.abs(audio.data[n + i]))
+		max = Math.abs(audio.data[n + i]);
+
+	    float y = -audio.data[n + i] / yscale;
+	    canvas.drawLine(oldx, oldy, i, y, paint);
+
+	    oldx = i;
+	    oldy = y;
+	}
+
     }
 }

@@ -34,14 +34,14 @@ public class Graticule extends TunerView
 {
     // Contructor
 
-    public Graticule(Context context, AttributeSet attrs)
+    protected Graticule(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
     }
 
     // On Draw
 
-    public void onDraw(Canvas canvas)
+    protected void onDraw(Canvas canvas)
     {
 	super.onDraw(canvas);
 
