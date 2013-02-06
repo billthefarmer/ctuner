@@ -1,19 +1,19 @@
-The API Demos application includes a variety of small applications 
-that illustrate the use of various Android APIs. It includes samples of:
-  - Notifications
-  - Alarms
-  - Progress Dialogs
-  - Intents
-  - Menus
-  - Search
-  - Persistent application state
-  - Preferences
-  - Background Services
-  - App Widgets
-  - Voice Recognition
-  - And many many more...
+Android Tuner
 
-Api demos is designed to use the compatibility library "android-support-v4.jar".
-It is available through the SDK Updater in the "Android Compatibility package".
-Once downloaded, copy the jar file into the ApiDemos project libs/ folder.
-(If using Eclipse, add it manually to the project build path).
+To import this project into the Android ADT you will need to add a
+.project file here. The easiest way to do that is to copy one from
+another project and edit the
+
+<projectDescription>
+	<name>Tuner</name>
+
+line to change the name. Or create a new project and copy all the
+files.
+
+If you want to use the Android SDK, you will need to enter
+
+android update project -p <project folder>
+
+from the command line or terminal substituting the project's folder
+for <project folder>. Then build it with ant. I don't understand ant,
+so I'm not going there.
