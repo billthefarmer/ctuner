@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -26,6 +26,7 @@ package org.billthefarmer.tuner;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -76,7 +77,8 @@ public class TunerView extends View
     {
 	// Set up the paint and draw the outline
 
-	paint.setColor(0xff7f7f7f);
+	paint.setShader(null);
+	paint.setColor(Color.GRAY);
 	paint.setStrokeWidth(3);
 	paint.setAntiAlias(true);
 	paint.setStyle(Paint.Style.STROKE);

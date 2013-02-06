@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -27,14 +27,13 @@ package org.billthefarmer.tuner;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.LinearGradient;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
-import android.graphics.RectF;
-import android.graphics.Shader.TileMode;
+import android.graphics.Rect;
 import android.util.AttributeSet;
 
 // Meter
@@ -43,14 +42,12 @@ public class Meter extends TunerView
 {
     MainActivity.Audio audio;
 
-    LinearGradient gradient;
     Matrix matrix;
-    RectF barRect;
+    Rect barRect;
     Path path;
 
-    float cents;
-    float medium;
-    int margin;
+    private float cents;
+    private float medium;
 
     // Constructor
 
@@ -63,7 +60,7 @@ public class Meter extends TunerView
 
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
-    	super.onSizeChanged(w, h, oldw, oldh);
+	super.onSizeChanged(w, h, oldw, oldh);
 
 	// Recalculate text size
 
@@ -78,14 +75,8 @@ public class Meter extends TunerView
 
 	// Create a rect for the horizoltal bar
 
-	barRect = new RectF(width / 36 - width / 2, -height / 32,
-			    width / 2 - width / 36, height / 32);
-
-	// Create a gradient
-
-	gradient =
-	    new LinearGradient(0, -height / 16, 0, height / 16,
-			       0xff5f5f5f, 0xff9f9f9f, TileMode.CLAMP);
+	barRect = new Rect(width / 36 - width / 2, -height / 64,
+			   width / 2 - width / 36, height / 64);
 
 	// Create a path for the thumb
 
@@ -102,7 +93,7 @@ public class Meter extends TunerView
 	// a bit narrower than the height
 
 	matrix = new Matrix();
-	matrix.setScale(height / 10, height / 8);
+	matrix.setScale(height / 24, height / 8);
 
 	// Scale the path
 
@@ -114,19 +105,18 @@ public class Meter extends TunerView
     @SuppressLint("DefaultLocale")
     protected void onDraw(Canvas canvas)
     {
-    	super.onDraw(canvas);
+	super.onDraw(canvas);
 
 	// Reset the paint to black
 
-    	paint.setColor(0xff000000);
-    	paint.setStrokeWidth(1);
-    	paint.setStyle(Style.FILL_AND_STROKE);
-    	paint.setShader(null);
+	paint.setColor(Color.BLACK);
+	paint.setStrokeWidth(1);
+	paint.setStyle(Style.FILL_AND_STROKE);
 
 	// Translate the canvas down
 	// and to the centre
 
-   	canvas.translate(width / 2, medium);
+	canvas.translate(width / 2, medium);
 
 	// Calculate x scale
 
@@ -146,9 +136,9 @@ public class Meter extends TunerView
 
 	// Wider lines for the scale
 
-    	paint.setStrokeWidth(3);
-    	paint.setStyle(Style.STROKE);
-   	canvas.translate(0, medium / 2);
+	paint.setStrokeWidth(3);
+	paint.setStyle(Style.STROKE);
+	canvas.translate(0, medium / 2);
 
 	// Draw the scale
 
@@ -178,28 +168,27 @@ public class Meter extends TunerView
 	// Transform the canvas down
 	// for the meter pointer
 
-   	canvas.translate(0, medium / 2.5f);
+	canvas.translate(0, medium / 2.5f);
 
-	// Set the paint colour to
-	// a paler shade of grey
-	// and fill the bar
+	// Set the paint colour to grey
 
-	paint.setColor(0xffdfdfdf);
-	paint.setStyle(Style.FILL);
-	canvas.drawRoundRect(barRect, 10, 10, paint);
+	paint.setColor(Color.GRAY);
 
-	// Set the gradient and
-	// draw the thumb outline
+	// Draw the bar outline
 
-	paint.setShader(gradient);
 	paint.setStyle(Style.STROKE);
-	paint.setStrokeWidth(5);
-	canvas.drawRoundRect(barRect, 10, 10, paint);
+	paint.setStrokeWidth(2);
+	canvas.drawRect(barRect, paint);
+
+	// Do the inertia calculation
+
+	if (audio != null)
+	    cents = (float)(((cents * 9.0) + audio.cents) / 10.0);
 
 	// Translate the canvas to
 	// the scaled cents value
 
-	canvas.translate(cents * (xscale / 10), 0);
+	canvas.translate(cents * (xscale / 10), -height / 64);
 
 	// Set up the paint for
 	// rounded corners
@@ -207,24 +196,16 @@ public class Meter extends TunerView
 	paint.setStrokeCap(Cap.ROUND);
 	paint.setStrokeJoin(Join.ROUND);
 	
-	// Remove the gradient, and
-	// set fill style and fill
+	// Set fill style and fill
 	// the thumb
 
-	paint.setShader(null);
+	paint.setColor(Color.WHITE);
 	paint.setStyle(Style.FILL);
 	canvas.drawPath(path, paint);
 
-	// Reset the matrix to scale the gradient
-	// and draw the thumb outline
-
-	matrix.reset();
-	matrix.setScale(1, -1);
-	gradient.setLocalMatrix(matrix);
-
-	paint.setShader(gradient);
+	paint.setStrokeWidth(3);
+	paint.setColor(Color.BLACK);
 	paint.setStyle(Style.STROKE);
-
 	canvas.drawPath(path, paint);
     }
 }

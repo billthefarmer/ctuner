@@ -4,6 +4,27 @@
     <string name="app_name">Tuner</string>
     <string name="settings">Settings</string>
 
+    <string name="filter_on">Audio filter on</string>
+    <string name="filter_off">Audio filter off</string>
+
+    <string name="zoom_on">Spectrum zoom on</string>
+    <string name="zoom_off">Spectrum zoom off</string>
+
+    <string name="lock_on">Display lock on</string>
+    <string name="lock_off">Display lock off</string>
+
+    <string name="strobe_on">Strobe on</string>
+    <string name="strobe_off">Strobe off</string>
+
+    <string name="down_on">Downsampling on</string>
+    <string name="down_off">Downsampling off</string>
+
+    <string name="multiple_on">Multiple notes on</string>
+    <string name="multiple_off">Multiple notes off</string>
+
+    <string name="pref_input">Input source</string>
+    <string name="pref_input_summ">%s"</string>
+
     <string name="pref_filter">Audio filter</string>
     <string name="pref_filter_summ">Filter input audio from microphone</string>
 
@@ -16,10 +37,13 @@
     <string name="pref_multiple">Multiple notes</string>
     <string name="pref_multiple_summ">Show multiple note values on display</string>
 
+    <string name="pref_strobe">Strobe</string>
+    <string name="pref_strobe_summ">Show the strobe display</string>
+
     <string name="pref_sample_rate">Sample Rate</string>
-    <string name="pref_sample_rate_summ">Audio input sample rate</string>
+    <string name="pref_sample_rate_summ">%s</string>
 
 	<string name="pref_ref">Reference</string>
-    <string name="pref_ref_summ">Reference frequency for \'A\'</string>
+    <string name="pref_ref_summ">%dHz</string>
 
 </resources>
