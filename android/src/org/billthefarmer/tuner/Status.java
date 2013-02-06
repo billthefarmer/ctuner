@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -27,6 +27,7 @@ package org.billthefarmer.tuner;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
@@ -36,14 +37,12 @@ public class Status extends View
 {
     MainActivity.Audio audio;
 
-    int size;
     int width;
     int height;
+
     Paint paint;
     RectF rect;
 
-    Object object;
-    
     public Status(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
@@ -63,24 +62,23 @@ public class Status extends View
     @SuppressLint("DefaultLocale")
     protected void onDraw(Canvas canvas)
     {
-	rect.inset(1, 1);
-
-	paint.setColor(0xff7f7f7f);
+	paint.setColor(Color.GRAY);
 	paint.setStrokeWidth(3);
 	paint.setFlags(Paint.ANTI_ALIAS_FLAG);
 	paint.setStyle(Paint.Style.STROKE);
 	canvas.drawLine(0, 0, width, 0, paint);
 
-	paint.setStrokeWidth(0);
-	paint.setColor(0xff000000);
+	if (audio == null)
+	    return;
+
+	paint.setStrokeWidth(1);
+	paint.setColor(Color.BLACK);
 	paint.setTextSize(height / 2);
+	paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-	boolean bool;
-
-	bool = (object != null);
-	
 	canvas.translate(width / 32, height * 2 / 3);
-	String s = String.format("Min buffer size: %d, record = %b", size, bool);
+
+	String s = String.format("Sample rate: %1.0f", audio.sample);
 	canvas.drawText(s, 0, 0, paint);
     }
 }

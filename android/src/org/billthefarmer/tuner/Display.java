@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,14 +18,16 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 package org.billthefarmer.tuner;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint.Style;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
@@ -53,59 +55,69 @@ public class Display extends TunerView
 
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
-    	super.onSizeChanged(w, h, oldw, oldh);
-    	
-    	large = height / 3;
-    	medium = height / 4;
-    	small = height / 6;
-    	margin = width / 32;
+	super.onSizeChanged(w, h, oldw, oldh);
+	
+	large = height / 3;
+	medium = height / 4;
+	small = height / 6;
+	margin = width / 32;
 
-    	paint.setTextSize(medium);
-    	float dx = paint.measureText("0000.00Hz");
-    	
-    	if (dx + (margin * 2) >= width / 2)
-    	{
-    		float xscale = (width / 2) / (dx + (margin * 2));
-    		paint.setTextScaleX(xscale);
-    	}
+	paint.setTextSize(medium);
+	float dx = paint.measureText("0000.00Hz");
+	
+	if (dx + (margin * 2) >= width / 2)
+	{
+	    float xscale = (width / 2) / (dx + (margin * 2));
+	    paint.setTextScaleX(xscale);
+	}
     }
 
+    @SuppressLint("DefaultLocale")
     protected void onDraw(Canvas canvas)
     {
-    	super.onDraw(canvas);
+	super.onDraw(canvas);
 
-    	paint.setColor(0xff000000);
-    	paint.setStrokeWidth(1);
-    	paint.setStyle(Style.FILL_AND_STROKE);
-    	paint.setTypeface(Typeface.DEFAULT_BOLD);
-    	paint.setTextSize(large);
+	paint.setColor(Color.BLACK);
+	paint.setStrokeWidth(1);
+	paint.setStyle(Style.FILL_AND_STROKE);
+	paint.setTypeface(Typeface.DEFAULT_BOLD);
 
-    	canvas.translate(0, large);
-    	canvas.drawText("C", margin, 0, paint);
-    	
-    	float dx = paint.measureText("C");
-    	
-    	paint.setTextSize(medium);
-    	canvas.drawText("0", margin + dx, 0, paint);
+	if (audio == null)
+	    return;
 
-    	paint.setTextSize(large);
-    	dx = paint.measureText("+0.00¢");
-    	canvas.drawText("+0.00¢", width - dx - margin, 0, paint);
-    	
-    	canvas.translate(0, medium);
-    	paint.setTextSize(medium);
-    	paint.setTypeface(Typeface.DEFAULT);
-    	canvas.drawText("0.00Hz", margin, 0, paint);
-    	
-    	dx = paint.measureText("0.00Hz");
-    	canvas.drawText("0.00Hz", width - dx - margin, 0, paint);
+	canvas.translate(0, large);
+	paint.setTextSize(large);
+	canvas.drawText(notes[audio.n % 12], margin, 0, paint);
+	
+	float dx = paint.measureText(notes[audio.n % 12]);
+	
+	paint.setTextSize(medium);
+	String s = Integer.toString(audio.n / 12);
+	canvas.drawText(s, margin + dx, 0, paint);
 
-    	canvas.translate(0, medium);
-    	paint.setTextSize(medium);
-    	canvas.drawText("440.00Hz", margin, 0, paint);
+	paint.setTextSize(large);
+	s = String.format("%+5.2fÂ¢", audio.cents);
+	dx = paint.measureText(s);
+	canvas.drawText(s, width - dx - margin, 0, paint);
+	
+	canvas.translate(0, medium);
+	paint.setTextSize(medium);
+	paint.setTypeface(Typeface.DEFAULT);
+	s = String.format("%4.2fHz", audio.nearest);
+	canvas.drawText(s, margin, 0, paint);
+	
+	s = String.format("%4.2fHz", audio.frequency);
+	dx = paint.measureText(s);
+	canvas.drawText(s, width - dx - margin, 0, paint);
 
-    	dx = paint.measureText("+0.00Hz");
-    	canvas.drawText("+0.00Hz", width - dx - margin, 0, paint);
+	canvas.translate(0, medium);
+	paint.setTextSize(medium);
+	s = String.format("%4.2fHz", audio.reference);
+	canvas.drawText(s, margin, 0, paint);
+
+	s = String.format("%+5.2fHz", audio.difference);
+	dx = paint.measureText(s);
+	canvas.drawText(s, width - dx - margin, 0, paint);
 
     }
 }

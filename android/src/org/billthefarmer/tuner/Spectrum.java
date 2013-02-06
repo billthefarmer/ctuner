@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,40 +18,54 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 package org.billthefarmer.tuner;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Path;
 import android.util.AttributeSet;
 
 public class Spectrum extends Graticule
 {
     protected MainActivity.Audio audio;
 
-    static float max;
+    Path path;
+
+    float max;
 
     public Spectrum(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
+
+	path = new Path();
     }
 
+    @SuppressLint("DefaultLocale")
     protected void onDraw(Canvas canvas)
     {
 	super.onDraw(canvas);
 
 	// Check for data
 
-	if (audio.xa == null)
+	if (audio == null || audio.xa == null)
 	    return;
 
-	// Color green
+	if (audio.downsample)
+	{
+	    // Color yellow
 
-	paint.setStrokeWidth(1);
-	paint.setColor(0xff00ff00);
+	    paint.setStrokeWidth(1);
+	    paint.setColor(Color.YELLOW);
+
+	    float height = paint.getFontMetrics(null);
+	    canvas.drawText("D", 4, height - 2, paint);
+	}
 
 	// Translate camvas
 
@@ -60,23 +74,155 @@ public class Spectrum extends Graticule
 	if (max < 1.0f)
 	    max = 1.0f;
 
-	float yscale = (float)(max / height);
+	// Calculate the scaling
+
+	float yscale = (float)(height / max);
 
 	max = 0.0f;
 
-	float oldx = 0;
-	float oldy = 0;
+	// Reset path
 
-	for (int i = 0; i <= Math.min(width, audio.data.length); i++)
+	path.reset();
+	path.moveTo(0, 0);
+
+	if (audio.zoom)
 	{
-	    if (max < audio.xa[i])
-		max = (float)audio.xa[i];
+	    double lower = audio.lower / audio.fps;
+	    double higher = audio.higher / audio.fps;
+	    double nearest = audio.nearest / audio.fps;
+	    
+	    // Calculate scale
 
-	    float y = -(float)(audio.xa[i] / yscale);
-	    canvas.drawLine(oldx, oldy, i, y, paint);
+	    float xscale = (float)((width / (nearest - lower)) / 2.0);
 
-	    oldx = i;
-	    oldy = y;
+	    for (int i = (int)Math.floor(lower); i <= Math.ceil(higher); i++)
+	    {
+		if (i > 0 && i < audio.xa.length)
+		{
+		    float value = (float)audio.xa[i];
+
+		    if (max < value)
+			max = value;
+
+		    float y = -value * yscale;
+		    float x = (float)((i - lower) * xscale); 
+
+		    path.lineTo(x, y);
+		}
+	    }
+
+	    // Draw centre line
+
+	    path.moveTo(width / 2, 0);
+	    path.lineTo(width / 2, -height);
+
+	    // Color green
+
+	    paint.setStrokeWidth(2);
+	    paint.setAntiAlias(true);
+	    paint.setColor(Color.GREEN);
+
+	    // Draw path
+
+	    canvas.drawPath(path, paint);
+	    path.reset();
+
+	    // Yellow pen for frequency trace
+
+	    paint.setColor(Color.YELLOW);
+	    paint.setAntiAlias(false);
+	    paint.setStrokeWidth(1);
+
+	    // Draw lines for each frequency
+
+	    for (int i = 0; i < audio.count; i++)
+	    {
+		// Draw line for each that are in range
+
+		if (audio.maxima.f[i] > audio.lower &&
+		    audio.maxima.f[i] < audio.higher)
+		{
+		    float x = (float)((audio.maxima.f[i] - audio.lower) /
+				      audio.fps * xscale);
+
+
+		    path.moveTo(x, 0);
+		    path.lineTo(x, -height);
+
+		    double f = audio.maxima.f[i];
+
+		    // Reference freq
+
+		    double fr = audio.maxima.r[i];
+		    double c = -12.0 * log2(fr / f);
+
+		    // Ignore silly values
+
+		    if (Double.isNaN(c))
+			continue;
+
+		    String s = String.format("%+1.0f", c * 100.0);
+		    float dx = paint.measureText(s);
+		    canvas.drawText(s, x - dx / 2, 0, paint);
+		}
+	    }
+
+	    // Yellow pen for frequency trace
+
+	    paint.setAntiAlias(true);
+	    paint.setStrokeWidth(2);
+
+	    // Draw path
+
+	    canvas.drawPath(path, paint);
 	}
+
+	else
+	{
+	    float xscale = ((float)audio.xa.length / (float)width);
+
+	    for (int x = 0; x < width; x++)
+	    {
+		float value = 0.0f;
+
+		// Don't show DC component
+
+		if (x > 0)
+		{
+		    for (int j = 0; j < xscale; j++)
+		    {
+			int n = (int)(x * xscale) + j;
+
+			if (value < audio.xa[n])
+			    value = (float)audio.xa[n];
+		    }
+		}
+
+		if (max < value)
+		    max = value;
+
+		float y = -value * yscale;
+
+		path.lineTo(x, y);
+
+	    }
+
+	    // Color green
+
+	    paint.setStrokeWidth(2);
+	    paint.setAntiAlias(true);
+	    paint.setColor(Color.GREEN);
+
+	    // Draw path
+
+	    canvas.drawPath(path, paint);
+	}
+    }
+
+    // Log2
+
+    protected double log2(double d)
+    {
+	return Math.log(d) / Math.log(2.0);
     }
 }

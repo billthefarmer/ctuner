@@ -2,7 +2,7 @@
 //
 //  Tuner - An Android Tuner written in Java.
 //
-//  Copyright (C) 2013  Bill Farmer
+//  Copyright (C) 2013	Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 //  with this program; if not, write to the Free Software Foundation, Inc.,
 //  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
-//  Bill Farmer  william j farmer [at] yahoo [dot] co [dot] uk.
+//  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -26,17 +26,22 @@ package org.billthefarmer.tuner;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Path;
 import android.util.AttributeSet;
 
 public class Scope extends Graticule
 {
     protected MainActivity.Audio audio;
 
-    static int max;
+    Path path;
+    int max;
 
     public Scope(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
+
+	path = new Path();
     }
 
     @Override
@@ -46,8 +51,20 @@ public class Scope extends Graticule
 
 	// Check for data
 
-	if (audio.data == null)
+	if (audio == null || audio.data == null)
 	    return;
+
+	if (audio.filter)
+	{
+	    // Color yellow
+
+	    paint.setStrokeWidth(2);
+	    paint.setAntiAlias(true);
+	    paint.setColor(Color.YELLOW);
+
+	    float height = paint.getFontMetrics(null);
+	    canvas.drawText("F", 4, height - 2, paint);
+	}
 
 	// Initialise sync
 
@@ -68,11 +85,6 @@ public class Scope extends Graticule
 		break;
 	}
 
-	// Color green
-
-	paint.setStrokeWidth(1);
-	paint.setColor(0xff00ff00);
-
 	// Translate camvas
 
 	canvas.translate(0, height / 2);
@@ -84,8 +96,8 @@ public class Scope extends Graticule
 
 	max = 0;
 
-	float oldx = 0;
-	float oldy = 0;
+	path.reset();
+	path.moveTo(0, 0);
 
 	for (int i = 0; i <= Math.min(width, audio.data.length - n); i++)
 	{
@@ -93,11 +105,18 @@ public class Scope extends Graticule
 		max = Math.abs(audio.data[n + i]);
 
 	    float y = -audio.data[n + i] / yscale;
-	    canvas.drawLine(oldx, oldy, i, y, paint);
 
-	    oldx = i;
-	    oldy = y;
+	    path.lineTo(i, y);
 	}
 
+	// Color green
+
+	paint.setStrokeWidth(2);
+	paint.setAntiAlias(true);
+	paint.setColor(Color.GREEN);
+
+	// Draw path
+
+	canvas.drawPath(path, paint);
     }
 }
