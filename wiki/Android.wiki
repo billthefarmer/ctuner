@@ -1,0 +1,13 @@
+#summary Android tuner.
+#labels Featured
+
+= Introduction =
+
+An Android version is in development.
+
+http://ctuner.googlecode.com/files/Tuner-android.png
+http://ctuner.googlecode.com/files/Settings-android.png
+
+= Progress =
+
+The tuner is working well on a Nexus 7. It hasn't been tested on anything else. Most of the display is working.
