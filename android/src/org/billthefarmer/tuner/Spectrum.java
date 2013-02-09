@@ -24,16 +24,19 @@
 
 package org.billthefarmer.tuner;
 
+import org.billthefarmer.tuner.MainActivity.Audio;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint.Align;
 import android.graphics.Path;
 import android.util.AttributeSet;
 
 public class Spectrum extends Graticule
 {
-    protected MainActivity.Audio audio;
+    protected Audio audio;
 
     Path path;
 
@@ -61,6 +64,7 @@ public class Spectrum extends Graticule
 	    // Color yellow
 
 	    paint.setStrokeWidth(1);
+	    paint.setTextAlign(Align.LEFT);
 	    paint.setColor(Color.YELLOW);
 
 	    float height = paint.getFontMetrics(null);
@@ -161,9 +165,9 @@ public class Spectrum extends Graticule
 		    if (Double.isNaN(c))
 			continue;
 
+		    paint.setTextAlign(Align.CENTER);
 		    String s = String.format("%+1.0f", c * 100.0);
-		    float dx = paint.measureText(s);
-		    canvas.drawText(s, x - dx / 2, 0, paint);
+		    canvas.drawText(s, x, 0, paint);
 		}
 	    }
 

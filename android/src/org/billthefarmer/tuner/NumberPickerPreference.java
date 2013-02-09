@@ -52,7 +52,7 @@ public class NumberPickerPreference extends DialogPreference
 					   R.styleable.NumberPickerPreference);
 	mMaxValue = a.getInteger(R.styleable.NumberPickerPreference_maxValue, 450);
 	mMinValue = a.getInteger(R.styleable.NumberPickerPreference_minValue, 430);
-	a.recycle();
+	 a.recycle();
     }
 
     @Override

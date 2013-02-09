@@ -28,11 +28,10 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.View;
-
-import org.billthefarmer.tuner.MainActivity;
 
 // Tuner View
 
@@ -41,10 +40,8 @@ public class TunerView extends View
     int width;
     int height;
     Paint paint;
-    RectF clipRect;
+    Rect clipRect;
     RectF outlineRect;
-
-    protected MainActivity mainActivity;
 
     // Constructor
 
@@ -68,7 +65,7 @@ public class TunerView extends View
 	// the outline and clipping
 
 	outlineRect = new RectF(1, 1, width - 1, height - 1);
-	clipRect = new RectF(4, 4, width - 4, height - 4);
+	clipRect = new Rect(4, 4, width - 4, height - 4);
     }
 
     // On Draw
@@ -77,10 +74,9 @@ public class TunerView extends View
     {
 	// Set up the paint and draw the outline
 
-	paint.setShader(null);
-	paint.setColor(Color.GRAY);
 	paint.setStrokeWidth(3);
 	paint.setAntiAlias(true);
+	paint.setColor(Color.GRAY);
 	paint.setStyle(Paint.Style.STROKE);
 	canvas.drawRoundRect(outlineRect, 10, 10, paint);
 

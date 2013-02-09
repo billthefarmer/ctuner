@@ -30,7 +30,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.res.Resources;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.os.Bundle;
@@ -167,7 +166,7 @@ public class MainActivity extends Activity
 			else
 			    showToast(R.string.down_off);
 
-		    return true;
+			return true;
 		    }
 		});
 	}
@@ -176,7 +175,7 @@ public class MainActivity extends Activity
 
 	if (display != null)
 	{
-		display.setOnClickListener(new OnClickListener()
+	    display.setOnClickListener(new OnClickListener()
 		{
 		    @Override
 		    public void onClick(View v)
@@ -190,21 +189,21 @@ public class MainActivity extends Activity
 		    }
 		});
 
-		display.setOnLongClickListener(new OnLongClickListener()
+	    display.setOnLongClickListener(new OnLongClickListener()
 		{
-			@Override
-			public boolean onLongClick(View v)
-			{
-				audio.multiple = !audio.multiple;
+		    @Override
+		    public boolean onLongClick(View v)
+		    {
+			audio.multiple = !audio.multiple;
 
-				if (audio.multiple)
-					showToast(R.string.multiple_on);
+			if (audio.multiple)
+			    showToast(R.string.multiple_on);
 
-				else
-					showToast(R.string.multiple_off);
+			else
+			    showToast(R.string.multiple_off);
 
-				return true;
-			}
+			return true;
+		    }
 		});
 	}
 
@@ -230,13 +229,17 @@ public class MainActivity extends Activity
 
     void showToast(int key)
     {
-    	Resources resources = getResources();
-    	String text = resources.getString(key);
+	String text = getResources().getString(key);
 
-    	Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
+	Toast toast = Toast.makeText(this, text, Toast.LENGTH_SHORT);
 
 	toast.setGravity(Gravity.CENTER, 0, 0);
 	toast.show();
+
+	// Update status
+
+	if (status != null)
+		status.invalidate();
     }
 
     // On start
@@ -301,18 +304,18 @@ public class MainActivity extends Activity
 
     void savePreferences()
     {
-    	SharedPreferences preferences =
-    		    PreferenceManager.getDefaultSharedPreferences(this);
+	SharedPreferences preferences =
+	    PreferenceManager.getDefaultSharedPreferences(this);
 
-    	Editor editor = preferences.edit();
+	Editor editor = preferences.edit();
 
-    	editor.putBoolean("pref_filter", audio.filter);
-    	editor.putBoolean("pref_down", audio.downsample);
-    	editor.putBoolean("pref_multiple", audio.multiple);
-    	editor.putBoolean("pref_strobe", audio.strobe);
-    	editor.putBoolean("pref_zoom", audio.zoom);
+	editor.putBoolean("pref_filter", audio.filter);
+	editor.putBoolean("pref_down", audio.downsample);
+	editor.putBoolean("pref_multiple", audio.multiple);
+	editor.putBoolean("pref_strobe", audio.strobe);
+	editor.putBoolean("pref_zoom", audio.zoom);
 
-    	editor.commit();
+	editor.commit();
     }
 
     // Get preferences
@@ -330,7 +333,7 @@ public class MainActivity extends Activity
 
 	if (audio != null)
 	{
-		audio.sample = preferences.getInt("pref_source", 0);
+	    audio.sample = preferences.getInt("pref_source", 0);
 	    audio.reference = preferences.getInt("pref_reference", 440);
 
 	    audio.sample =
@@ -346,7 +349,7 @@ public class MainActivity extends Activity
 
     // Show alert
 
-    void showAlert(String title, String message)
+    void showAlert(int appName, int errorBuffer)
     {
 	// Create an alert dialog builder
 
@@ -355,8 +358,8 @@ public class MainActivity extends Activity
 
 	// Set the title, message and button
 
-	builder.setTitle(title);
-	builder.setMessage(message);
+	builder.setTitle(appName);
+	builder.setMessage(errorBuffer);
 	builder.setNeutralButton(android.R.string.ok,
 				 new DialogInterface.OnClickListener()
 				 {				
@@ -428,7 +431,7 @@ public class MainActivity extends Activity
 	private static final int STEP = SAMPLES / OVERSAMPLE;
 
 	private static final int C5_OFFSET = 57;
-	private static final long TIMER_COUNT = 16; 
+	private static final long TIMER_COUNT = 24; 
 	private static final double MIN = 0.5;
 
 	private static final double G = 3.023332184e+01;
@@ -441,6 +444,8 @@ public class MainActivity extends Activity
 
 	private Complex x;
 
+	protected Maxima maxima;
+
 	protected double xa[];
 
 	private double xp[];
@@ -451,8 +456,6 @@ public class MainActivity extends Activity
 	private double x3[];
 	private double x4[];
 	private double x5[];
-
-	protected Maxima maxima;
 
 	// Constructor
 
@@ -466,6 +469,8 @@ public class MainActivity extends Activity
 
 	    x = new Complex(SAMPLES);
 
+	    maxima = new Maxima(MAXIMA);
+
 	    xa = new double[RANGE];
 	    xp = new double[RANGE];
 	    xf = new double[RANGE];
@@ -475,8 +480,6 @@ public class MainActivity extends Activity
 	    x3 = new double[RANGE / 3];
 	    x4 = new double[RANGE / 4];
 	    x5 = new double[RANGE / 5];
-
-	    maxima = new Maxima(MAXIMA);
 	}
 
 	// Start audio
@@ -523,8 +526,7 @@ public class MainActivity extends Activity
 		    {
 			public void run()
 			{
-			    showAlert("Tuner",
-				      "Error from AudioRecord.getMinBufferSize()");
+			    showAlert(R.string.app_name, R.string.error_buffer);
 			}
 		    });
 
@@ -548,8 +550,7 @@ public class MainActivity extends Activity
 		    {
 			public void run()
 			{
-			    showAlert("Alert!",
-				      "Audio record not initialised!");
+			    showAlert(R.string.app_name, R.string.error_init);
 			}
 		    });
 
@@ -577,6 +578,11 @@ public class MainActivity extends Activity
 		    thread = null;
 		    break;
 		}
+
+		// If display not locked update scope
+
+		if (scope != null && !lock)
+		    scope.postInvalidate();
 
 		// Move the main data buffer up
 
@@ -843,32 +849,23 @@ public class MainActivity extends Activity
 			}
 		    }
 
-		    // Difference
+		    // Cents relative to reference note
 
-		    difference = frequency - nearest;
+		    cents = -12.0 * log2(nearest / frequency) * 100.0;
 
 		    // Ignore silly values
 
-		    if (Double.isNaN(cf))
+		    if (Double.isNaN(cents))
 			found = false;
+
+		    // Difference
+
+		    difference = frequency - nearest;
 
 		    // Ignore if not within 50 cents of reference note
 
 		    if (Math.abs(cents) > 50.0)
 			found = false;
-		}
-
-		// If display not locked
-
-		if (!lock)
-		{
-		    // Update scope window
-
-		    if (scope != null)
-			scope.postInvalidate();
-
-		    if (spectrum != null)
-			spectrum.postInvalidate();
 		}
 
 		// Found
@@ -879,22 +876,15 @@ public class MainActivity extends Activity
 
 		    if (!lock)
 		    {
-			// Cents relative to reference note
+			// Update spectrum
 
-			cents = -12.0 * log2(nearest / frequency) * 100.0;
+			if (spectrum != null)
+			    spectrum.postInvalidate();
 
 			// Update display
 
 			if (display != null)
 			    display.postInvalidate();
-
-			if (meter != null)
-			    meter.postInvalidate();
-
-			// Update spectrum
-
-			if (spectrum != null)
-			    spectrum.postInvalidate();
 		    }
 
 		    // Reset count;
@@ -916,25 +906,19 @@ public class MainActivity extends Activity
 			    higher = 0.0;
 			    lower = 0.0;
 			    cents = 0.0;
+			    count = 0;
 			    n = 0;
 
-			    // Update spectrum
+			    // Update display
 
-			    lower = 0.0;
-			    higher = 0.0;
-
-			    count = 0;
+			    if (display != null)
+				display.postInvalidate();
 			}
 
 			// Update spectrum
 
 			if (spectrum != null)
 			    spectrum.postInvalidate();
-
-			// Update display
-
-			display.postInvalidate();
-			meter.postInvalidate();
 		    }
 		}
 
@@ -1002,16 +986,20 @@ public class MainActivity extends Activity
 		}
 	    }
 	}
-   }
+    }
 
-	// Log2
+    // Log2
 
-	protected double log2(double d)
-	{
-	    return Math.log(d) / Math.log(2.0);
-	}
- 
-    // Comples
+    protected double log2(double d)
+    {
+	return Math.log(d) / Math.log(2.0);
+    }
+
+    // These two objects replace arrays of structs in the C version
+    // because initialising arrays of objects in Java is, IMHO, barmy
+
+    // Complex
+
     private class Complex
     {
 	double r[];
@@ -1023,6 +1011,7 @@ public class MainActivity extends Activity
 	    i = new double[l];
 	}
     }
+
     // Maximum
 
     protected class Maxima

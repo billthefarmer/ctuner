@@ -24,23 +24,30 @@
 
 package org.billthefarmer.tuner;
 
+import org.billthefarmer.tuner.MainActivity.Audio;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint.Align;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.os.Handler;
 import android.util.AttributeSet;
 
 // Meter
 
 public class Meter extends TunerView
 {
-    MainActivity.Audio audio;
+    Audio audio;
+
+    Handler handler;
+    Runnable run;
 
     Matrix matrix;
     Rect barRect;
@@ -49,11 +56,39 @@ public class Meter extends TunerView
     private float cents;
     private float medium;
 
+    private static final int DELAY = 100;
+
     // Constructor
 
     public Meter(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
+
+	handler = new Handler();
+	run = new Runnable()
+	    {
+		@Override
+		public void run()
+		{
+		    invalidate();
+		    handler.postDelayed(this, DELAY);
+		}
+	    };
+
+	handler.postDelayed(run, DELAY);
+
+	// Create a path for the thumb
+
+	path = new Path();
+
+	path.moveTo(0, -1);
+	path.lineTo(1, 0);
+	path.lineTo(1, 1);
+	path.lineTo(-1, 1);
+	path.lineTo(-1, 0);
+	path.close();
+
+	matrix = new Matrix();
     }
 
     // OnSizeChanged
@@ -64,7 +99,7 @@ public class Meter extends TunerView
 
 	// Recalculate text size
 
-	medium = height / 2.5f;
+	medium = height / 3.0f;
 	paint.setTextSize(medium);
 
 	// Scale text if necessary to fit it in
@@ -78,21 +113,9 @@ public class Meter extends TunerView
 	barRect = new Rect(width / 36 - width / 2, -height / 64,
 			   width / 2 - width / 36, height / 64);
 
-	// Create a path for the thumb
-
-	path = new Path();
-
-	path.moveTo(0, -1);
-	path.lineTo(1, 0);
-	path.lineTo(1, 1);
-	path.lineTo(-1, 1);
-	path.lineTo(-1, 0);
-	path.close();
-
 	// Create a matrix to scale the path,
 	// a bit narrower than the height
 
-	matrix = new Matrix();
 	matrix.setScale(height / 24, height / 8);
 
 	// Scale the path
@@ -127,33 +150,28 @@ public class Meter extends TunerView
 	for (int i = 0; i <= 5; i++)
 	{
 	    String s = String.format("%d", i * 10);
-	    float dx = paint.measureText(s) / 2;
 	    float x = i * xscale;
 
-	    canvas.drawText(s, x - dx, 0, paint);
-	    canvas.drawText(s, -x - dx, 0, paint);
+	    paint.setTextAlign(Align.CENTER);
+	    canvas.drawText(s, x, 0, paint);
+	    canvas.drawText(s, -x, 0, paint);
 	}
 
 	// Wider lines for the scale
 
 	paint.setStrokeWidth(3);
 	paint.setStyle(Style.STROKE);
-	canvas.translate(0, medium / 2);
+	canvas.translate(0, medium / 1.5f);
 
 	// Draw the scale
 
-	for (int i = 1; i <= 5; i++)
+	for (int i = 0; i <= 5; i++)
 	{
 	    float x = i * xscale;
 
 	    canvas.drawLine(x, 0, x, -medium / 2, paint);
 	    canvas.drawLine(-x, 0, -x, -medium / 2, paint);
 	}
-
-	// Draw the centre line a bit shorter
-	// so it doesn't touch the zero
-
-	canvas.drawLine(0, 0, 0, -medium / 2.5f, paint);
 
 	// Draw the fine scale
 
@@ -168,7 +186,7 @@ public class Meter extends TunerView
 	// Transform the canvas down
 	// for the meter pointer
 
-	canvas.translate(0, medium / 2.5f);
+	canvas.translate(0, medium / 2.0f);
 
 	// Set the paint colour to grey
 
