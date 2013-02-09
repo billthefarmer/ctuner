@@ -24,6 +24,8 @@
 
 package org.billthefarmer.tuner;
 
+import org.billthefarmer.tuner.MainActivity.Audio;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -36,15 +38,16 @@ import android.util.AttributeSet;
 
 public class Display extends TunerView
 {
-    protected MainActivity.Audio audio;
+    protected Audio audio;
 
     int large;
     int medium;
     int small;
     
     int margin;
+    int space;
 
-    final String notes[] =
+    static final String notes[] =
     {"C", "C#", "D", "Eb", "E", "F",
      "F#", "G", "Ab", "A", "Bb", "B"};
 
@@ -59,8 +62,9 @@ public class Display extends TunerView
 	
 	large = height / 3;
 	medium = height / 4;
-	small = height / 6;
+	small = height / 9;
 	margin = width / 32;
+	space = width / 48;
 
 	paint.setTextSize(medium);
 	float dx = paint.measureText("0000.00Hz");
@@ -80,44 +84,122 @@ public class Display extends TunerView
 	paint.setColor(Color.BLACK);
 	paint.setStrokeWidth(1);
 	paint.setStyle(Style.FILL_AND_STROKE);
-	paint.setTypeface(Typeface.DEFAULT_BOLD);
 
 	if (audio == null)
 	    return;
 
-	canvas.translate(0, large);
-	paint.setTextSize(large);
-	canvas.drawText(notes[audio.n % 12], margin, 0, paint);
-	
-	float dx = paint.measureText(notes[audio.n % 12]);
-	
-	paint.setTextSize(medium);
-	String s = Integer.toString(audio.n / 12);
-	canvas.drawText(s, margin + dx, 0, paint);
+	if (audio.multiple)
+	{
+	    String s;
+	    float x;
 
-	paint.setTextSize(large);
-	s = String.format("%+5.2f¢", audio.cents);
-	dx = paint.measureText(s);
-	canvas.drawText(s, width - dx - margin, 0, paint);
-	
-	canvas.translate(0, medium);
-	paint.setTextSize(medium);
-	paint.setTypeface(Typeface.DEFAULT);
-	s = String.format("%4.2fHz", audio.nearest);
-	canvas.drawText(s, margin, 0, paint);
-	
-	s = String.format("%4.2fHz", audio.frequency);
-	dx = paint.measureText(s);
-	canvas.drawText(s, width - dx - margin, 0, paint);
+	    paint.setTextSize(small);
+	    canvas.translate(0, width / 64);
 
-	canvas.translate(0, medium);
-	paint.setTextSize(medium);
-	s = String.format("%4.2fHz", audio.reference);
-	canvas.drawText(s, margin, 0, paint);
+	    for (int i = 0; i < audio.count; i++)
+	    {
+		canvas.translate(0, small);
 
-	s = String.format("%+5.2fHz", audio.difference);
-	dx = paint.measureText(s);
-	canvas.drawText(s, width - dx - margin, 0, paint);
+		s = String.format("%s%d", notes[audio.maxima.n[i] % 12],
+				  audio.maxima.n[i] / 12);
+		canvas.drawText(s, margin, 0, paint);
 
+		double cents = -12.0 * log2(audio.maxima.r[i] /
+					    audio.maxima.f[i]) * 100.0;
+
+		// Ignore silly values
+
+		if (Double.isNaN(cents))
+		    continue;
+
+		s = String.format("%+5.2f¢", cents);
+		x = width * 43 / 368;
+		canvas.drawText(s, x, 0, paint);
+				
+		s = String.format("%4.2fHz", audio.maxima.r[i]);
+		x = width * 107 / 368;
+		canvas.drawText(s, x, 0, paint);
+
+		s = String.format("%4.2fHz", audio.maxima.f[i]);
+		x = width * 12 / 23;
+		canvas.drawText(s, x, 0, paint);
+
+		x = width * 139 / 184;
+		s = String.format("%+5.2fHz", audio.maxima.r[i] -
+				  audio.maxima.f[i]);
+		canvas.drawText(s, x, 0, paint);
+	    }
+
+	    if (audio.count == 0)
+	    {
+		canvas.translate(0, small);
+
+		s = String.format("%s%d", notes[audio.n % 12], audio.n / 12);
+		canvas.drawText(s, margin, 0, paint);
+
+		s = String.format("%+5.2f¢", audio.cents);
+		x = width * 43 / 368;
+		canvas.drawText(s, x, 0, paint);
+				
+		s = String.format("%4.2fHz", audio.nearest);
+		x = width * 107 / 368;
+		canvas.drawText(s, x, 0, paint);
+
+		s = String.format("%4.2fHz", audio.frequency);
+		x = width * 12 / 23;
+		canvas.drawText(s, x, 0, paint);
+
+		x = width * 139 / 184;
+		s = String.format("%+5.2fHz", audio.difference);
+		canvas.drawText(s, x, 0, paint);
+	    }
+	}
+
+	else
+	{
+	    String s;
+
+	    canvas.translate(0, large);
+	    paint.setTextSize(large);
+	    paint.setTypeface(Typeface.DEFAULT_BOLD);
+	    canvas.drawText(notes[audio.n % 12], margin, 0, paint);
+
+	    float dx = paint.measureText(notes[audio.n % 12]);
+
+	    paint.setTextSize(medium);
+	    s = Integer.toString(audio.n / 12);
+	    canvas.drawText(s, margin + dx, 0, paint);
+
+	    paint.setTextSize(large);
+	    s = String.format("%+5.2f¢", audio.cents);
+	    dx = paint.measureText(s);
+	    canvas.drawText(s, width - dx - margin, 0, paint);
+
+	    canvas.translate(0, medium);
+	    paint.setTextSize(medium);
+	    paint.setTypeface(Typeface.DEFAULT);
+	    s = String.format("%4.2fHz", audio.nearest);
+	    canvas.drawText(s, margin, 0, paint);
+
+	    s = String.format("%4.2fHz", audio.frequency);
+	    dx = paint.measureText(s);
+	    canvas.drawText(s, width - dx - margin, 0, paint);
+
+	    canvas.translate(0, medium);
+	    paint.setTextSize(medium);
+	    s = String.format("%4.2fHz", audio.reference);
+	    canvas.drawText(s, margin, 0, paint);
+
+	    s = String.format("%+5.2fHz", audio.difference);
+	    dx = paint.measureText(s);
+	    canvas.drawText(s, width - dx - margin, 0, paint);
+	}
     }
+
+	// Log2
+
+	protected double log2(double d)
+	{
+	    return Math.log(d) / Math.log(2.0);
+	}
 }

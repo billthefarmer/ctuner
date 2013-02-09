@@ -24,6 +24,8 @@
 
 package org.billthefarmer.tuner;
 
+import org.billthefarmer.tuner.MainActivity.Audio;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -32,7 +34,7 @@ import android.util.AttributeSet;
 
 public class Scope extends Graticule
 {
-    protected MainActivity.Audio audio;
+    protected Audio audio;
 
     Path path;
     int max;
