@@ -50,21 +50,22 @@ public class NumberPickerPreference extends DialogPreference
 	TypedArray a =
 	    context.obtainStyledAttributes(attrs,
 					   R.styleable.NumberPickerPreference);
-	mMaxValue = a.getInteger(R.styleable.NumberPickerPreference_maxValue, 450);
-	mMinValue = a.getInteger(R.styleable.NumberPickerPreference_minValue, 430);
-	 a.recycle();
+	mMaxValue =
+	    a.getInt(R.styleable.NumberPickerPreference_maxValue, 0);
+	mMinValue =
+	    a.getInt(R.styleable.NumberPickerPreference_minValue, 0);
+	a.recycle();
     }
 
-    @Override
-    protected void onBindDialogView(View view)
-    {
-	super.onBindDialogView(view);
+    // On create dialog view
 
-	mPicker = (NumberPicker)view.findViewById(R.id.picker);
+    @Override
+    protected View onCreateDialogView()
+    {
+	mPicker = new NumberPicker(getContext());
 
 	mPicker.setMaxValue(mMaxValue);
 	mPicker.setMinValue(mMinValue);
-
 	mPicker.setValue(mValue);
 
 	mPicker.setFormatter(new NumberPicker.Formatter()
@@ -79,6 +80,8 @@ public class NumberPickerPreference extends DialogPreference
 
 	mPicker.setWrapSelectorWheel(false);
 	mPicker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
+
+	return mPicker;
     }
 
     // On get default value
@@ -86,7 +89,7 @@ public class NumberPickerPreference extends DialogPreference
     @Override
     protected Object onGetDefaultValue(TypedArray a, int index)
     {
-	return a.getInteger(index, 0);
+	return a.getInteger(index, mValue);
     }
 
     // On set initial value
