@@ -5,9 +5,9 @@
 
 An Android version is in development. It may also be found on [https://github.com/billthefarmer/tuner Github].
 
-http://ctuner.googlecode.com/wiki/images/Tuner-portrait.png
-http://ctuner.googlecode.com/wiki/images/Tuner-settings.png
-http://ctuner.googlecode.com/wiki/images/Tuner-landscape.png
+http://ctuner.googlecode.com/svn/wiki/images/Tuner-portrait.png
+http://ctuner.googlecode.com/svn/wiki/images/Tuner-settings.png
+http://ctuner.googlecode.com/svn/wiki/images/Tuner-landscape.png
 
 = Progress =
 
