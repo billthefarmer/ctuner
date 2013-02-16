@@ -24,8 +24,6 @@
 
 package org.billthefarmer.tuner;
 
-import org.billthefarmer.tuner.MainActivity.Audio;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -37,45 +35,26 @@ import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
-import android.os.Handler;
 import android.util.AttributeSet;
 
 // Meter
 
 public class Meter extends TunerView
 {
-    Audio audio;
+    private Matrix matrix;
+    private Rect barRect;
+    private Path path;
 
-    Handler handler;
-    Runnable run;
-
-    Matrix matrix;
-    Rect barRect;
-    Path path;
-
-    private float cents;
+    private double cents;
     private float medium;
 
-    private static final int DELAY = 100;
+    private static final int DELAY = 40;
 
     // Constructor
 
     public Meter(Context context, AttributeSet attrs)
     {
 	super(context, attrs);
-
-	handler = new Handler();
-	run = new Runnable()
-	    {
-		@Override
-		public void run()
-		{
-		    invalidate();
-		    handler.postDelayed(this, DELAY);
-		}
-	    };
-
-	handler.postDelayed(run, DELAY);
 
 	// Create a path for the thumb
 
@@ -87,6 +66,8 @@ public class Meter extends TunerView
 	path.lineTo(-1, 1);
 	path.lineTo(-1, 0);
 	path.close();
+
+	// Create a matrix for scaling
 
 	matrix = new Matrix();
     }
@@ -130,11 +111,15 @@ public class Meter extends TunerView
     {
 	super.onDraw(canvas);
 
+	// Post invalidate after delay
+
+	postInvalidateDelayed(DELAY);
+
 	// Reset the paint to black
 
-	paint.setColor(Color.BLACK);
 	paint.setStrokeWidth(1);
-	paint.setStyle(Style.FILL_AND_STROKE);
+	paint.setColor(Color.BLACK);
+	paint.setStyle(Style.FILL);
 
 	// Translate the canvas down
 	// and to the centre
@@ -201,12 +186,12 @@ public class Meter extends TunerView
 	// Do the inertia calculation
 
 	if (audio != null)
-	    cents = (float)(((cents * 9.0) + audio.cents) / 10.0);
+	    cents = ((cents * 19.0) + audio.cents) / 20.0;
 
 	// Translate the canvas to
 	// the scaled cents value
 
-	canvas.translate(cents * (xscale / 10), -height / 64);
+	canvas.translate((float)cents * (xscale / 10), -height / 64);
 
 	// Set up the paint for
 	// rounded corners
@@ -220,6 +205,8 @@ public class Meter extends TunerView
 	paint.setColor(Color.WHITE);
 	paint.setStyle(Style.FILL);
 	canvas.drawPath(path, paint);
+
+	// Draw the thumb outline
 
 	paint.setStrokeWidth(3);
 	paint.setColor(Color.BLACK);
