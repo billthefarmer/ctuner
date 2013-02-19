@@ -68,7 +68,7 @@ public class Strobe extends TunerView
     private double offset;
     private double cents;
 
-    protected static final int DELAY = 40;
+    private static final int DELAY = 40;
 
     // Constructor
 
