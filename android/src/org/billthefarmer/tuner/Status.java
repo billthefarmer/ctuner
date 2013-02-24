@@ -6,7 +6,7 @@
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
+//  the Free Software Foundation; either version 3 of the License, or
 //  (at your option) any later version.
 //
 //  This program is distributed in the hope that it will be useful,
@@ -14,9 +14,8 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
 //
-//  You should have received a copy of the GNU General Public License along
-//  with this program; if not, write to the Free Software Foundation, Inc.,
-//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
@@ -28,6 +27,7 @@ import org.billthefarmer.tuner.MainActivity.Audio;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -98,7 +98,9 @@ public class Status extends View
 
 	// Draw sample rate text
 
-	s = String.format(getResources().getString(R.string.sample_rate), audio.sample);
+	Resources resources = getResources();
+	s = String.format(resources.getString(R.string.sample_rate),
+			  audio.sample);
 	canvas.drawText(s, margin, 0, paint);
 	float x = margin + paint.measureText(s + "   ");
 
@@ -106,7 +108,7 @@ public class Status extends View
 
 	if (audio.filter)
 	{
-	    s = getResources().getString(R.string.filter);
+	    s = resources.getString(R.string.filter);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -115,7 +117,7 @@ public class Status extends View
 
 	if (audio.downsample)
 	{
-	    s = getResources().getString(R.string.downsample);
+	    s = resources.getString(R.string.downsample);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -124,7 +126,7 @@ public class Status extends View
 
 	if (audio.zoom)
 	{
-	    s = getResources().getString(R.string.zoom);
+	    s = resources.getString(R.string.zoom);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -133,7 +135,7 @@ public class Status extends View
 
 	if (audio.lock)
 	{
-	    s = getResources().getString(R.string.lock);
+	    s = resources.getString(R.string.lock);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -142,7 +144,7 @@ public class Status extends View
 
 	if (audio.multiple)
 	{
-		s = getResources().getString(R.string.multiple);
+		s = resources.getString(R.string.multiple);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -151,7 +153,7 @@ public class Status extends View
 
 	if (audio.screen)
 	{
-		s = getResources().getString(R.string.screen);
+		s = resources.getString(R.string.screen);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
@@ -160,7 +162,7 @@ public class Status extends View
 
 	if (audio.strobe)
 	{
-	    s = getResources().getString(R.string.strobe);
+	    s = resources.getString(R.string.strobe);
 	    canvas.drawText(s, x, 0, paint);
 	    x += paint.measureText(s + " ");
 	}
