@@ -35,12 +35,12 @@
   <string name="filter">filter</string>
   <string name="zoom">zoom</string>
   <string name="lock">lock</string>
-  <string name="screen">display</string>
+  <string name="display">display</string>
   <string name="strobe">strobe</string>
   <string name="downsample">downsample</string>
   <string name="multiple">multiple</string>
 
-  <string name="def_custom">[0.0,180.0]</string>
+  <string name="def_custom">[-1073807360,-1090518785]</string>
 
   <string name="pref_input_category">Input</string>
 
@@ -55,8 +55,8 @@
 
   <string name="pref_display">Display</string>
 
-  <string name="pref_screen">Screen</string>
-  <string name="pref_screen_summ">Keep display on</string>
+  <string name="pref_backlight">Display backlight</string>
+  <string name="pref_backlight_summ">Keep display backlight on</string>
 
   <string name="pref_zoom">Zoom spectrum</string>
   <string name="pref_zoom_summ">Zoom in to current note on spectrum display</string>
