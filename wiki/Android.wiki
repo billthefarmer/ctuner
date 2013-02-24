@@ -39,13 +39,11 @@ The status bar shows the input sample rate and the status of the various setting
 
 == Settings ==
 
+All the settings are preserved except the multiple note option and will be remembered the next time you use the app.
+
 === Input ===
 
-The *input source* may be changed. This doesn't make any difference on my tablet, but it may on a phone. All the settings are preserved except the multiple note option and will be remembered the next time you use the app.
-
-==== Sample rate ====
-
-The input *sample rate* may be changed. The best setting is 11025 samples/sec, but not all settings may work on some devices. An error message will be displayed if there is a problem.
+The *input source* may be changed. This doesn't make any difference on my tablet, but it may on a phone.
 
 ==== Audio filter ====
 
@@ -56,6 +54,10 @@ The are *audio filter* item controls a low pass filter in the audio input before
 The *downsample* item controls a downsampling feature on the audio input during processing to help with bass reeds. This feature may cause spurious results
 
 === Display ===
+
+==== Keep the display on ====
+
+The **screen** item controls the display backlight.
 
 ==== Spectrum zoom ====
 
