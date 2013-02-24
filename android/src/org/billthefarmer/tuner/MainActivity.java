@@ -62,7 +62,7 @@ public class MainActivity extends Activity
     private static final String PREF_FILTER = "pref_filter";
     private static final String PREF_DOWNSAMPLE = "pref_downsample";
     private static final String PREF_MULTIPLE = "pref_multiple";
-    private static final String PREF_SCREEN = "pref_screen";
+    private static final String PREF_BACKLIGHT = "pref_backlight";
     private static final String PREF_STROBE = "pref_strobe";
     private static final String PREF_ZOOM = "pref_zoom";
 
@@ -276,9 +276,9 @@ public class MainActivity extends Activity
 		@Override
 		public boolean onLongClick(View v)
 		{
-		    audio.screen = !audio.screen;
+		    audio.backlight = !audio.backlight;
 
-		    if (audio.screen)
+		    if (audio.backlight)
 			showToast(R.string.screen_on);
 
 		    else
@@ -286,7 +286,7 @@ public class MainActivity extends Activity
 
 		    Window window = getWindow();
 
-		    if (audio.screen)
+		    if (audio.backlight)
 			window.addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		    else
@@ -392,7 +392,7 @@ public class MainActivity extends Activity
 	editor.putBoolean(PREF_FILTER, audio.filter);
 	editor.putBoolean(PREF_DOWNSAMPLE, audio.downsample);
 	editor.putBoolean(PREF_MULTIPLE, audio.multiple);
-	editor.putBoolean(PREF_SCREEN, audio.screen);
+	editor.putBoolean(PREF_BACKLIGHT, audio.backlight);
 	editor.putBoolean(PREF_STROBE, audio.strobe);
 	editor.putBoolean(PREF_ZOOM, audio.zoom);
 
@@ -419,13 +419,13 @@ public class MainActivity extends Activity
 	    audio.filter = preferences.getBoolean(PREF_FILTER, false);
 	    audio.downsample = preferences.getBoolean(PREF_DOWNSAMPLE, false);
 	    audio.multiple = preferences.getBoolean(PREF_MULTIPLE, false);
-	    audio.screen = preferences.getBoolean(PREF_SCREEN, false);
+	    audio.backlight = preferences.getBoolean(PREF_BACKLIGHT, false);
 	    audio.strobe = preferences.getBoolean(PREF_STROBE, false);
 	    audio.zoom = preferences.getBoolean(PREF_ZOOM, true);
 
 	    // Check screen
 
-	    if (audio.screen)
+	    if (audio.backlight)
 	    {
 		Window window = getWindow();
 		window.addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -517,9 +517,9 @@ public class MainActivity extends Activity
 	protected boolean lock;
 	protected boolean zoom;
 	protected boolean filter;
-	protected boolean screen;
 	protected boolean strobe;
 	protected boolean multiple;
+	protected boolean backlight;
 	protected boolean downsample;
 
 	protected double reference;
@@ -542,7 +542,7 @@ public class MainActivity extends Activity
 	protected double fps;
 
 	protected int count;
-	protected int n;
+	protected int note;
 
 	// Private data
 
@@ -674,12 +674,6 @@ public class MainActivity extends Activity
 		}
 	    }
 
-	    // Calculate fps
-
-	    fps = (double)sample / (double)SAMPLES;
-	    final double expect = 2.0 * Math.PI *
-		(double)STEP / (double)SAMPLES;
-
 	    // Set divisor according to sample rate
 	    
 	    switch ((int)sample)
@@ -700,6 +694,12 @@ public class MainActivity extends Activity
 		data = new short[STEP * divisor];
 		break;
 	    }
+
+	    // Calculate fps
+
+	    fps = (sample / divisor) / (double)SAMPLES;
+	    final double expect = 2.0 * Math.PI *
+		(double)STEP / (double)SAMPLES;
 
 	    // Create the AudioRecord object
 
@@ -972,7 +972,6 @@ public class MainActivity extends Activity
 		// Found flag
 
 		boolean found = false;
-		n = 0;
 
 		// Do the note and cents calculations
 
@@ -1009,9 +1008,9 @@ public class MainActivity extends Activity
 
 		    // Note number
 
-		    n = (int)Math.round(cf) + C5_OFFSET;
+		    note = (int)Math.round(cf) + C5_OFFSET;
 
-		    if (n < 0)
+		    if (note < 0)
 			found = false;
 
 		    // Find nearest maximum to reference note
@@ -1091,7 +1090,7 @@ public class MainActivity extends Activity
 			    lower = 0.0;
 			    cents = 0.0;
 			    count = 0;
-			    n = 0;
+			    note = 0;
 
 			    // Update display
 
@@ -1201,14 +1200,14 @@ public class MainActivity extends Activity
 		if (count == 0)
 		    text =
 			String.format("%s%s%d\t%+5.2f\u00A2\t%4.2fHz\t%4.2fHz\t%+5.2fHz\n",
-				      notes[n % OCTAVE], sharps[n % OCTAVE], n / OCTAVE, cents,
+				      notes[note % OCTAVE], sharps[note % OCTAVE], note / OCTAVE, cents,
 				      nearest, frequency, difference);
 	    }
 
 	    else
 		text =
 		    String.format("%s%s%d\t%+5.2f\u00A2\t%4.2fHz\t%4.2fHz\t%+5.2fHz\n",
-				  notes[n % OCTAVE], sharps[n % OCTAVE], n / OCTAVE, cents,
+				  notes[note % OCTAVE], sharps[note % OCTAVE], note / OCTAVE, cents,
 				  nearest, frequency, difference);
 
 	    ClipboardManager clipboard =
