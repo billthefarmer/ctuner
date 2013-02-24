@@ -11,7 +11,7 @@ http://ctuner.googlecode.com/svn/wiki/images/Tuner-landscape.png
 
 == Using ==
 
-Hold the phone/tablet near the instrument, play a note and observe the display. In portrait the app shows a scope with the input signal, a spectrum showing the processed signal, the main display with the note value, cents error, frequency error etc, a strobe display and a meter display showing the cents error. In landscape the app shows just the main display and the meter.
+Hold the phone/tablet near the instrument, play a note and observe the display. In portrait the app shows a scope with the input signal, a spectrum showing the processed signal, the main display with the note value, cents error, frequency error etc, a strobe display and a meter display showing the cents error. In landscape the app shows just the main display and the meter. Using the touch setting changes below causes a short notification message to pop up for a few seconds.
 
 === Scope ===
 
@@ -31,7 +31,7 @@ Touch the strobe to turn it on and off. Strobe colours are configurable in the s
 
 === Meter ===
 
-The meter shows the cents error up to plus or minus 50 cents.
+The meter shows the cents error up to plus or minus 50 cents. Touch the meter to copy the results to the clipboard. Touch and hold to prevent the display turning itself off. Touch and hold again to allow the display to turn off.
 
 === Status bar ===
 
@@ -75,11 +75,9 @@ The *strobe* item controls the strobe display.
 
 If the strobe is enabled, there is an option to change the *colours*. There are three predefined settings and a custom setting. If the custom setting is selected the two colours may be changed individually. touch the coloured circle to select a colour.
 
-http://ctuner.googlecode.com/svn/wiki/images/Tuner-colour.png
 http://ctuner.googlecode.com/svn/wiki/images/Tuner-colourpicker.png
+http://ctuner.googlecode.com/svn/wiki/images/Tuner-reference.png
 
 === Reference ===
-
-http://ctuner.googlecode.com/svn/wiki/images/Tuner-reference.png
 
 The *reference* frequency for 'A' may be changed over a limited range. This will be remembered, so change it back to 440Hz before you quit the app.
