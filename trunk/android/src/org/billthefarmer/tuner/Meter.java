@@ -6,7 +6,7 @@
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
+//  the Free Software Foundation; either version  of the License, or
 //  (at your option) any later version.
 //
 //  This program is distributed in the hope that it will be useful,
@@ -14,9 +14,8 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
 //
-//  You should have received a copy of the GNU General Public License along
-//  with this program; if not, write to the Free Software Foundation, Inc.,
-//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
@@ -26,6 +25,7 @@ package org.billthefarmer.tuner;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -96,7 +96,7 @@ public class Meter extends TunerView
 	if (dx >= width / 11)
 	    paint.setTextScaleX((width / 12) / dx);
 
-	// Create a rect for the horizoltal bar
+	// Create a rect for the horizontal bar
 
 	barRect = new Rect(width / 36 - width / 2, -height / 64,
 			   width / 2 - width / 36, height / 64);
@@ -126,13 +126,14 @@ public class Meter extends TunerView
 
 	canvas.translate(clipRect.left, clipRect.top);
 
-	if (audio.screen)
+	if (audio != null && audio.screen)
 	{
-		BitmapDrawable drawable =
-				(BitmapDrawable)getResources().getDrawable(R.drawable.ic_pref_screen);
-		Bitmap bitmap = drawable.getBitmap();
-		canvas.drawBitmap(bitmap, 2, height - bitmap.getHeight() - 2, null);
-		drawable.draw(canvas);
+	    Resources resources = getResources();
+	    BitmapDrawable drawable =
+		(BitmapDrawable)resources.getDrawable(R.drawable.ic_pref_screen);
+	    Bitmap bitmap = drawable.getBitmap();
+	    canvas.drawBitmap(bitmap, 2, height - bitmap.getHeight() - 2, null);
+	    drawable.draw(canvas);
 	}
 
 	// Reset the paint to black

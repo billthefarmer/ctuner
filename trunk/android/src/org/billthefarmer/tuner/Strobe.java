@@ -6,7 +6,7 @@
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
+//  the Free Software Foundation; either version 3 of the License, or
 //  (at your option) any later version.
 //
 //  This program is distributed in the hope that it will be useful,
@@ -14,9 +14,8 @@
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
 //
-//  You should have received a copy of the GNU General Public License along
-//  with this program; if not, write to the Free Software Foundation, Inc.,
-//  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 //  Bill Farmer	 william j farmer [at] yahoo [dot] co [dot] uk.
 //
@@ -25,6 +24,7 @@
 package org.billthefarmer.tuner;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.BitmapShader;
@@ -102,10 +102,10 @@ public class Strobe extends TunerView
 
 	// Create rounded bitmap
 
-	rounded = Bitmap.createBitmap(w, h, Config.ARGB_8888);
+	rounded = Bitmap.createBitmap(width, height, Config.ARGB_8888);
 	Canvas canvas = new Canvas(rounded);
 	paint.setColor(Color.WHITE);
-	canvas.drawRoundRect(new RectF(0, 0, w, h), 20, 20, paint);	
+	canvas.drawRoundRect(new RectF(0, 0, width, height), 10, 10, paint);	
 
 	// Create magic paint
 
@@ -114,7 +114,7 @@ public class Strobe extends TunerView
 
 	// Create a bitmap to draw on
 
-	bitmap = Bitmap.createBitmap(w, h, Config.ARGB_8888);
+	bitmap = Bitmap.createBitmap(width, height, Config.ARGB_8888);
 	source = new Canvas(bitmap);
 
 	// Create matrix for translating shaders
@@ -132,13 +132,18 @@ public class Strobe extends TunerView
     {
 	// Get the colours
 
-	fore = getResources().getIntArray(R.array.foreground_colours);
-	back = getResources().getIntArray(R.array.background_colours);
-
-	if (colour < CUSTOM)
+	if (audio != null)
 	{
-	    foreground = fore[colour];
-	    background = back[colour];
+	    Resources resources = getResources();
+
+	    fore = resources.getIntArray(R.array.foreground_colours);
+	    back = resources.getIntArray(R.array.background_colours);
+
+	    if (colour < CUSTOM)
+	    {
+		foreground = fore[colour];
+		background = back[colour];
+	    }
 	}
 
 	// Create the bitmap shaders
@@ -191,7 +196,8 @@ public class Strobe extends TunerView
     {
 	// Create bitmap twice as wide as the block
 
-	Bitmap bitmap = Bitmap.createBitmap(width * 2, height, Config.ARGB_8888);
+	Bitmap bitmap =
+	    Bitmap.createBitmap(width * 2, height, Config.ARGB_8888);
 	Canvas canvas = new Canvas(bitmap);
 	Paint paint = new Paint();
 
@@ -233,6 +239,10 @@ public class Strobe extends TunerView
 
 	if (offset < 0.0)
 	    offset = size * 16;
+
+	// Translate to the clip rect
+
+	canvas.translate(clipRect.left, clipRect.top);
 
 	// Draw strobe
 
