@@ -23,10 +23,13 @@
 
 package org.billthefarmer.tuner;
 
+import android.animation.ValueAnimator;
+import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
@@ -34,23 +37,24 @@ import android.graphics.Paint.Align;
 import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.view.animation.LinearInterpolator;
 
 // Meter
 
 public class Meter extends TunerView
 {
     private Matrix matrix;
+    private Bitmap bitmap;
     private Rect barRect;
     private Path path;
+    
+    private ValueAnimator animator;
 
     private double cents;
     private float medium;
-
-    private static final int DELAY = 40;
 
     // Constructor
 
@@ -72,6 +76,9 @@ public class Meter extends TunerView
 	// Create a matrix for scaling
 
 	matrix = new Matrix();
+    Resources resources = getResources();
+	bitmap = BitmapFactory.decodeResource(resources,
+    		R.drawable.ic_pref_screen);
     }
 
     // OnSizeChanged
@@ -109,6 +116,24 @@ public class Meter extends TunerView
 	// Scale the path
 
 	path.transform(matrix);
+
+	// Create animator
+
+	animator = ValueAnimator.ofFloat(0, 1);
+	animator.setInterpolator(new LinearInterpolator());
+	animator.setRepeatCount(ValueAnimator.INFINITE);
+	animator.setRepeatMode(ValueAnimator.RESTART);
+	animator.setDuration(10000);
+	
+	animator.addUpdateListener(new AnimatorUpdateListener()
+	{
+		public void onAnimationUpdate(ValueAnimator animator)
+		{
+			invalidate();
+		}
+	});
+
+	animator.start();
     }
 
     // OnDraw
@@ -118,22 +143,8 @@ public class Meter extends TunerView
     {
 	super.onDraw(canvas);
 
-	// Post invalidate after delay
-
-	postInvalidateDelayed(DELAY);
-
-	// Translate to the clip rect
-
-	canvas.translate(clipRect.left, clipRect.top);
-
 	if (audio != null && audio.backlight)
-	{
-	    Resources resources = getResources();
-	    BitmapDrawable drawable =
-		(BitmapDrawable)resources.getDrawable(R.drawable.ic_pref_screen);
-	    Bitmap bitmap = drawable.getBitmap();
 	    canvas.drawBitmap(bitmap, 2, height - bitmap.getHeight() - 2, null);
-	}
 
 	// Reset the paint to black
 
