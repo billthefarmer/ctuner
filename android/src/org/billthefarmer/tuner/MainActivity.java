@@ -27,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -79,6 +80,7 @@ public class MainActivity extends Activity
     {"", "\u266F", "", "\u266D", "", "",
      "\u266F", "", "\u266D", "", "\u266D", ""};
  
+    private SignalView signal;
     private Spectrum spectrum;
     private Display display;
     private Strobe strobe;
@@ -106,6 +108,14 @@ public class MainActivity extends Activity
 	meter = (Meter)findViewById(R.id.meter);
 	scope = (Scope)findViewById(R.id.scope);
 
+	// Add custom view to action bar
+
+	ActionBar actionBar = getActionBar();
+	actionBar.setCustomView(R.layout.signal_view);
+	actionBar.setDisplayShowCustomEnabled(true);
+
+	signal = (SignalView)actionBar.getCustomView();
+
 	// Create audio
 
 	audio = new Audio();
@@ -123,6 +133,9 @@ public class MainActivity extends Activity
 
 	if (status != null)
 	    status.audio = audio;
+
+	if (signal != null)
+	    signal.audio = audio;
 
 	if (meter != null)
 	    meter.audio = audio;
@@ -372,6 +385,30 @@ public class MainActivity extends Activity
 	super.onStop();
     }
 
+    // On destroy
+
+    @Override
+    protected void onDestroy()
+    {
+	super.onDestroy();
+
+	// Get rid of all those pesky objects
+
+	audio = null;
+	scope = null;
+	spectrum = null;
+	display = null;
+	strobe = null;
+	meter = null;
+	status = null;
+	signal = null;
+	toast = null;
+
+	// Hint that it might be a good idea
+
+	System.runFinalization();
+    }
+
     // On settings click
 
     public void onSettingsClick(MenuItem item)
@@ -569,9 +606,10 @@ public class MainActivity extends Activity
 	private double xv[];
 	private double yv[];
 
-	private double dmax;
-
 	private Complex x;
+
+	private double dmax;
+	protected double signal;
 
 	protected Maxima maxima;
 
@@ -617,30 +655,34 @@ public class MainActivity extends Activity
 	{
 	    // Start the thread
 
-	    new Thread(new Runnable()
+	    thread = new Thread(new Runnable()
 		{
 		    public void run()
 		    {
 			processAudio();
 		    }
-		}, "Audio").start();
+		}, "Audio");
+
+	    thread.start();
 	}
 
 	// Stop
 
 	void stop()
 	{
+	    Thread t = thread;
 	    thread = null;
+
+	    // Wait for the thread to exit
+
+	    while (t != null && t.isAlive())
+		Thread.yield();
 	}
 
 	// Process Audio
 
 	void processAudio()
 	{
-	    // Save the thread
-
-	    thread = Thread.currentThread();
-
 	    // Sample rates to try
 
 	    int rates[] =
@@ -774,8 +816,12 @@ public class MainActivity extends Activity
 		    buffer[(SAMPLES - STEP) + i] =
 			audio.filter? yv[1]: (double)data[i * divisor];
 		}
+		
+		// Signal value
 
-		// Maximum data value
+		signal = dmax;
+
+		// Maximum value
 
 		if (dmax < 4096.0)
 		    dmax = 4096.0;
@@ -783,6 +829,7 @@ public class MainActivity extends Activity
 		// Calculate normalising value
 
 		double norm = dmax;
+
 		dmax = 0.0;
 
 		// Copy data to FFT input arrays for tuner
@@ -961,7 +1008,10 @@ public class MainActivity extends Activity
 			// Don't use if negative
 
 			if (maxima.n[count] < 0)
+			{
+			    maxima.n[count] = 0;
 			    continue;
+			}
 
 			// Set limit to octave above
 
@@ -1014,8 +1064,10 @@ public class MainActivity extends Activity
 		    note = (int)Math.round(cf) + C5_OFFSET;
 
 		    if (note < 0)
+		    {
+			note = 0;
 			found = false;
-
+		    }
 		    // Find nearest maximum to reference note
 
 		    double df = 1000.0;
