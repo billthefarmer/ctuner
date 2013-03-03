@@ -5,7 +5,7 @@
 
 A Mac version has been released.
 
-http://ctuner.googlecode.com/files/TunerMac.png  http://ctuner.googlecode.com/files/Preferences.png
+http://ctuner.googlecode.com/svn/wiki/images/TunerMac.png  http://ctuner.googlecode.com/svn/wiki/images/Preferences.png
 
 = Progress =
 
