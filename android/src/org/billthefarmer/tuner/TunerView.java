@@ -26,8 +26,8 @@ package org.billthefarmer.tuner;
 import org.billthefarmer.tuner.MainActivity.Audio;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
@@ -40,6 +40,7 @@ import android.view.View;
 public class TunerView extends View
 {
     protected Audio audio;
+    protected Resources resources;
 
     protected int width;
     protected int height;
@@ -54,10 +55,12 @@ public class TunerView extends View
 	super(context, attrs);
 
 	paint = new Paint();
+	resources = getResources();
     }
 
     // On Size Changed
 
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
 	// Save the new width and height
@@ -74,13 +77,14 @@ public class TunerView extends View
 
     // On Draw
 
+    @Override
     protected void onDraw(Canvas canvas)
     {
 	// Set up the paint and draw the outline
 
 	paint.setStrokeWidth(3);
 	paint.setAntiAlias(true);
-	paint.setColor(Color.GRAY);
+	paint.setColor(resources.getColor(android.R.color.darker_gray));
 	paint.setStyle(Style.STROKE);
 	canvas.drawRoundRect(outlineRect, 10, 10, paint);
 

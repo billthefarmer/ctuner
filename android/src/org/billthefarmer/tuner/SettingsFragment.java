@@ -23,8 +23,12 @@
 
 package org.billthefarmer.tuner;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.ListPreference;
@@ -44,8 +48,9 @@ public class SettingsFragment extends PreferenceFragment
     private static final String KEY_PREF_COLOUR = "pref_colour";
     private static final String KEY_PREF_REFERENCE = "pref_reference";
     private static final String KEY_PREF_CUSTOM = "pref_custom";
+    private static final String KEY_PREF_ABOUT = "pref_about";
 
-    private String refSummary;
+    private String summary;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -93,9 +98,8 @@ public class SettingsFragment extends PreferenceFragment
 	    break;
 
 	case CUSTOM:
-	    Drawable d = custom.getIcon();
-	    preference.setDialogIcon(d);
-	    preference.setIcon(d);
+	    preference.setIcon(R.drawable.ic_pref_spectrum);
+	    preference.setDialogIcon(R.drawable.ic_pref_spectrum);
 
 	    // Enable colour pickers
 
@@ -105,15 +109,49 @@ public class SettingsFragment extends PreferenceFragment
 
 	NumberPickerPreference picker = 
 	    (NumberPickerPreference)findPreference(KEY_PREF_REFERENCE);
-	refSummary = (String)picker.getSummary();
+	summary = (String)picker.getSummary();
+
+	// Set number picker summary
 
 	v = picker.getValue();
-	String s = String.format(refSummary, v);
+	String s = String.format(summary, v);
 	picker.setSummary(s);
+
+	// Get about summary
+
+	Preference about = findPreference(KEY_PREF_ABOUT);
+	String sum = (String) about.getSummary();
+
+	// Get context and package manager
+
+	Context context = getActivity();
+	PackageManager manager = context.getPackageManager();
+
+	// Get info
+
+	PackageInfo info = null;
+	try
+	{
+	    info = manager.getPackageInfo("org.billthefarmer.tuner", 0);
+	}
+	
+	catch (NameNotFoundException e)
+	{
+	    e.printStackTrace();
+	}
+
+	// Set version in text view
+
+	if (info != null)
+	{
+	    s = String.format(sum, info.versionName);
+	    about.setSummary(s);
+	}
     }
 
     // On shared preference changed
 
+    @Override
     public void onSharedPreferenceChanged(SharedPreferences preferences,
 					  String key)
     {
@@ -136,7 +174,7 @@ public class SettingsFragment extends PreferenceFragment
 
 	    // Get the value and set the dialog icon
 
-	    int v = Integer.valueOf(((ListPreference)preference).getValue());
+	    int v = Integer.valueOf(preference.getValue());
 	    switch (v)
 	    {
 	    case BLUE:
@@ -155,11 +193,10 @@ public class SettingsFragment extends PreferenceFragment
 		break;
 
 	    case CUSTOM:
-		Drawable d = custom.getIcon();
-		preference.setDialogIcon(d);
-		preference.setIcon(d);
+		preference.setIcon(R.drawable.ic_pref_spectrum);
+		preference.setDialogIcon(R.drawable.ic_pref_spectrum);
 
-	    // Enable colour pickers
+		// Enable colour pickers
 
 		custom.setEnabled(true);
 		break;
@@ -188,7 +225,7 @@ public class SettingsFragment extends PreferenceFragment
 	    // Get the value and set the summary
 
 	    int v = preference.getValue();
-	    String s = String.format(refSummary, v);
+	    String s = String.format(summary, v);
 	    preference.setSummary(s);
 	}
     }

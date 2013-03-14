@@ -57,6 +57,7 @@ import android.widget.Toast;
 // Main Activity
 
 public class MainActivity extends Activity
+    implements OnClickListener, OnLongClickListener
 {
     private static final String PREF_INPUT = "pref_input";
     private static final String PREF_REFERENCE = "pref_reference";
@@ -149,7 +150,7 @@ public class MainActivity extends Activity
 	setClickListeners();
     }
 
-    // No menu yet
+    // On create options menu
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
@@ -158,6 +159,7 @@ public class MainActivity extends Activity
 
 	MenuInflater inflater = getMenuInflater();
 	inflater.inflate(R.menu.activity_main, menu);
+
 	return true;
     }
 
@@ -168,147 +170,185 @@ public class MainActivity extends Activity
 	// Scope
 
 	if (scope != null)
-	    scope.setOnClickListener(new OnClickListener()
-		{
-		    @Override
-		    public void onClick(View v)
-		    {
-			audio.filter = !audio.filter;
-
-			if (audio.filter)
-			    showToast(R.string.filter_on);
-			else
-			    showToast(R.string.filter_off);
-		    }
-		});
+	    scope.setOnClickListener(this);
 
 	// Spectrum
 
 	if (spectrum != null)
 	{
-	    spectrum.setOnClickListener(new OnClickListener()
-		{
-		    @Override
-		    public void onClick(View v)
-		    {
-			audio.zoom = !audio.zoom;
-
-			if (audio.zoom)
-			    showToast(R.string.zoom_on);
-			else
-			    showToast(R.string.zoom_off);
-		    }
-		});
-
-	    spectrum.setOnLongClickListener(new OnLongClickListener()
-		{
-		    @Override
-		    public boolean onLongClick(View v)
-		    {
-			audio.downsample = !audio.downsample;
-
-			if (audio.downsample)
-			    showToast(R.string.downsample_on);
-			else
-			    showToast(R.string.downsample_off);
-
-			return true;
-		    }
-		});
+	    spectrum.setOnClickListener(this);
+	    spectrum.setOnLongClickListener(this);
 	}
 
 	// Display
 
 	if (display != null)
 	{
-	    display.setOnClickListener(new OnClickListener()
-		{
-		    @Override
-		    public void onClick(View v)
-		    {
-			audio.lock = !audio.lock;
-			display.invalidate();
-
-			if (audio.lock)
-			    showToast(R.string.lock_on);
-			else
-			    showToast(R.string.lock_off);
-		    }
-		});
-
-	    display.setOnLongClickListener(new OnLongClickListener()
-		{
-		    @Override
-		    public boolean onLongClick(View v)
-		    {
-			audio.multiple = !audio.multiple;
-
-			if (audio.multiple)
-			    showToast(R.string.multiple_on);
-
-			else
-			    showToast(R.string.multiple_off);
-
-			return true;
-		    }
-		});
+	    display.setOnClickListener(this);
+	    display.setOnLongClickListener(this);
 	}
 
 	// Strobe
 
 	if (strobe != null)
-	    strobe.setOnClickListener(new OnClickListener()
-		{
-		    @Override
-		    public void onClick(View v)
-		    {
-			audio.strobe = !audio.strobe;
-
-			if (audio.strobe)
-			    showToast(R.string.strobe_on);
-
-			else
-			    showToast(R.string.strobe_off);
-		    }
-		});
+	    strobe.setOnClickListener(this);
 
 	// Meter
 
 	if (meter != null)
-	    meter.setOnClickListener(new OnClickListener()
-		{
-		    @Override
-		    public void onClick(View arg0)
-		    {
-			audio.copyToClipboard();
-			showToast(R.string.copied_clip);
-		    }
-		});
+	{
+	    meter.setOnClickListener(this);
+	    meter.setOnLongClickListener(this);
+	}
+    }
 
-	meter.setOnLongClickListener(new OnLongClickListener()
-	    {
-		@Override
-		public boolean onLongClick(View v)
-		{
-		    audio.screen = !audio.screen;
+    // On click
 
-		    if (audio.screen)
-			showToast(R.string.screen_on);
+    @Override
+    public void onClick(View v)
+    {
+	// Get id
 
-		    else
-			showToast(R.string.screen_off);
+	int id = v.getId();
+	switch (id)
+	{
+	    // Scope
 
-		    Window window = getWindow();
+	case R.id.scope:
+	    audio.filter = !audio.filter;
 
-		    if (audio.screen)
-			window.addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+	    if (audio.filter)
+		showToast(R.string.filter_on);
+	    else
+		showToast(R.string.filter_off);
+	    break;
 
-		    else
-			window.clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+	    // Spectrum
 
-		    return true;
-		}
-	    });
+	case R.id.spectrum:
+	    audio.zoom = !audio.zoom;
+
+	    if (audio.zoom)
+		showToast(R.string.zoom_on);
+	    else
+		showToast(R.string.zoom_off);
+	    break;
+
+	    // Display
+
+	case R.id.display:
+	    audio.lock = !audio.lock;
+	    display.invalidate();
+
+	    if (audio.lock)
+		showToast(R.string.lock_on);
+	    else
+		showToast(R.string.lock_off);
+	    break;
+
+	    // Strobe
+
+	case R.id.strobe:
+	    audio.strobe = !audio.strobe;
+
+	    if (audio.strobe)
+		showToast(R.string.strobe_on);
+
+	    else
+		showToast(R.string.strobe_off);
+	    break;
+
+	    // Meter
+
+	case R.id.meter:
+	    audio.copyToClipboard();
+	    showToast(R.string.copied_clip);
+	    break;
+	}	
+    }
+
+    // On long click
+
+    @Override
+    public boolean onLongClick(View v)
+    {
+	int id = v.getId();
+	switch (id)
+	{
+	    // Spectrum
+
+	case R.id.spectrum:
+	    audio.downsample = !audio.downsample;
+
+	    if (audio.downsample)
+		showToast(R.string.downsample_on);
+	    else
+		showToast(R.string.downsample_off);
+	    break;
+
+	    // Display
+
+	case R.id.display:
+	    audio.multiple = !audio.multiple;
+
+	    if (audio.multiple)
+		showToast(R.string.multiple_on);
+
+	    else
+		showToast(R.string.multiple_off);
+	    break;
+
+	    // Meter
+
+	case R.id.meter:
+	    audio.screen = !audio.screen;
+
+	    if (audio.screen)
+		showToast(R.string.screen_on);
+
+	    else
+		showToast(R.string.screen_off);
+
+	    Window window = getWindow();
+
+	    if (audio.screen)
+		window.addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+	    else
+		window.clearFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+	    break;
+	}
+	return true;
+    }
+
+    // On options item
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+	// Get id
+
+	int id = item.getItemId();
+	switch (id)
+	{
+	    // Settings
+
+	case R.id.settings:
+	    return onSettingsClick(item);
+
+	default:
+	    return false;
+	}
+    }
+
+    // On settings click
+
+    private boolean onSettingsClick(MenuItem item)
+    {
+	Intent intent = new Intent(this, SettingsActivity.class);
+	startActivity(intent);
+
+	return true;
     }
 
     // Show toast.
@@ -408,14 +448,6 @@ public class MainActivity extends Activity
 	// Hint that it might be a good idea
 
 	System.runFinalization();
-    }
-
-    // On settings click
-
-    public void onSettingsClick(MenuItem item)
-    {
-	Intent intent = new Intent(this, SettingsActivity.class);
-	startActivity(intent);
     }
 
     // Save preferences
@@ -546,7 +578,7 @@ public class MainActivity extends Activity
 
     // Audio
 
-    protected class Audio
+    protected class Audio implements Runnable
     {
 	// Preferences
 
@@ -626,7 +658,7 @@ public class MainActivity extends Activity
 
 	// Constructor
 
-	Audio()
+	protected Audio()
 	{
 	    buffer = new double[SAMPLES];
 	    data = new short[STEP];
@@ -651,24 +683,25 @@ public class MainActivity extends Activity
 
 	// Start audio
 
-	void start()
+	protected void start()
 	{
 	    // Start the thread
 
-	    thread = new Thread(new Runnable()
-		{
-		    public void run()
-		    {
-			processAudio();
-		    }
-		}, "Audio");
-
+	    thread = new Thread(this, "Audio");
 	    thread.start();
+	}
+
+	// Run
+
+	@Override
+	public void run()
+	{
+	    processAudio();
 	}
 
 	// Stop
 
-	void stop()
+	protected void stop()
 	{
 	    Thread t = thread;
 	    thread = null;
@@ -681,7 +714,7 @@ public class MainActivity extends Activity
 
 	// Process Audio
 
-	void processAudio()
+	protected void processAudio()
 	{
 	    // Sample rates to try
 
@@ -706,6 +739,7 @@ public class MainActivity extends Activity
 		{
 		    runOnUiThread(new Runnable()
 			{
+			    @Override
 			    public void run()
 			    {
 				showAlert(R.string.app_name,
@@ -732,9 +766,9 @@ public class MainActivity extends Activity
 
 	    // Calculate fps
 
-	    fps = (sample / divisor) / (double)SAMPLES;
+	    fps = (sample / divisor) / SAMPLES;
 	    final double expect = 2.0 * Math.PI *
-		(double)STEP / (double)SAMPLES;
+		STEP / SAMPLES;
 
 	    // Create the AudioRecord object
 
@@ -751,6 +785,7 @@ public class MainActivity extends Activity
 	    {
 		runOnUiThread(new Runnable()
 		    {
+			@Override
 			public void run()
 			{
 			    showAlert(R.string.app_name, R.string.error_init);
@@ -878,7 +913,7 @@ public class MainActivity extends Activity
 
 		    // Calculate phase difference
 
-		    dp -= (double)i * expect;
+		    dp -= i * expect;
 
 		    int qpd = (int)(dp / Math.PI);
 
@@ -888,7 +923,7 @@ public class MainActivity extends Activity
 		    else
 			qpd -= qpd & 1;
 
-		    dp -=  Math.PI * (double)qpd;
+		    dp -=  Math.PI * qpd;
 
 		    // Calculate frequency difference
 
