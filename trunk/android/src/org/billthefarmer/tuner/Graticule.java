@@ -55,14 +55,15 @@ public class Graticule extends TunerView
 
     // On Size Changed
 
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
 	super.onSizeChanged(w, h, oldw, oldh);
 
 	// Calculate indented width and height
 
-	width = (int)(clipRect.right - clipRect.left);
-	height = (int)(clipRect.bottom - clipRect.top);
+	width = (clipRect.right - clipRect.left);
+	height = (clipRect.bottom - clipRect.top);
 
 	// Create rounded bitmap
 
@@ -85,6 +86,7 @@ public class Graticule extends TunerView
 
     // On Draw
 
+    @Override
     protected void onDraw(Canvas canvas)
     {
 	super.onDraw(canvas);

@@ -25,11 +25,9 @@ package org.billthefarmer.tuner;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint.Align;
 import android.graphics.Paint.Style;
 import android.graphics.Typeface;
@@ -65,13 +63,13 @@ public class Display extends TunerView
     {
 	super(context, attrs);
 
-    Resources resources = getResources();
-    bitmap = BitmapFactory.decodeResource(resources,
-    		R.drawable.ic_locked);
+	bitmap = BitmapFactory.decodeResource(resources,
+					      R.drawable.ic_locked);
     }
 
     // On size changed
 
+    @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh)
     {
 	super.onSizeChanged(w, h, oldw, oldh);
@@ -105,6 +103,7 @@ public class Display extends TunerView
 
     // On draw
 
+    @Override
     @SuppressLint("DefaultLocale")
     protected void onDraw(Canvas canvas)
     {
@@ -118,7 +117,7 @@ public class Display extends TunerView
 	// Set up paint
 
 	paint.setStrokeWidth(1);
-	paint.setColor(Color.BLACK);
+	paint.setColor(resources.getColor(android.R.color.primary_text_light));
 	paint.setTextAlign(Align.LEFT);
 	paint.setStyle(Style.FILL);
 
