@@ -83,3 +83,7 @@ http://ctuner.googlecode.com/svn/wiki/images/Tuner-reference.png
 === Reference ===
 
 The *reference* frequency for 'A' may be changed over a limited range. This will be remembered, so change it back to 440Hz before you quit the app.
+
+=== About ===
+
+The *about* item shows the copyright and licence.
