@@ -25,8 +25,8 @@
 #ifndef TUNER_H
 #define TUNER_H
 
+#define WINVER 0x501
 #define _WIN32_IE    0x0501
-#define _WIN32_WINNT 0x0500
 
 #include <math.h>
 #include <stdio.h>
@@ -241,6 +241,7 @@ typedef struct
     double c;
     int colours;
     BOOL enable;
+    BOOL changed;
     HANDLE timer;
 } STROBE, *STROBEP;
 

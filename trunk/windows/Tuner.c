@@ -196,6 +196,15 @@ VOID GetSavedStatus()
 	if (error == ERROR_SUCCESS)
 	    strobe.enable = value;
 
+	// Strobe colours
+
+	error = RegQueryValueEx(hkey, "Colours", NULL, NULL,
+				(LPBYTE)&value,(LPDWORD)&size);
+	// Update value
+
+	if (error == ERROR_SUCCESS)
+	    strobe.colours = value;
+
 	// Filter
 
 	error = RegQueryValueEx(hkey, "Filter", NULL, NULL,
@@ -1456,6 +1465,58 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     return TRUE;
 }
 
+// Colour clicked
+
+BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	if (strobe.enable)
+	{
+	    strobe.colours++;
+
+	    if (strobe.colours > MAGENTA)
+		strobe.colours = 0;
+
+	    strobe.changed = TRUE;
+	}
+
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    HKEY hkey;
+    LONG error;
+
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
+			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
+
+    if (error == ERROR_SUCCESS)
+    {
+	RegSetValueEx(hkey, "Colours", 0, REG_DWORD,
+		      (LPBYTE)&strobe.colours, sizeof(strobe.colours));
+
+	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static TCHAR s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
 // Down clicked
 
 BOOL DownClicked(WPARAM wParam, LPARAM lParam)
@@ -1714,6 +1775,13 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
     case 'F':
     case 'f':
 	FilterClicked(wParam, lParam);
+	break;
+
+	// Colour
+
+    case 'K':
+    case 'k':
+	ColourClicked(wParam, lParam);
 	break;
 
 	// Lock
@@ -2346,15 +2414,13 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static HFONT musica;
     static HFONT medium;
     static HFONT large;
-    static HFONT tiny;
     static HFONT font;
     static HDC hbdc;
 
     enum
     {FONT_HEIGHT   = 16,
-     TINY_HEIGHT   = 24,
-     MUSIC_HEIGHT  = 32,
-     LARGE_HEIGHT  = 48,
+     MUSIC_HEIGHT  = 36,
+     LARGE_HEIGHT  = 56,
      MEDIUM_HEIGHT = 28};
 
     static TCHAR *notes[] =
@@ -2392,9 +2458,6 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	lf.lfHeight = MEDIUM_HEIGHT;
 	medium = CreateFontIndirect(&lf);
-
-	lf.lfHeight = TINY_HEIGHT;
-	tiny = CreateFontIndirect(&lf);
 
 	AddFontResource("Musica.ttf");
 	lf.lfHeight = MUSIC_HEIGHT;
@@ -2447,7 +2510,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
 		    sharps[display.n % Length(notes)], display.n / 12);
-	    TextOut(hbdc, 0, 0, s, strlen(s));
+	    TextOut(hbdc, 8, 0, s, strlen(s));
 
 	    // Display cents
 
@@ -2494,7 +2557,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
 		    sharps[n % Length(notes)], n / 12);
-	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
+	    TextOut(hbdc, 8, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display cents
 
@@ -2529,7 +2592,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	// Display coordinates
 
-	int y = 36;
+	int y = 42;
 
 	// Text size
 
@@ -2548,9 +2611,9 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	GetTextExtentPoint32(hbdc, s, strlen(s), &size);
 	int x = size.cx + 8;
 
-	// Select tiny font
+	// Select medium font
 
-	SelectObject(hbdc, tiny);
+	SelectObject(hbdc, medium);
 
 	sprintf(s, "%d", display.n / 12);
 	TextOut(hbdc, x, y, s, strlen(s));
@@ -2560,7 +2623,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SelectObject(hbdc, musica);
 
 	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
-	TextOut(hbdc, x, y - 16, s, strlen(s));
+	TextOut(hbdc, x, y - 20, s, strlen(s));
 
 	// Select large font
 
@@ -2590,7 +2653,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	sprintf(s, "%4.2fHz", display.f);
 	TextOut(hbdc, width - 8, y, s, strlen(s));
 
-	y += MEDIUM_HEIGHT;
+	y += 24;
 
 	// Display reference
 
@@ -2608,7 +2671,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     // Show lock
 
     if (display.lock)
-	DrawLock(hbdc, 0, height);
+	DrawLock(hbdc, -1, height + 1);
 
     // Copy the bitmap
 
@@ -2776,17 +2839,20 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     static float mc = 0.0;
     static float mx = 0.0;
 
-    static HBRUSH hsmall;
-    static HBRUSH medium;
-    static HBRUSH large;
-    static HBRUSH larger;
+    static HBRUSH sbrush;
+    static HBRUSH sshade;
+    static HBRUSH mbrush;
+    static HBRUSH mshade;
+    static HBRUSH lbrush;
+    static HBRUSH lshade;
+    static HBRUSH ebrush;
 
     // Colours
 
     static int colours[][2] =
 	{{RGB(63, 63, 255), RGB(63, 255, 255)},
-	 {RGB(191, 255, 191), RGB(111, 111, 0)},
-	 {RGB(255, 255, 63), RGB(255, 63, 255)}};
+	 {RGB(111, 111, 0), RGB(191, 255, 191)},
+	 {RGB(255, 63, 255), RGB(255, 255, 63)}};
 
     // Draw nice etched edge
 
@@ -2799,58 +2865,127 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 
     // Create brushes
 
-    if (hsmall == NULL)
-    {
-	HDC hbdc = CreateCompatibleDC(hdc);
+    int foreground = colours[strobe.colours][0];
+    int background = colours[strobe.colours][1];
 
-	int background = colours[strobe.colours][0];
-	int foreground = colours[strobe.colours][1];
+    if (sbrush == NULL || strobe.changed)
+    {
+	if (sbrush != NULL)
+	    DeleteObject(sbrush);
+
+	if (sshade != NULL)
+	    DeleteObject(sshade);
+
+	if (mbrush != NULL)
+	    DeleteObject(mbrush);
+
+	if (mshade != NULL)
+	    DeleteObject(mshade);
+
+	if (lbrush != NULL)
+	    DeleteObject(lbrush);
+
+	if (lshade != NULL)
+	    DeleteObject(lshade);
+
+	if (ebrush != NULL)
+	    DeleteObject(ebrush);
+
+	HDC hbdc = CreateCompatibleDC(hdc);
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 20, 10));
 	SelectObject(hbdc, GetStockObject(DC_PEN));
 	SelectObject(hbdc, GetStockObject(DC_BRUSH));
 
-	SetDCPenColor(hbdc, background);
-	SetDCBrushColor(hbdc, background);
-	Rectangle(hbdc, 0, 0, 10, 10);
 	SetDCPenColor(hbdc, foreground);
 	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 0, 0, 10, 10);
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 10, 0, 20, 10);
 
-	hsmall = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	sbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 20, 10));
+
+	TRIVERTEX vertex[] =
+	    {{0, 0,
+	      GetRValue(foreground) << 8,
+	      GetGValue(foreground) << 8,
+	      GetBValue(foreground) << 8,
+	      0},
+	     {10, 10,
+	      GetRValue(background) << 8,
+	      GetGValue(background) << 8,
+	      GetBValue(background) << 8,
+	      0},
+	     {20, 0,
+	      GetRValue(foreground) << 8,
+	      GetGValue(foreground) << 8,
+	      GetBValue(foreground) << 8,
+	      0}};
+
+	GRADIENT_RECT gradient[] =
+	    {{0, 1}, {1, 2}};
+
+	GradientFill(hbdc, vertex, Length(vertex),
+		     gradient, Length(gradient), GRADIENT_FILL_RECT_H);
+
+	sshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
 
-	SetDCPenColor(hbdc, background);
-	SetDCBrushColor(hbdc, background);
-	Rectangle(hbdc, 0, 0, 20, 10);
 	SetDCPenColor(hbdc, foreground);
 	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 0, 0, 20, 10);
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 20, 0, 40, 10);
 
-	medium = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	mbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
+
+	vertex[1].x = 20;
+	vertex[2].x = 40;
+
+	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
+
+	mshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
 
-	SetDCPenColor(hbdc, background);
-	SetDCBrushColor(hbdc, background);
-	Rectangle(hbdc, 0, 0, 40, 10);
 	SetDCPenColor(hbdc, foreground);
 	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 0, 0, 40, 10);
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 40, 0, 80, 10);
 
-	large = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	lbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
+
+	vertex[1].x = 40;
+	vertex[2].x = 80;
+
+	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
+
+	lshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 160, 10));
 
-	SetDCPenColor(hbdc, background);
-	SetDCBrushColor(hbdc, background);
-	Rectangle(hbdc, 0, 0, 80, 10);
 	SetDCPenColor(hbdc, foreground);
 	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 0, 0, 80, 10);
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 80, 0, 160, 10);
 
-	larger = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	ebrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	DeleteDC(hbdc);
+	strobe.changed = FALSE;
     }
 
     // Erase background
@@ -2873,16 +3008,34 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	SetBrushOrgEx(hdc, rx, 0, NULL);
 	SelectObject(hdc, GetStockObject(NULL_PEN));
 
-	SelectObject(hdc, hsmall);
+	if (fabs(mc) > 0.4)
+	{
+	    SelectObject(hdc, GetStockObject(DC_BRUSH));
+	    SetDCBrushColor(hdc, background);
+	}
+
+	else if (fabs(mc) > 0.2)
+	    SelectObject(hdc, sshade);
+
+	else
+	    SelectObject(hdc, sbrush);
 	Rectangle(hdc, 0, 0, width, 10);
 
-	SelectObject(hdc, medium);
+	if (fabs(mc) > 0.3)
+	    SelectObject(hdc, mshade);
+
+	else
+	    SelectObject(hdc, mbrush);
 	Rectangle(hdc, 0, 10, width, 20);
 
-	SelectObject(hdc, large);
+	if (fabs(mc) > 0.4)
+	    SelectObject(hdc, lshade);
+
+	else
+	    SelectObject(hdc, lbrush);
 	Rectangle(hdc, 0, 20, width, 30);
 
-	SelectObject(hdc, larger);
+	SelectObject(hdc, ebrush);
 	Rectangle(hdc, 0, 30, width, 40);
     }
     return TRUE;
