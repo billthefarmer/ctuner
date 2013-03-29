@@ -898,7 +898,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			   LPARAM lParam)
 {
     RECT cRect;
-    static char s[64];
+    static TCHAR s[64];
 
     // Get the client rect
 
@@ -1443,13 +1443,17 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
 	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+
+	return FALSE;
     }
+
+    return TRUE;
 }
 
 // Down clicked
@@ -1582,7 +1586,7 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
 
 BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
 {
-    static char s[64];
+    static TCHAR s[64];
 
     switch (HIWORD(wParam))
     {
@@ -1606,7 +1610,7 @@ BOOL EditCorrection(WPARAM wParam, LPARAM lParam)
 
 BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
 {
-    static char s[64];
+    static TCHAR s[64];
 
     long value = SendMessage(correction.hwnd, UDM_GETPOS32, 0, 0);
     audio.correction = (double)value / 100000.0;
@@ -1625,7 +1629,7 @@ BOOL ChangeCorrection(WPARAM wParam, LPARAM lParam)
 
 VOID UpdateStatusBar()
 {
-    static char s[64];
+    static TCHAR s[64];
 
     sprintf(s, " Reference: %5.2lfHz\t\tCorrection: %6.5lf ",
 	    audio.reference, audio.correction);
@@ -1657,7 +1661,7 @@ BOOL SaveCorrection(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
@@ -2089,7 +2093,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
 
-    static char s[16];
+    static TCHAR s[16];
 
     // Create font
 
@@ -2339,19 +2343,27 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 BOOL DrawDisplay(HDC hdc, RECT rect)
 {
     static HBITMAP bitmap;
+    static HFONT musica;
     static HFONT medium;
     static HFONT large;
+    static HFONT tiny;
     static HFONT font;
     static HDC hbdc;
 
     enum
     {FONT_HEIGHT   = 16,
-     LARGE_HEIGHT  = 42,
+     TINY_HEIGHT   = 24,
+     MUSIC_HEIGHT  = 32,
+     LARGE_HEIGHT  = 48,
      MEDIUM_HEIGHT = 28};
 
-    static char *notes[] =
-	{"C", "C#", "D", "Eb", "E", "F",
-	 "F#", "G", "Ab", "A", "Bb", "B"};
+    static TCHAR *notes[] =
+	{"C", "C", "D", "E", "E", "F",
+	 "F", "G", "A", "A", "B", "B"};
+
+    static TCHAR *sharps[] =
+	{"", "#", "", "b", "", "",
+	 "#", "", "b", "", "b", ""};
 
     // Bold font
 
@@ -2366,7 +2378,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
 
-    static char s[64];
+    static TCHAR s[64];
 
     // Create fonts
 
@@ -2380,6 +2392,16 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	lf.lfHeight = MEDIUM_HEIGHT;
 	medium = CreateFontIndirect(&lf);
+
+	lf.lfHeight = TINY_HEIGHT;
+	tiny = CreateFontIndirect(&lf);
+
+	AddFontResource("Musica.ttf");
+	lf.lfHeight = MUSIC_HEIGHT;
+	// lf.lfWeight = FW_REGULAR;
+	strcat(lf.lfFaceName, "Musica");
+
+	musica = CreateFontIndirect(&lf);
     }
 
     // Draw nice etched edge
@@ -2423,28 +2445,28 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	{
 	    // Display note
 
-	    sprintf(s, "%4s%d", notes[display.n % Length(notes)],
-		    display.n / 12);
+	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
+		    sharps[display.n % Length(notes)], display.n / 12);
 	    TextOut(hbdc, 0, 0, s, strlen(s));
 
 	    // Display cents
 
-	    sprintf(s, "%+7.2lf¢", display.c * 100.0);
+	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
 	    TextOut(hbdc, 36, 0, s, strlen(s));
 
 	    // Display reference
 
-	    sprintf(s, "%8.2lfHz", display.fr);
+	    sprintf(s, "%4.2lfHz", display.fr);
 	    TextOut(hbdc, 90, 0, s, strlen(s));
 
 	    // Display frequency
 
-	    sprintf(s, "%8.2lfHz", display.f);
+	    sprintf(s, "%4.2lfHz", display.f);
 	    TextOut(hbdc, 162, 0, s, strlen(s));
 
 	    // Display difference
 
-	    sprintf(s, "%+7.2lfHz", display.f - display.fr);
+	    sprintf(s, "%+4.2lfHz", display.f - display.fr);
 	    TextOut(hbdc, 234, 0, s, strlen(s));
 	}
 
@@ -2470,27 +2492,28 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	    // Display note
 
-	    sprintf(s, "%4s%d", notes[n % Length(notes)], n / 12);
+	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
+		    sharps[n % Length(notes)], n / 12);
 	    TextOut(hbdc, 0, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display cents
 
-	    sprintf(s, "%+7.2lf¢", c * 100.0);
+	    sprintf(s, "%+4.2lf¢", c * 100.0);
 	    TextOut(hbdc, 36, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display reference
 
-	    sprintf(s, "%8.2lfHz", fr);
+	    sprintf(s, "%4.2lfHz", fr);
 	    TextOut(hbdc, 90, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display frequency
 
-	    sprintf(s, "%8.2lfHz", f);
+	    sprintf(s, "%4.2lfHz", f);
 	    TextOut(hbdc, 162, i * FONT_HEIGHT, s, strlen(s));
 
 	    // Display difference
 
-	    sprintf(s, "%+7.2lfHz", f - fr);
+	    sprintf(s, "%+4.2lfHz", f - fr);
 	    TextOut(hbdc, 234, i * FONT_HEIGHT, s, strlen(s));
 
 	    if (i == 5)
@@ -2506,66 +2529,80 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	// Display coordinates
 
-	int y = 32;
+	int y = 36;
 
-	// Get text rect
+	// Text size
 
-	RECT rect = {0};
-
-	sprintf(s, "%4s", notes[display.n % Length(notes)]);
-	DrawText(hbdc, s, strlen(s), &rect, DT_CALCRECT);
+	SIZE size = {0};
 
 	// Set text align
 
-	SetTextAlign(hbdc, TA_BASELINE);
+	SetTextAlign(hbdc, TA_BASELINE|TA_LEFT);
+	SetBkMode(hbdc, TRANSPARENT);
 
 	// Display note
 
+	sprintf(s, "%s", notes[display.n % Length(notes)]);
 	TextOut(hbdc, 8, y, s, strlen(s));
 
-	// Select medium font
+	GetTextExtentPoint32(hbdc, s, strlen(s), &size);
+	int x = size.cx + 8;
 
-	SelectObject(hbdc, medium);
+	// Select tiny font
+
+	SelectObject(hbdc, tiny);
 
 	sprintf(s, "%d", display.n / 12);
-	TextOut(hbdc, rect.right + 8, y, s, strlen(s));
+	TextOut(hbdc, x, y, s, strlen(s));
+
+	// Select musica font
+
+	SelectObject(hbdc, musica);
+
+	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
+	TextOut(hbdc, x, y - 16, s, strlen(s));
 
 	// Select large font
 
 	SelectObject(hbdc, large);
+	SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
 
 	// Display cents
 
-	sprintf(s, "%+6.2lf¢", display.c * 100.0);
-	TextOut(hbdc, width / 2, y, s, strlen(s));
+	sprintf(s, "%+4.2f¢", display.c * 100.0);
+	TextOut(hbdc, width - 8, y, s, strlen(s));
 
 	y += MEDIUM_HEIGHT;
 
 	// Select medium font
 
 	SelectObject(hbdc, medium);
+	SetTextAlign(hbdc, TA_BASELINE|TA_LEFT);
 
 	// Display reference frequency
 
-	sprintf(s, "%9.2lfHz", display.fr);
+	sprintf(s, "%4.2fHz", display.fr);
 	TextOut(hbdc, 8, y, s, strlen(s));
 
 	// Display actual frequency
 
-	sprintf(s, "%9.2lfHz", display.f);
-	TextOut(hbdc, width / 2, y, s, strlen(s));
+	SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
+	sprintf(s, "%4.2fHz", display.f);
+	TextOut(hbdc, width - 8, y, s, strlen(s));
 
 	y += MEDIUM_HEIGHT;
 
 	// Display reference
 
-	sprintf(s, "%9.2lfHz", audio.reference);
+	SetTextAlign(hbdc, TA_BASELINE|TA_LEFT);
+	sprintf(s, "%4.2fHz", audio.reference);
 	TextOut(hbdc, 8, y, s, strlen(s));
 
 	// Display frequency difference
 
-	sprintf(s, "%+8.2lfHz", display.f - display.fr);
-	TextOut(hbdc, width / 2, y, s, strlen(s));
+	SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
+	sprintf(s, "%+4.2lfHz", display.f - display.fr);
+	TextOut(hbdc, width - 8, y, s, strlen(s));
     }
 
     // Show lock
@@ -2686,7 +2723,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     for (int i = 0; i < 6; i++)
     {
 	int x = width / 11 * i;
-	static char s[16];
+	static TCHAR s[16];
 
 	sprintf(s, "%d", i * 10);
 	TextOut(hbdc, x + 1, 0, s, strlen(s));
@@ -2739,8 +2776,17 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     static float mc = 0.0;
     static float mx = 0.0;
 
-    static HDC hbdc;
-    static HBITMAP bitmap;
+    static HBRUSH hsmall;
+    static HBRUSH medium;
+    static HBRUSH large;
+    static HBRUSH larger;
+
+    // Colours
+
+    static int colours[][2] =
+	{{RGB(63, 63, 255), RGB(63, 255, 255)},
+	 {RGB(191, 255, 191), RGB(111, 111, 0)},
+	 {RGB(255, 255, 63), RGB(255, 63, 255)}};
 
     // Draw nice etched edge
 
@@ -2751,21 +2797,66 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
 
-    // Create DC
+    // Create brushes
 
-    if (hbdc == NULL)
+    if (hsmall == NULL)
     {
-	hbdc = CreateCompatibleDC(hdc);
-	bitmap = CreateCompatibleBitmap(hdc, width, height);
-	SelectObject(hbdc, bitmap);
-	SelectObject(hbdc, GetStockObject(BLACK_BRUSH));
+	HDC hbdc = CreateCompatibleDC(hdc);
+
+	int background = colours[strobe.colours][0];
+	int foreground = colours[strobe.colours][1];
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 20, 10));
+	SelectObject(hbdc, GetStockObject(DC_PEN));
+	SelectObject(hbdc, GetStockObject(DC_BRUSH));
+
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
+	Rectangle(hbdc, 0, 0, 10, 10);
+	SetDCPenColor(hbdc, foreground);
+	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 10, 0, 20, 10);
+
+	hsmall = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
+
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
+	Rectangle(hbdc, 0, 0, 20, 10);
+	SetDCPenColor(hbdc, foreground);
+	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 20, 0, 40, 10);
+
+	medium = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
+
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
+	Rectangle(hbdc, 0, 0, 40, 10);
+	SetDCPenColor(hbdc, foreground);
+	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 40, 0, 80, 10);
+
+	large = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+
+	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 160, 10));
+
+	SetDCPenColor(hbdc, background);
+	SetDCBrushColor(hbdc, background);
+	Rectangle(hbdc, 0, 0, 80, 10);
+	SetDCPenColor(hbdc, foreground);
+	SetDCBrushColor(hbdc, foreground);
+	Rectangle(hbdc, 80, 0, 160, 10);
+
+	larger = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
     }
 
     // Erase background
 
-    RECT brct =
-	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
+    FillRect(hdc, &rect, GetStockObject(WHITE_BRUSH));
+    SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
 
     if (strobe.enable)
     {
@@ -2779,23 +2870,21 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     	    mx = 160.0;
 
     	int rx = round(mx - 160.0);
+	SetBrushOrgEx(hdc, rx, 0, NULL);
+	SelectObject(hdc, GetStockObject(NULL_PEN));
 
-    	for (int x = rx % 20; x < width; x += 20)
-    	    Rectangle(hbdc, x, 0, x + 10, 10);
+	SelectObject(hdc, hsmall);
+	Rectangle(hdc, 0, 0, width, 10);
 
-    	for (int x = rx % 40; x < width; x += 40)
-    	    Rectangle(hbdc, x, 10, x + 20, 20);
+	SelectObject(hdc, medium);
+	Rectangle(hdc, 0, 10, width, 20);
 
-    	for (int x = rx % 80; x < width; x += 80)
-    	    Rectangle(hbdc, x, 20, x + 40, 30);
+	SelectObject(hdc, large);
+	Rectangle(hdc, 0, 20, width, 30);
 
-    	for (int x = rx % 160; x < width; x += 160)
-    	    Rectangle(hbdc, x, 30, x + 80, 40);
+	SelectObject(hdc, larger);
+	Rectangle(hdc, 0, 30, width, 40);
     }
-
-    BitBlt(hdc, rect.left, rect.top, width, height, hbdc,
-	   0, 0, SRCCOPY);
-
     return TRUE;
 }
 
@@ -2874,7 +2963,7 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
@@ -2922,7 +3011,7 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
@@ -3005,7 +3094,7 @@ BOOL VolumeChange(WPARAM wParam, LPARAM lParam)
 
 BOOL EditReference(WPARAM wParam, LPARAM lParam)
 {
-    static char s[64];
+    static TCHAR s[64];
 
     if (audio.reference == 0)
 	return FALSE;
@@ -3046,7 +3135,7 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
@@ -3061,7 +3150,7 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 
 BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 {
-    static char s[64];
+    static TCHAR s[64];
 
     long value = SendMessage(reference.hwnd, UDM_GETPOS32, 0, 0);
     audio.reference = (double)value / 10.0;
@@ -3089,7 +3178,7 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 
     else
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
@@ -3164,7 +3253,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 
     if (mmr != MMSYSERR_NOERROR)
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	waveInGetErrorText(mmr, s, sizeof(s));
 	MessageBox(window.hwnd, s, "WaveInOpen", MB_OK | MB_ICONERROR);
@@ -3318,7 +3407,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	mmr = waveInPrepareHeader(audio.hwi, &hdrs[i], sizeof(WAVEHDR));
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    static char s[64];
+	    static TCHAR s[64];
 
 	    waveInGetErrorText(mmr, s, sizeof(s));
 	    MessageBox(window.hwnd, s, "WaveInPrepareHeader",
@@ -3331,7 +3420,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	mmr = waveInAddBuffer(audio.hwi, &hdrs[i], sizeof(WAVEHDR));
 	if (mmr != MMSYSERR_NOERROR)
 	{
-	    static char s[64];
+	    static TCHAR s[64];
 
 	    waveInGetErrorText(mmr, s, sizeof(s));
 	    MessageBox(window.hwnd, s, "WaveInAddBuffer",
@@ -3345,7 +3434,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
     mmr = waveInStart(audio.hwi);
     if (mmr != MMSYSERR_NOERROR)
     {
-	static char s[64];
+	static TCHAR s[64];
 
 	waveInGetErrorText(mmr, s, sizeof(s));
 	MessageBox(window.hwnd, s, "WaveInStart", MB_OK | MB_ICONERROR);
@@ -3629,7 +3718,6 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
     }
 
-
     // Maximum FFT output
 
     double max = 0.0;
@@ -3676,7 +3764,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	    count++;
 	}
-   }
+    }
 
     // Reference note frequency and lower and upper limits
 

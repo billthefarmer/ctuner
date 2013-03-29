@@ -114,6 +114,13 @@ enum
      REF_CORRECTION = 100000,
      MIN_CORRECTION =  99000};
 
+// Strobe colours
+
+enum
+    {BLUE,
+     GREEN,
+     MAGENTA};
+
 // Timer values
 
 enum
@@ -232,6 +239,7 @@ typedef struct
 {
     HWND hwnd;
     double c;
+    int colours;
     BOOL enable;
     HANDLE timer;
 } STROBE, *STROBEP;
