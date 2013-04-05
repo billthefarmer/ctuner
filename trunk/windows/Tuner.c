@@ -2413,6 +2413,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static HBITMAP bitmap;
     static HFONT musica;
     static HFONT medium;
+    static HFONT larger;
     static HFONT large;
     static HFONT font;
     static HDC hbdc;
@@ -2420,7 +2421,8 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     enum
     {FONT_HEIGHT   = 16,
      MUSIC_HEIGHT  = 36,
-     LARGE_HEIGHT  = 56,
+     LARGE_HEIGHT  = 42,
+     LARGER_HEIGHT = 56,
      MEDIUM_HEIGHT = 28};
 
     static TCHAR *notes[] =
@@ -2455,6 +2457,9 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	lf.lfHeight = LARGE_HEIGHT;
 	large = CreateFontIndirect(&lf);
+
+	lf.lfHeight = LARGER_HEIGHT;
+	larger = CreateFontIndirect(&lf);
 
 	lf.lfHeight = MEDIUM_HEIGHT;
 	medium = CreateFontIndirect(&lf);
@@ -2586,9 +2591,9 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     else
     {
-	// Select large font
+	// Select larger font
 
-	SelectObject(hbdc, large);
+	SelectObject(hbdc, larger);
 
 	// Display coordinates
 
@@ -2623,7 +2628,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SelectObject(hbdc, musica);
 
 	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
-	TextOut(hbdc, x, y - 20, s, strlen(s));
+	TextOut(hbdc, x + 8, y - 20, s, strlen(s));
 
 	// Select large font
 
@@ -2905,6 +2910,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	Rectangle(hbdc, 10, 0, 20, 10);
 
 	sbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 20, 10));
 
@@ -2932,6 +2938,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 		     gradient, Length(gradient), GRADIENT_FILL_RECT_H);
 
 	sshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
 
@@ -2943,6 +2950,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	Rectangle(hbdc, 20, 0, 40, 10);
 
 	mbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
 
@@ -2952,6 +2960,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
 
 	mshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
 
@@ -2963,6 +2972,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	Rectangle(hbdc, 40, 0, 80, 10);
 
 	lbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
 
@@ -2972,6 +2982,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
 
 	lshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 160, 10));
 
@@ -2983,6 +2994,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	Rectangle(hbdc, 80, 0, 160, 10);
 
 	ebrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	DeleteDC(hbdc);
 	strobe.changed = FALSE;

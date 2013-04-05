@@ -25,8 +25,8 @@
 #ifndef TUNER_H
 #define TUNER_H
 
-#define WINVER 0x501
-#define _WIN32_IE    0x0501
+#define WINVER    0x0501
+#define _WIN32_IE 0x0501
 
 #include <math.h>
 #include <stdio.h>
