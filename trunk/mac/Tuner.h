@@ -97,6 +97,13 @@ enum
     {kEventAudioUpdate = 'Updt',
      kEventAudioRate   = 'Rate'};
 
+// Strobe colours
+
+enum
+    {kColourBlue,
+     kColourOlive,
+     kColourMagenta};
+
 // Structs
 
 typedef struct
@@ -146,8 +153,10 @@ typedef struct
 typedef struct
 {
     HIViewRef view;
-    float c;
+    bool changed;
     bool enable;
+    int colours;
+    float c;
 } Strobe;
 
 typedef struct
@@ -228,6 +237,8 @@ OSStatus CopyInfo(EventRef);
 
 OSStatus StrokeRoundRect(CGContextRef, CGRect, float);
 OSStatus CentreTextAtPoint(CGContextRef, float, float, const char *, size_t);
+OSStatus RightJustifyTextAtPoint(CGContextRef, float, float,
+				 const char *, size_t);
 OSStatus DrawLock(CGContextRef, int, int);
 HIRect DrawEdge(CGContextRef, HIRect);
 
