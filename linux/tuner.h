@@ -25,6 +25,7 @@
 #include <gtk/gtk.h>
 #include <pthread.h>
 
+#include <cairo/cairo.h>
 #include <alsa/asoundlib.h>
 
 enum
@@ -115,5 +116,17 @@ typedef struct
     GtkWidget *downsample;
 } Check;
 
-int scope_draw_callback(GtkWidget *, GtkWindow *);
-int quit_clicked(GtkWidget *, GtkWindow *);
+typedef struct
+{
+    pthread_t thread;
+} Audio;
+
+void *initAudio(void *);
+
+gboolean scope_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+gboolean spectrum_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+gboolean display_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+gboolean strobe_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+gboolean meter_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+
+void quit_clicked(GtkWidget *, GtkWindow *);

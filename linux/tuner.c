@@ -42,16 +42,16 @@ int main(int argc, char *argv[])
 
     GtkWidget *window;
     GtkWidget *vbox;
+    GtkWidget *wbox;
     GtkWidget *hbox;
     GtkWidget *quit;
-    GtkWidget *scope;
-    GtkWidget *spectrum;
-    GtkWidget *display;
-    GtkWidget *strobe;
-    GtkWidget *meter;
-    GtkWidget *slider;
     GtkWidget *label;
     GtkWidget *separator;
+
+    // Initialise threads
+
+    gdk_threads_init();
+    gdk_threads_enter();
 
     // Initialise GTK
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     // V box, this contains the fake status bar and the rest of the
     // display
 
-    vbox = gtk_vbox_new(FALSE, 0);
+    vbox = gtk_vbox_new(FALSE, MARGIN);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     // Label, this label and separator are a fake status bar that can
@@ -74,34 +74,68 @@ int main(int argc, char *argv[])
 
     label = gtk_label_new(NULL);
     gtk_label_set_markup(GTK_LABEL(label),
-		    "<small>Test.</small>");
+		    "Test.");
     gtk_box_pack_end(GTK_BOX(vbox), label, FALSE, FALSE, 0);
-
-    // Scope
-
-    scope = gtk_drawing_area_new();
-    gtk_widget_set_size_request(scope, 280, 32);
-    gtk_box_pack_start(GTK_BOX(vbox), scope, FALSE, FALSE, 0);
-
-    g_signal_connect (G_OBJECT(scope), "expose_event",
-		      G_CALLBACK(scope_draw_callback), NULL);
-
-    // Spectrum
-
-    spectrum = gtk_drawing_area_new();
-    gtk_widget_set_size_request(spectrum, 280, 32);
-    gtk_box_pack_start(GTK_BOX(vbox), spectrum, FALSE, FALSE, 0);
-
-    // Display
-
-    display = gtk_drawing_area_new();
-    gtk_widget_set_size_request(display, 280, 100);
-    gtk_box_pack_start(GTK_BOX(vbox), display, FALSE, FALSE, 0);
 
     // Separator
 
     separator = gtk_hseparator_new();
     gtk_box_pack_end(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
+
+    // H box
+
+    hbox = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
+
+    // V box
+
+    vbox = gtk_vbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, FALSE, FALSE, MARGIN);
+
+    // Scope
+
+    scope.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(scope.widget, 280, 32);
+    gtk_box_pack_start(GTK_BOX(vbox), scope.widget, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(scope.widget), "expose_event",
+		     G_CALLBACK(scope_draw_callback), NULL);
+
+    // Spectrum
+
+    spectrum.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(spectrum.widget, 280, 32);
+    gtk_box_pack_start(GTK_BOX(vbox), spectrum.widget, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(spectrum.widget), "expose_event",
+		     G_CALLBACK(spectrum_draw_callback), NULL);
+
+    // Display
+
+    display.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(display.widget, 280, 100);
+    gtk_box_pack_start(GTK_BOX(vbox), display.widget, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(display.widget), "expose_event",
+		     G_CALLBACK(display_draw_callback), NULL);
+
+    // Strobe
+
+    strobe.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(strobe.widget, 280, 44);
+    gtk_box_pack_start(GTK_BOX(vbox), strobe.widget, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(strobe.widget), "expose_event",
+		     G_CALLBACK(strobe_draw_callback), NULL);
+
+    // Meter
+
+    meter.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(meter.widget, 280, 52);
+    gtk_box_pack_start(GTK_BOX(vbox), meter.widget, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(meter.widget), "expose_event",
+		     G_CALLBACK(meter_draw_callback), NULL);
 
     // H box
 
@@ -129,26 +163,99 @@ int main(int argc, char *argv[])
 
     // Start audio thread
 
-    pthread_create(&thread, NULL, initAudio, NULL);
+    pthread_create(&audio.thread, NULL, initAudio, NULL);
 
     // Interact with user
 
     gtk_main();
+    gdk_threads_leave();
 
     // Exit
 
     return 0;
 }
 
+// init audio
+
+void *initAudio(void *data)
+{
+    // gdk_threads_enter();
+    // gdk_threads_leave();
+}
+
 // Scope draw callback
 
-int scope_draw_callback(GtkWidget *widget, GtkWindow *window)
+gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
+			void *data)
 {
+  cairo_t *cr = gdk_cairo_create(event->window);
+
+  cairo_set_source_rgb(cr, 1, 0, 0);
+  cairo_paint(cr);
+  cairo_destroy(cr);
+
+  return TRUE;
+}
+
+// Spectrum draw callback
+
+gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
+			   void *data)
+{
+  cairo_t *cr = gdk_cairo_create(event->window);
+
+  cairo_set_source_rgb(cr, 0, 1, 0);
+  cairo_paint(cr);
+  cairo_destroy(cr);
+
+  return TRUE;
+}
+
+// Display draw callback
+
+gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
+			   void *data)
+{
+  cairo_t *cr = gdk_cairo_create(event->window);
+
+  cairo_set_source_rgb(cr, 1, 1, 0);
+  cairo_paint(cr);
+  cairo_destroy(cr);
+
+  return TRUE;
+}
+
+// Strobe draw callback
+
+gboolean strobe_draw_callback(GtkWidget *widget, GdkEventExpose *event,
+			 void *data)
+{
+  cairo_t *cr = gdk_cairo_create(event->window);
+
+  cairo_set_source_rgb(cr, 0, 0, 1);
+  cairo_paint(cr);
+  cairo_destroy(cr);
+
+  return TRUE;
+}
+
+// Meter draw callback
+
+gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
+			void *data)
+{
+  cairo_t *cr = gdk_cairo_create(event->window);
+
+  cairo_set_source_rgb(cr, 0, 1, 1);
+  cairo_paint(cr);
+  cairo_destroy(cr);
+
+  return TRUE;
 }
 
 // Quit callback
 
-int quit_clicked(GtkWidget *widget, GtkWindow *window)
+void quit_clicked(GtkWidget *widget, GtkWindow *window)
 {
     // Create a message dialog
 #ifdef QUERY_QUIT
