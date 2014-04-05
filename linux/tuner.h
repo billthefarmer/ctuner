@@ -22,6 +22,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <math.h>
 #include <gtk/gtk.h>
 #include <pthread.h>
 
@@ -29,21 +30,57 @@
 #include <alsa/asoundlib.h>
 
 enum
-  {MARGIN = 10};
+    {MARGIN = 10};
+
+// PCM values
+
+enum
+    {SAMPLE_RATE = 11025,
+     LATENCY = 50000,
+     CHANNELS = 1};
+
+// Audio processing values
+
+enum
+    {MAXIMA = 8,
+     OVERSAMPLE = 16,
+     SAMPLES = 16384,
+     RANGE = SAMPLES * 3 / 8,
+     STEP = SAMPLES / OVERSAMPLE};
+
+// Tuner reference values
+
+enum
+    {A5_REFNCE = 440,
+     C5_OFFSET = 57};
 
 // Structs
 
 typedef struct
 {
-    float f;
-    float fr;
+    double r;
+    double i;
+} complex;
+
+typedef struct
+{
+    double f;
+    double fr;
     int n;
 } maximum;
 
 typedef struct
 {
+    double f;
+    double r;
+    double l;
+    double h;
+} value;
+
+typedef struct
+{
     GtkWidget *widget;
-    float *data;
+    short *data;
     int length;
 } Scope;
 
@@ -54,21 +91,21 @@ typedef struct
     int expand;
     int count;
     gboolean zoom;
-    float f;
-    float r;
-    float l;
-    float h;
-    float *data;
-    float *values;
+    double f;
+    double r;
+    double l;
+    double h;
+    double *data;
+    value *values;
 } Spectrum;
 
 typedef struct
 {
     GtkWidget *widget;
     maximum *maxima;
-    float f;
-    float fr;
-    float c;
+    double f;
+    double fr;
+    double c;
     gboolean lock;
     gboolean zoom;
     gboolean multiple;
@@ -82,14 +119,14 @@ typedef struct
     gboolean changed;
     gboolean enable;
     int colours;
-    float c;
+    double c;
 } Strobe;
 
 typedef struct
 {
     GtkWidget *widget;
     GtkWidget *slider; 
-    float c;
+    double c;
 } Meter;
 
 typedef struct
@@ -119,9 +156,12 @@ typedef struct
 typedef struct
 {
     pthread_t thread;
+    snd_pcm_t *handle;
+    gboolean done;
 } Audio;
 
-void *initAudio(void *);
+void initAudio(void);
+void *readAudio(void *);
 
 gboolean scope_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 gboolean spectrum_draw_callback(GtkWidget *, GdkEventExpose *, void *);
