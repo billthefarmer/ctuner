@@ -26,8 +26,20 @@
 #include <gtk/gtk.h>
 #include <pthread.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H 
+
 #include <cairo/cairo.h>
+#include <cairo/cairo-ft.h>
+
 #include <alsa/asoundlib.h>
+
+// Macros
+
+#define Length(a) (sizeof(a) / sizeof(a[0]))
+
+#define OCTAVE    12
+#define MINIMUM   0.5
 
 enum
     {MARGIN = 10};
@@ -158,6 +170,10 @@ typedef struct
     pthread_t thread;
     snd_pcm_t *handle;
     gboolean done;
+    gboolean filter;
+    gboolean downsample;
+    double correction;
+    double reference;
 } Audio;
 
 void initAudio(void);
@@ -169,4 +185,7 @@ gboolean display_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 gboolean strobe_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 gboolean meter_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 
+void options_clicked(GtkWidget *, GtkWindow *);
 void quit_clicked(GtkWidget *, GtkWindow *);
+
+void fftr(complex[], int);
