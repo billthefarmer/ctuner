@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
     GtkWidget *hbox;
     GtkWidget *quit;
     GtkWidget *label;
+    GtkWidget *options;
     GtkWidget *separator;
 
     // Initialise threads
@@ -142,6 +143,16 @@ int main(int argc, char *argv[])
     hbox = gtk_hbox_new(FALSE, MARGIN);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
+    // Options button
+
+    options = gtk_button_new_with_label(" Options... ");
+    gtk_box_pack_start(GTK_BOX(hbox), options, FALSE, FALSE, 0);
+
+    // Options clicked
+
+    g_signal_connect(G_OBJECT(options), "clicked",
+		     G_CALLBACK(options_clicked), window);
+
     // Quit button
 
     quit = gtk_button_new_with_label("  Quit  ");
@@ -189,7 +200,8 @@ void initAudio(void)
     unsigned rate_min, rate_max;
     snd_pcm_hw_params_t *hwparams;
 
-    if ((err = snd_pcm_open(&audio.handle, "default", SND_PCM_STREAM_CAPTURE, 0)) < 0)
+    if ((err = snd_pcm_open(&audio.handle, "default",
+			    SND_PCM_STREAM_CAPTURE, 0)) < 0)
     {
 	printf("Capture open error: %s\n", snd_strerror(err));
 	return;
@@ -245,6 +257,9 @@ void initAudio(void)
 
 void *readAudio(void *dummy)
 {
+    enum
+    {TIMER_COUNT = 16};
+
     int err;
     snd_pcm_sframes_t frames;
 
@@ -284,6 +299,8 @@ void *readAudio(void *dummy)
 
 	spectrum.values = values;
 	display.maxima = maxima;
+
+	audio.correction = 1.0;
     }
 
     while (!audio.done)
@@ -291,11 +308,402 @@ void *readAudio(void *dummy)
 	if ((frames = snd_pcm_readi(audio.handle, data, STEP)) < 0)
 	    break;
 
+	// Copy the input data
+
+	memmove(buffer, buffer + STEP, (SAMPLES - STEP) * sizeof(double));
+
+	// Butterworth filter, 3dB/octave
+
+	for (int i = 0; i < STEP; i++)
+	{
+	    static double G = 3.023332184e+01;
+	    static double K = 0.9338478249;
+
+	    static double xv[2];
+	    static double yv[2];
+
+	    xv[0] = xv[1];
+	    xv[1] = (double)data[i] / G;
+
+	    yv[0] = yv[1];
+	    yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
+
+	    // Choose filtered/unfiltered data
+
+	    buffer[(SAMPLES - STEP) + i] =
+		audio.filter? yv[1]: (double)data[i];
+	}
+
+	// Maximum data value
+
+	static double dmax;
+
+	if (dmax < 4096.0)
+	    dmax = 4096.0;
+
+	// Calculate normalising value
+
+	double norm = dmax;
+	dmax = 0.0;
+
+	// Copy data to FFT input arrays for tuner
+
+	for (int i = 0; i < SAMPLES; i++)
+	{
+	    // Find the magnitude
+
+	    if (dmax < fabs(buffer[i]))
+		dmax = fabs(buffer[i]);
+
+	    // Calculate the window
+
+	    double window =
+		0.5 - 0.5 * cos(2.0 * M_PI *
+				i / SAMPLES);
+
+	    // Normalise and window the input data
+
+	    x[i].r = (double)buffer[i] / norm * window;
+	}
+
+	// do FFT for tuner
+
+	fftr(x, SAMPLES);
+
+	// Process FFT output for tuner
+
+	for (int i = 1; i < RANGE; i++)
+	{
+	    double real = x[i].r;
+	    double imag = x[i].i;
+
+	    xa[i] = hypot(real, imag);
+
+	    // Do frequency calculation
+
+	    double p = atan2(imag, real);
+	    double dp = xp[i] - p;
+	    xp[i] = p;
+
+	    // Calculate phase difference
+
+	    dp -= (double)i * expect;
+
+	    int qpd = dp / M_PI;
+
+	    if (qpd >= 0)
+		qpd += qpd & 1;
+
+	    else
+		qpd -= qpd & 1;
+
+	    dp -=  M_PI * (double)qpd;
+
+	    // Calculate frequency difference
+
+	    double df = OVERSAMPLE * dp / (2.0 * M_PI);
+
+	    // Calculate actual frequency from slot frequency plus
+	    // frequency difference and correction value
+
+	    xf[i] = (i * fps + df * fps) / audio.correction;
+
+	    // Calculate differences for finding maxima
+
+	    dx[i] = xa[i] - xa[i - 1];
+	}
+
+	// Downsample
+
+	if (audio.downsample)
+	{
+	    // x2 = xa << 2
+
+	    for (int i = 0; i < Length(x2); i++)
+	    {
+		x2[i] = 0.0;
+
+		for (int j = 0; j < 2; j++)
+		    x2[i] += xa[(i * 2) + j] / 2.0;
+	    }
+
+	    // x3 = xa << 3
+
+	    for (int i = 0; i < Length(x3); i++)
+	    {
+		x3[i] = 0.0;
+
+		for (int j = 0; j < 3; j++)
+		    x3[i] += xa[(i * 3) + j] / 3.0;
+	    }
+
+	    // x4 = xa << 4
+
+	    for (int i = 0; i < Length(x4); i++)
+	    {
+		x4[i] = 0.0;
+
+		for (int j = 0; j < 4; j++)
+		    x2[i] += xa[(i * 4) + j] / 4.0;
+	    }
+
+	    // x5 = xa << 5
+
+	    for (int i = 0; i < Length(x5); i++)
+	    {
+		x5[i] = 0.0;
+
+		for (int j = 0; j < 5; j++)
+		    x5[i] += xa[(i * 5) + j] / 5.0;
+	    }
+
+	    // Add downsamples
+
+	    for (int i = 1; i < Length(xa); i++)
+	    {
+		if (i < Length(x2))
+		    xa[i] += x2[i];
+
+		if (i < Length(x3))
+		    xa[i] += x3[i];
+
+		if (i < Length(x4))
+		    xa[i] += x4[i];
+
+		if (i < Length(x5))
+		    xa[i] += x5[i];
+
+		// Recalculate differences
+
+		dx[i] = xa[i] - xa[i - 1];
+	    }
+	}
+
+	// Maximum FFT output
+
+	double max = 0.0;
+	double f = 0.0;
+
+	int count = 0;
+	int limit = RANGE - 1;
+
+	// Find maximum value, and list of maxima
+
+	for (int i = 1; i < limit; i++)
+	{
+	    if (xa[i] > max)
+	    {
+		max = xa[i];
+		f = xf[i];
+	    }
+
+	    // If display not locked, find maxima and add to list
+
+	    if (!display.lock && count < Length(maxima) &&
+		xa[i] > MINIMUM && xa[i] > (max / 4.0) &&
+		dx[i] > 0.0 && dx[i + 1] < 0.0)
+	    {
+		maxima[count].f = xf[i];
+
+		// Cents relative to reference
+
+		double cf =
+		    -12.0 * log2(audio.reference / xf[i]);
+
+		// Reference note
+
+		maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+		// Note number
+
+		maxima[count].n = round(cf) + C5_OFFSET;
+
+		// Set limit to octave above
+
+		if (!audio.downsample && (limit > i * 2))
+		    limit = i * 2 - 1;
+
+		count++;
+	    }
+	}
+
+	// Reference note frequency and lower and upper limits
+
+	double fr = 0.0;
+	double fl = 0.0;
+	double fh = 0.0;
+
+	// Note number
+
+	int n = 0;
+
+	// Found flag and cents value
+
+	gboolean found = FALSE;
+	double c = 0.0;
+
+	// Do the note and cents calculations
+
+	if (max > MINIMUM)
+	{
+	    found = TRUE;
+
+	    // Frequency
+
+	    if (!audio.downsample)
+		f = maxima[0].f;
+
+	    // Cents relative to reference
+
+	    double cf =
+		-12.0 * log2(audio.reference / f);
+
+	    // Reference note
+
+	    fr = audio.reference * pow(2.0, round(cf) / 12.0);
+
+	    // Lower and upper freq
+
+	    fl = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
+	    fh = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
+
+	    // Note number
+
+	    n = round(cf) + C5_OFFSET;
+
+	    if (n < 0)
+		found = FALSE;
+
+	    // Find nearest maximum to reference note
+
+	    double df = 1000.0;
+
+	    for (int i = 0; i < count; i++)
+	    {
+		if (fabs(maxima[i].f - fr) < df)
+		{
+		    df = fabs(maxima[i].f - fr);
+		    f = maxima[i].f;
+		}
+	    }
+
+	    // Cents relative to reference note
+
+	    c = -12.0 * log2(fr / f);
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		c = 0.0;
+
+	    // Ignore if not within 50 cents of reference note
+
+	    if (fabs(c) > 0.5)
+		found = FALSE;
+	}
+
+	// If display not locked
+
+	if (!display.lock)
+	{
+	    // Update scope window
+
+	    gtk_widget_queue_draw(scope.widget);
+
+	    // Update spectrum window
+
+	    for (int i = 0; i < count; i++)
+		values[i].f = maxima[i].f / fps * audio.correction;
+
+	    spectrum.count = count;
+
+	    if (found)
+	    {
+		spectrum.f = f  / fps * audio.correction;
+		spectrum.r = fr / fps * audio.correction;
+		spectrum.l = fl / fps * audio.correction;
+		spectrum.h = fh / fps * audio.correction;
+	    }
+
+	    gtk_widget_queue_draw(spectrum.widget);
+	}
+
+	static long timer;
+
+	if (found)
+	{
+	    // If display not locked
+
+	    if (!display.lock)
+	    {
+		// Update the display struct
+
+		display.f = f;
+		display.fr = fr;
+		display.c = c;
+		display.n = n;
+		display.count = count;
+
+		// Update meter
+
+		meter.c = c;
+
+		// Update strobe
+
+		strobe.c = c;
+	    }
+
+	    // Update display
+
+	    gtk_widget_queue_draw(display.widget);
+
+	    // Reset count;
+
+	    timer = 0;
+	}
+
+	else
+	{
+	    // If display not locked
+
+	    if (!display.lock)
+	    {
+
+		if (timer > TIMER_COUNT)
+		{
+		    display.f = 0.0;
+		    display.fr = 0.0;
+		    display.c = 0.0;
+		    display.n = 0;
+		    display.count = 0;
+
+		    // Update meter
+
+		    meter.c = 0.0;
+
+		    // Update strobe
+
+		    strobe.c = 0.0;
+
+		    // Update spectrum
+
+		    spectrum.f = 0.0;
+		    spectrum.r = 0.0;
+		    spectrum.l = 0.0;
+		    spectrum.h = 0.0;
+		}
+
+		// Update display
+
+		gtk_widget_queue_draw(display.widget);
+	    }
+	}
 
 	// gdk_threads_enter();
-	gtk_widget_queue_draw(scope.widget);
+	// gtk_widget_queue_draw(scope.widget);
 	// gdk_threads_leave();
 
+	timer++;
     }
 
     if (frames < 0)
@@ -305,6 +713,58 @@ void *readAudio(void *dummy)
     {
 	printf("Capture close error: %s\n", snd_strerror(err));
 	return NULL;
+    }
+}
+
+// Real to complex FFT, ignores imaginary values in input array
+
+void fftr(complex a[], int n)
+{
+    double norm = sqrt(1.0 / n);
+
+    for (int i = 0, j = 0; i < n; i++)
+    {
+	if (j >= i)
+	{
+	    double tr = a[j].r * norm;
+
+	    a[j].r = a[i].r * norm;
+	    a[j].i = 0.0;
+
+	    a[i].r = tr;
+	    a[i].i = 0.0;
+	}
+
+	int m = n / 2;
+	while (m >= 1 && j >= m)
+	{
+	    j -= m;
+	    m /= 2;
+	}
+	j += m;
+    }
+    
+    for (int mmax = 1, istep = 2 * mmax; mmax < n;
+	 mmax = istep, istep = 2 * mmax)
+    {
+	double delta = (M_PI / mmax);
+	for (int m = 0; m < mmax; m++)
+	{
+	    double w = m * delta;
+	    double wr = cos(w);
+	    double wi = sin(w);
+
+	    for (int i = m; i < n; i += istep)
+	    {
+		int j = i + mmax;
+		double tr = wr * a[j].r - wi * a[j].i;
+		double ti = wr * a[j].i + wi * a[j].r;
+		a[j].r = a[i].r - tr;
+		a[j].i = a[i].i - ti;
+		a[i].r += tr;
+		a[i].i += ti;
+	    }
+	}
     }
 }
 
@@ -354,7 +814,8 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_paint(cr);
 
     cairo_translate(cr, 0, height / 2);
-    cairo_set_source_rgb(cr, 0, 0.2, 0);
+    cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_line_width(cr, 1);
 
     for (int x = 0; x < width; x += 5)
     {
@@ -441,6 +902,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 
     cairo_translate(cr, 0, height);
     cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_line_width(cr, 1);
 
     for (int x = 0; x < width; x += 5)
     {
@@ -465,9 +927,40 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			       void *data)
 {
+    static FT_Library library;
+    static FT_Face face;
+    static cairo_font_face_t *ff;
+    static char s[16];
+
+    if (library == NULL)
+    {
+	int err;
+
+	err = FT_Init_FreeType(&library);
+
+	err = FT_New_Face(library, "/usr/share/fonts/truetype/musica.ttf",
+			  0, &face);
+
+	ff = cairo_ft_font_face_create_for_ft_face(face, 0);
+    }
+
     cairo_t *cr = gdk_cairo_create(event->window);
 
     cairo_edge(cr,  widget->allocation.width, widget->allocation.height);
+
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_select_font_face(cr, "sans-serif",
+			   CAIRO_FONT_SLANT_NORMAL,
+			   CAIRO_FONT_WEIGHT_BOLD);
+    cairo_set_font_size(cr, 48);
+
+    cairo_move_to(cr, 8, 48);
+    cairo_show_text(cr, "C");
+
+    cairo_set_font_size(cr, 24);
+    cairo_show_text(cr, "0");
+
+    sprintf(s, "%+2.2lf¢", display.c);
 
     cairo_destroy(cr);
 
@@ -504,6 +997,12 @@ gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_destroy(cr);
 
     return TRUE;
+}
+
+// Options callback
+
+void options_clicked(GtkWidget *widget, GtkWindow *window)
+{
 }
 
 // Quit callback
