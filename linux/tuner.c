@@ -32,6 +32,8 @@ Display display;
 Strobe strobe;
 Meter meter;
 
+Options options;
+
 Audio audio;
 
 // Main function
@@ -53,6 +55,10 @@ int main(int argc, char *argv[])
 
     gdk_threads_init();
     gdk_threads_enter();
+
+    // Restore optiond
+
+    restoreOptions();
 
     // Initialise GTK
 
@@ -96,7 +102,7 @@ int main(int argc, char *argv[])
     // Scope
 
     scope.widget = gtk_drawing_area_new();
-    gtk_widget_set_size_request(scope.widget, 280, 32);
+    gtk_widget_set_size_request(scope.widget, 300, 32);
     gtk_box_pack_start(GTK_BOX(vbox), scope.widget, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(scope.widget), "expose_event",
@@ -105,7 +111,7 @@ int main(int argc, char *argv[])
     // Spectrum
 
     spectrum.widget = gtk_drawing_area_new();
-    gtk_widget_set_size_request(spectrum.widget, 280, 32);
+    gtk_widget_set_size_request(spectrum.widget, 300, 32);
     gtk_box_pack_start(GTK_BOX(vbox), spectrum.widget, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(spectrum.widget), "expose_event",
@@ -114,7 +120,7 @@ int main(int argc, char *argv[])
     // Display
 
     display.widget = gtk_drawing_area_new();
-    gtk_widget_set_size_request(display.widget, 280, 100);
+    gtk_widget_set_size_request(display.widget, 300, 100);
     gtk_box_pack_start(GTK_BOX(vbox), display.widget, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(display.widget), "expose_event",
@@ -123,7 +129,7 @@ int main(int argc, char *argv[])
     // Strobe
 
     strobe.widget = gtk_drawing_area_new();
-    gtk_widget_set_size_request(strobe.widget, 280, 44);
+    gtk_widget_set_size_request(strobe.widget, 300, 44);
     gtk_box_pack_start(GTK_BOX(vbox), strobe.widget, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(strobe.widget), "expose_event",
@@ -132,7 +138,7 @@ int main(int argc, char *argv[])
     // Meter
 
     meter.widget = gtk_drawing_area_new();
-    gtk_widget_set_size_request(meter.widget, 280, 52);
+    gtk_widget_set_size_request(meter.widget, 300, 52);
     gtk_box_pack_start(GTK_BOX(vbox), meter.widget, FALSE, FALSE, 0);
 
     g_signal_connect(G_OBJECT(meter.widget), "expose_event",
@@ -161,11 +167,23 @@ int main(int argc, char *argv[])
     // Quit clicked
 
     g_signal_connect(G_OBJECT(quit), "clicked",
-		     G_CALLBACK(quit_clicked), window);
+		     G_CALLBACK(gtk_main_quit), NULL);
+
+    // Key pressed callback
+
+    g_signal_connect(G_OBJECT(window), "key-press-event",
+		     G_CALLBACK(key_press), NULL);
+
+    // Button pressed callback
+
+    g_signal_connect(G_OBJECT(window), "button-press-event",
+		     G_CALLBACK(button_press), NULL);
+
+    gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 
     // Destroy window callback
 
-    g_signal_connect(window, "destroy",
+    g_signal_connect(G_OBJECT(window), "destroy",
 		     G_CALLBACK(gtk_main_quit), NULL);
 
     // Show the window
@@ -183,13 +201,27 @@ int main(int argc, char *argv[])
     // Stop audio
 
     audio.done = TRUE;
-    pthread_join(audio.thread, NULL);
+
+    snd_pcm_close(audio.handle);
 
     gdk_threads_leave();
 
     // Exit
 
     return 0;
+}
+
+// Restore options
+
+void restoreOptions()
+{
+    // Initial values
+
+    spectrum.zoom = TRUE;
+    spectrum.expand = 1;
+
+    audio.reference = A5_REFERENCE;
+    audio.correction = 1.0;
 }
 
 // Init audio
@@ -299,8 +331,6 @@ void *readAudio(void *dummy)
 
 	spectrum.values = values;
 	display.maxima = maxima;
-
-	audio.correction = 1.0;
     }
 
     while (!audio.done)
@@ -604,6 +634,8 @@ void *readAudio(void *dummy)
 
 	// If display not locked
 
+	gdk_threads_enter();
+
 	if (!display.lock)
 	{
 	    // Update scope window
@@ -699,9 +731,7 @@ void *readAudio(void *dummy)
 	    }
 	}
 
-	// gdk_threads_enter();
-	// gtk_widget_queue_draw(scope.widget);
-	// gdk_threads_leave();
+	gdk_threads_leave();
 
 	timer++;
     }
@@ -798,6 +828,34 @@ void cairo_edge(cairo_t *cr, int w, int h)
     cairo_translate(cr, 2, 2);
 }
 
+// Right justify text
+
+void cairo_right_justify_text(cairo_t *cr, char *t)
+{
+    double x, y;
+    cairo_text_extents_t extents;
+
+    cairo_get_current_point(cr, &x, &y);
+    cairo_text_extents(cr, t, &extents);
+
+    cairo_move_to(cr, x - extents.x_advance, y);
+    cairo_show_text(cr, t);
+}
+
+// Centre text
+
+void cairo_centre_text(cairo_t *cr, char *t)
+{
+    double x, y;
+    cairo_text_extents_t extents;
+
+    cairo_get_current_point(cr, &x, &y);
+    cairo_text_extents(cr, t, &extents);
+
+    cairo_move_to(cr, x - extents.width / 2, y);
+    cairo_show_text(cr, t);
+}
+
 // Scope draw callback
 
 gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
@@ -880,6 +938,16 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     }
 
     cairo_stroke(cr);
+
+    // Show F for filter
+
+    if (audio.filter)
+    {
+	cairo_set_source_rgb(cr, 1, 1, 0);
+	cairo_move_to(cr, 2, -(height / 2) + 10);
+	cairo_show_text(cr, "F");
+    }
+
     cairo_destroy(cr);
 
     return TRUE;
@@ -890,6 +958,11 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 				void *data)
 {
+    static char s[16];
+
+    enum
+    {FONT_HEIGHT   = 10};
+
     cairo_t *cr = gdk_cairo_create(event->window);
 
     cairo_edge(cr,  widget->allocation.width, widget->allocation.height);
@@ -900,7 +973,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_set_source_rgb(cr, 0, 0, 0);
     cairo_paint(cr);
 
-    cairo_translate(cr, 0, height);
+    cairo_translate(cr, 0, height - 1);
     cairo_set_source_rgb(cr, 0, 0.5, 0);
     cairo_set_line_width(cr, 1);
 
@@ -917,6 +990,182 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     }
 
     cairo_stroke(cr);
+
+    // Don't attempt the trace until there's a buffer
+
+    if (spectrum.data == NULL)
+	return TRUE;
+
+    // Select font
+
+    // cairo_select_font_face(cr, "sans-serif",
+    // 			   CAIRO_FONT_SLANT_NORMAL,
+    // 			   CAIRO_FONT_WEIGHT_NORMAL);
+    // cairo_set_font_size(cr, FONT_HEIGHT);
+
+    // Green pen for spectrum trace
+
+    cairo_set_source_rgb(cr, 0, 1, 0);
+
+    static float max;
+
+    if (max < 1.0)
+	max = 1.0;
+
+    // Calculate the scaling
+
+    float yscale = (float)height / max;
+
+    max = 0.0;
+
+    // Draw the spectrum
+
+    cairo_move_to(cr, 0, 0);
+
+    if (spectrum.zoom)
+    {
+	// Calculate scale
+
+	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
+
+	for (int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
+	{
+	    if (i > 0 && i < spectrum.length)
+	    {
+		float value = spectrum.data[i];
+
+		if (max < value)
+		    max = value;
+
+		int y = -round(value * yscale);
+		int x = round(((float)i - spectrum.l) * xscale); 
+
+		cairo_line_to(cr, x, y);
+	    }
+	}
+
+	cairo_move_to(cr, width / 2, 0);
+	cairo_line_to(cr, width / 2, -height);
+
+	cairo_stroke(cr);
+
+	// Yellow pen for frequency trace
+
+	cairo_set_source_rgb(cr, 1, 1, 0);
+
+	// Draw lines for each frequency
+
+	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Draw line for each that are in range
+
+	    if (spectrum.values[i].f > spectrum.l &&
+		spectrum.values[i].f < spectrum.h)
+	    {
+		int x = round((spectrum.values[i].f - spectrum.l) * xscale);
+		cairo_move_to(cr, x, 0);
+		cairo_line_to(cr, x, -height);
+
+		double f = display.maxima[i].f;
+
+		// Reference freq
+
+		double fr = display.maxima[i].fr;
+		double c = -12.0 * log2(fr / f);
+
+		// Ignore silly values
+
+		if (!isfinite(c))
+		    continue;
+
+		sprintf(s, "%+0.0f", c * 100.0);
+		cairo_move_to(cr, x, -2);
+		cairo_centre_text(cr, s);
+	    }
+	}
+    }
+
+    else
+    {
+	float xscale = ((float)spectrum.length /
+			(float)spectrum.expand) / (float)width;
+
+	for (int x = 0; x < width; x++)
+	{
+	    float value = 0.0;
+
+	    // Don't show DC component
+
+	    if (x > 0)
+	    {
+		for (int j = 0; j < xscale; j++)
+		{
+		    int n = x * xscale + j;
+
+		    if (value < spectrum.data[n])
+			value = spectrum.data[n];
+		}
+	    }
+
+	    if (max < value)
+		max = value;
+
+	    int y = -round(value * yscale);
+
+	    cairo_line_to(cr, x, y);
+	}
+
+	cairo_stroke(cr);
+
+	// Yellow pen for frequency trace
+
+	cairo_set_source_rgb(cr, 1, 1, 0);
+
+	// Draw lines for each frequency
+
+	for (int i = 0; i < spectrum.count; i++)
+	{
+	    // Draw line for each
+
+	    int x = round(spectrum.values[i].f / xscale);
+	    cairo_move_to(cr, x, 0);
+	    cairo_line_to(cr, x, -height);
+
+	    double f = display.maxima[i].f;
+
+	    // Reference freq
+
+	    double fr = display.maxima[i].fr;
+	    double c = -12.0 * log2(fr / f);
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    sprintf(s, "%+0.0f", c * 100.0);
+	    cairo_move_to(cr, x, -2);
+	    cairo_centre_text(cr, s);
+	}
+
+	if (spectrum.expand > 1)
+	{
+	    sprintf(s, "x%d", spectrum.expand);
+	    cairo_move_to(cr, 0, -2);
+	    cairo_show_text(cr, s);
+	}
+    }
+
+    cairo_stroke(cr);
+
+    // Show D for downsample
+
+    if (audio.downsample)
+    {
+	cairo_move_to(cr, 0, 10 - height);
+	cairo_show_text(cr, "D");
+    }
+
     cairo_destroy(cr);
 
     return TRUE;
@@ -929,8 +1178,23 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 {
     static FT_Library library;
     static FT_Face face;
-    static cairo_font_face_t *ff;
+    static cairo_font_face_t *musica;
     static char s[16];
+
+    enum
+    {FONT_HEIGHT   = 12,
+     MUSIC_HEIGHT  = 26,
+     LARGE_HEIGHT  = 36,
+     LARGER_HEIGHT = 48,
+     MEDIUM_HEIGHT = 24};
+
+    static char *notes[] =
+	{"C", "C", "D", "E", "E", "F",
+	 "F", "G", "A", "A", "B", "B"};
+
+    static char *sharps[] =
+	{"", "#", "", "b", "", "",
+	 "#", "", "b", "", "b", ""};
 
     if (library == NULL)
     {
@@ -938,29 +1202,240 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 
 	err = FT_Init_FreeType(&library);
 
-	err = FT_New_Face(library, "/usr/share/fonts/truetype/musica.ttf",
-			  0, &face);
+	// err = FT_New_Face(library, "/usr/share/fonts/truetype/musica.ttf",
+	// 		  0, &face);
+	err = FT_New_Face(library, "Musica.ttf", 0, &face);
 
-	ff = cairo_ft_font_face_create_for_ft_face(face, 0);
+	musica = cairo_ft_font_face_create_for_ft_face(face, 0);
     }
 
     cairo_t *cr = gdk_cairo_create(event->window);
 
     cairo_edge(cr,  widget->allocation.width, widget->allocation.height);
 
+    int width = widget->allocation.width - 4;
+    int height = widget->allocation.height - 4;
+
     cairo_set_source_rgb(cr, 0, 0, 0);
-    cairo_select_font_face(cr, "sans-serif",
-			   CAIRO_FONT_SLANT_NORMAL,
-			   CAIRO_FONT_WEIGHT_BOLD);
-    cairo_set_font_size(cr, 48);
 
-    cairo_move_to(cr, 8, 48);
-    cairo_show_text(cr, "C");
+    if (display.multiple)
+    {
+	// Select font
 
-    cairo_set_font_size(cr, 24);
-    cairo_show_text(cr, "0");
+	cairo_select_font_face(cr, "sans-serif",
+			       CAIRO_FONT_SLANT_NORMAL,
+			       CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_set_font_size(cr, FONT_HEIGHT);
 
-    sprintf(s, "%+2.2lf¢", display.c);
+	// Set text align
+
+	if (display.count == 0)
+	{
+	    // Display note
+
+	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
+		    sharps[display.n % Length(notes)], display.n / 12);
+	    cairo_move_to(cr, 8, FONT_HEIGHT);
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 8, 0, s, strlen(s));
+
+	    // Display cents
+
+	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
+	    cairo_move_to(cr, 36, FONT_HEIGHT);
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 36, 0, s, strlen(s));
+
+	    // Display reference
+
+	    sprintf(s, "%4.2lfHz", display.fr);
+	    cairo_move_to(cr, 90, FONT_HEIGHT);
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 90, 0, s, strlen(s));
+
+	    // Display frequency
+
+	    sprintf(s, "%4.2lfHz", display.f);
+	    cairo_move_to(cr, 162, FONT_HEIGHT);
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 162, 0, s, strlen(s));
+
+	    // Display difference
+
+	    sprintf(s, "%+4.2lfHz", display.f - display.fr);
+	    cairo_move_to(cr, 234, FONT_HEIGHT);
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 234, 0, s, strlen(s));
+	}
+
+	for (int i = 0; i < display.count; i++)
+	{
+	    double f = display.maxima[i].f;
+
+	    // Reference freq
+
+	    double fr = display.maxima[i].fr;
+
+	    int n = display.maxima[i].n;
+
+	    if (n < 0)
+		n = 0;
+
+	    double c = -12.0 * log2(fr / f);
+
+	    // Ignore silly values
+
+	    if (!isfinite(c))
+		continue;
+
+	    // Display note
+
+	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
+		    sharps[n % Length(notes)], n / 12);
+	    cairo_move_to(cr, 8, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 8, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display cents
+
+	    sprintf(s, "%+4.2lf¢", c * 100.0);
+	    cairo_move_to(cr, 36, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 36, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display reference
+
+	    sprintf(s, "%4.2lfHz", fr);
+	    cairo_move_to(cr, 90, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 90, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display frequency
+
+	    sprintf(s, "%4.2lfHz", f);
+	    cairo_move_to(cr, 162, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 162, i * FONT_HEIGHT, s, strlen(s));
+
+	    // Display difference
+
+	    sprintf(s, "%+4.2lfHz", f - fr);
+	    cairo_move_to(cr, 234, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_show_text(cr, s);
+	    // TextOut(hbdc, 234, i * FONT_HEIGHT, s, strlen(s));
+
+	    if (i == 5)
+		break;
+	}
+    }
+
+    else
+    {
+	double x, y;
+	cairo_matrix_t matrix;
+
+	// Select larger font
+
+	cairo_select_font_face(cr, "sans-serif",
+			       CAIRO_FONT_SLANT_NORMAL,
+			       CAIRO_FONT_WEIGHT_BOLD);
+	cairo_matrix_init_scale(&matrix, 0.8, 1.0);
+	cairo_set_font_matrix(cr, &matrix);
+	cairo_set_font_size(cr, LARGER_HEIGHT);
+
+	// Display note
+
+	sprintf(s, "%s", notes[display.n % Length(notes)]);
+	cairo_move_to(cr, 8, LARGE_HEIGHT);
+	cairo_show_text(cr, s);
+	// TextOut(hbdc, 8, y, s, strlen(s));
+
+	cairo_get_current_point(cr, &x, &y);
+
+	// Select medium font
+
+	cairo_set_font_size(cr, MEDIUM_HEIGHT);
+	// SelectObject(hbdc, medium);
+
+	sprintf(s, "%d", display.n / 12);
+	cairo_show_text(cr, s);
+	// TextOut(hbdc, x, y, s, strlen(s));
+
+	// Select musica font
+
+	cairo_save(cr);
+	cairo_set_font_face(cr, musica);
+	cairo_set_font_size(cr, MUSIC_HEIGHT);
+	// SelectObject(hbdc, musica);
+
+	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
+	cairo_move_to(cr, x, MEDIUM_HEIGHT);
+	cairo_show_text(cr, s);
+	// TextOut(hbdc, x + 8, y - 20, s, strlen(s));
+
+	// Select large font
+
+	cairo_restore(cr);
+	cairo_set_font_size(cr, LARGE_HEIGHT);
+	// SelectObject(hbdc, large);
+	// SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
+
+	// Display cents
+
+	sprintf(s, "%+4.2f¢", display.c * 100.0);
+	cairo_move_to(cr, width - 8, y);
+	cairo_right_justify_text(cr, s);
+	// TextOut(hbdc, width - 8, y, s, strlen(s));
+
+	y += MEDIUM_HEIGHT;
+
+	// Select medium font
+
+	cairo_select_font_face(cr, "sans-serif",
+			       CAIRO_FONT_SLANT_NORMAL,
+			       CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_set_font_size(cr, MEDIUM_HEIGHT);
+	// SelectObject(hbdc, medium);
+	// SetTextAlign(hbdc, TA_BASELINE|TA_LEFT);
+
+	// Display reference frequency
+
+	sprintf(s, "%4.2fHz", display.fr);
+	cairo_move_to(cr, 8, y);
+	cairo_show_text(cr, s);
+	// TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Display actual frequency
+
+	// SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
+	sprintf(s, "%4.2fHz", display.f);
+	cairo_move_to(cr, width - 8, y);
+	cairo_right_justify_text(cr, s);
+	// TextOut(hbdc, width - 8, y, s, strlen(s));
+
+	y += 24;
+
+	// Display reference
+
+	// SetTextAlign(hbdc, TA_BASELINE|TA_LEFT);
+	sprintf(s, "%4.2fHz", audio.reference);
+	cairo_move_to(cr, 8, y);
+	cairo_show_text(cr, s);
+	// TextOut(hbdc, 8, y, s, strlen(s));
+
+	// Display frequency difference
+
+	// SetTextAlign(hbdc, TA_BASELINE|TA_RIGHT);
+	sprintf(s, "%+4.2lfHz", display.f - display.fr);
+	cairo_move_to(cr, width - 8, y);
+	cairo_right_justify_text(cr, s);
+	// TextOut(hbdc, width - 8, y, s, strlen(s));
+    }
+
+    // Show lock
+
+    if (display.lock)
+	// DrawLock(hbdc, -1, height + 1);
 
     cairo_destroy(cr);
 
@@ -999,30 +1474,327 @@ gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     return TRUE;
 }
 
+// Key press
+
+gboolean key_press(GtkWidget *window, GdkEventKey *event, void *data)
+{
+    switch (event->keyval)
+    {
+    case GDK_KEY_c:
+    case GDK_KEY_C:
+	break;
+
+    case GDK_KEY_d:
+    case GDK_KEY_D:
+	audio.downsample = !audio.downsample;
+	break;
+
+    case GDK_KEY_f:
+    case GDK_KEY_F:
+	audio.filter = !audio.filter;
+	break;
+
+    case GDK_KEY_l:
+    case GDK_KEY_L:
+	display.lock = !display.lock;
+	break;
+
+    case GDK_KEY_m:
+    case GDK_KEY_M:
+	display.multiple = !display.multiple;
+	break;
+
+    case GDK_KEY_s:
+    case GDK_KEY_S:
+	strobe.enable = !strobe.enable;
+	break;
+
+    case GDK_KEY_z:
+    case GDK_KEY_Z:
+	spectrum.zoom = !spectrum.zoom;
+	break;
+
+    case GDK_KEY_plus:
+    case GDK_KEY_equal:
+    case GDK_KEY_KP_Add:
+	if (spectrum.expand < 16)
+	    spectrum.expand *= 2;
+	break;
+
+    case GDK_KEY_minus:
+    case GDK_KEY_underscore:
+    case GDK_KEY_KP_Subtract:
+	if (spectrum.expand > 1)
+	    spectrum.expand /= 2;
+	break;
+
+    default:
+	printf("Key code = %x\n", event->keyval);
+	return TRUE;
+	return FALSE;
+    }
+
+    return TRUE;
+}
+
+// Button press
+
+gboolean button_press(GtkWidget *window, GdkEventButton *event, void *data)
+{
+    GtkWidget *menu;
+    GtkWidget *item;
+
+    if (event->button != 3)
+	return FALSE;
+
+    // Menu
+
+    menu = gtk_menu_new();
+
+    // Downsample
+
+    item = gtk_check_menu_item_new_with_label("Downsample audio");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), audio.downsample);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Filter
+
+    item = gtk_check_menu_item_new_with_label("Filter audio");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), audio.filter);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Lock
+
+    item = gtk_check_menu_item_new_with_label("Display lock");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), display.lock);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Multiple
+
+    item = gtk_check_menu_item_new_with_label("Multiple notes");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), display.multiple);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Strobe
+
+    item = gtk_check_menu_item_new_with_label("Show strobe");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), strobe.enable);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Zoom
+
+    item = gtk_check_menu_item_new_with_label("Zoom spectrum");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), spectrum.zoom);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Separator
+
+    item = gtk_separator_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Options
+
+    item = gtk_menu_item_new_with_label("Options...");
+    g_signal_connect(G_OBJECT(item), "activate",
+		     G_CALLBACK(options_clicked), NULL);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Separator
+
+    item = gtk_separator_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    // Quit
+
+    item = gtk_menu_item_new_with_label("Quit");
+    g_signal_connect(G_OBJECT(item), "activate",
+		     G_CALLBACK(gtk_main_quit), NULL);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+
+    gtk_menu_popup(GTK_MENU(menu), NULL, NULL, NULL, NULL,
+		   event->button, event->time);
+
+    return TRUE;
+}
+
 // Options callback
 
 void options_clicked(GtkWidget *widget, GtkWindow *window)
 {
+    static GtkWidget *dialog;
+
+    GtkWidget *hbox;
+    GtkWidget *h1box;
+    GtkWidget *vbox;
+    GtkWidget *close;
+    GtkWidget *label;
+    GtkWidget *save;
+    GtkWidget *separator;
+
+    if (dialog != NULL)
+    {
+	gtk_widget_show_all(dialog);
+	return;
+    }
+	
+    // Create options dialog
+
+    dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(dialog), "Tuner Options");
+    gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
+    gtk_window_set_transient_for(GTK_WINDOW(dialog), window);
+
+    // V box
+
+    vbox = gtk_vbox_new(FALSE, 0);
+    gtk_container_add(GTK_CONTAINER(dialog), vbox);
+
+    // H box
+
+    hbox = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
+
+    // Label
+
+    label = gtk_label_new("Sample rate: 11025.0");
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
+
+    // Close button
+
+    close = gtk_button_new_with_label("  Close  ");
+    gtk_box_pack_end(GTK_BOX(hbox), close, FALSE, FALSE, MARGIN);
+
+    // Close clicked
+
+    g_signal_connect_swapped(G_OBJECT(close), "clicked",
+			     G_CALLBACK(gtk_widget_hide), dialog);
+    // H box
+
+    hbox = gtk_hbox_new(FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+    // Label
+
+    label = gtk_label_new("Correction:");
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
+
+    // Correction
+
+    options.correction = gtk_spin_button_new_with_range(0.9999, 1.0001,
+							0.000001);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.correction),
+			      audio.correction);
+    gtk_box_pack_start(GTK_BOX(hbox), options.correction, FALSE, FALSE, 0);
+
+    // Save button
+
+    save = gtk_button_new_with_label("  Save  ");
+    gtk_box_pack_end(GTK_BOX(hbox), save, FALSE, FALSE, MARGIN);
+
+    // Save clicked
+
+    g_signal_connect(G_OBJECT(save), "clicked",
+		     G_CALLBACK(save_clicked), window);
+    // H box
+
+    hbox = gtk_hbox_new(FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
+
+    // Label
+
+    label = gtk_label_new("Use correction if your sound card clock is\n"
+			  "significantly inaccurate");
+    gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
+
+    // Separator
+
+    separator = gtk_hseparator_new();
+    gtk_box_pack_end(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
+
+    // H box
+
+    hbox = gtk_hbox_new(TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+
+    // V box
+
+    vbox = gtk_vbox_new(FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
+
+    // Filter
+
+    options.filter = gtk_check_button_new_with_label("Filter audio");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
+				 audio.filter);
+    gtk_box_pack_start(GTK_BOX(vbox), options.filter, FALSE, FALSE, 0);
+
+    // Lock
+
+    options.lock = gtk_check_button_new_with_label("Lock display");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.lock),
+				 display.lock);
+    gtk_box_pack_start(GTK_BOX(vbox), options.lock, FALSE, FALSE, 0);
+
+    // Strobe
+
+    options.strobe = gtk_check_button_new_with_label("Show strobe");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
+				 strobe.enable);
+    gtk_box_pack_start(GTK_BOX(vbox), options.strobe, FALSE, FALSE, 0);
+
+    // H1 box
+
+    h1box = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), h1box, FALSE, FALSE, 0);
+
+    // Label
+
+    label = gtk_label_new("Reference:");
+    gtk_box_pack_start(GTK_BOX(h1box), label, FALSE, FALSE, 0);
+
+    // Reference
+
+    options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
+			      audio.reference);
+    gtk_box_pack_start(GTK_BOX(h1box), options.reference, FALSE, FALSE, 0);
+
+    // V box
+
+    vbox = gtk_vbox_new(FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
+
+    // Downsample
+
+    options.downsample = gtk_check_button_new_with_label("Downsample audio");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.downsample),
+				 audio.downsample);
+    gtk_box_pack_start(GTK_BOX(vbox), options.downsample, FALSE, FALSE, 0);
+
+    // Multiple
+
+    options.multiple = gtk_check_button_new_with_label("Multiple notes");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.multiple),
+				 display.multiple);
+    gtk_box_pack_start(GTK_BOX(vbox), options.multiple, FALSE, FALSE, 0);
+
+    // Zoom
+
+    options.zoom = gtk_check_button_new_with_label("Zoom spectrum");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.zoom),
+				 spectrum.zoom);
+    gtk_box_pack_start(GTK_BOX(vbox), options.zoom, FALSE, FALSE, 0);
+
+    // Destroy dialog callback
+
+    g_signal_connect(G_OBJECT(dialog), "destroy",
+		     G_CALLBACK(gtk_widget_destroyed), &dialog);
+
+    gtk_widget_show_all(dialog);
 }
 
-// Quit callback
+// Save callback
 
-void quit_clicked(GtkWidget *widget, GtkWindow *window)
+void save_clicked(GtkWidget *widget, GtkWindow *window)
 {
-    // Create a message dialog
-#ifdef QUERY_QUIT
-    GtkWidget *dialog =
-	gtk_message_dialog_new(GTK_WINDOW(window),
-			       GTK_DIALOG_MODAL,
-			       GTK_MESSAGE_QUESTION,
-			       GTK_BUTTONS_OK_CANCEL,
-			       "Quit");
-    gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dialog),
-					     "Really?");
-    int result = gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
-
-    if (result == GTK_RESPONSE_OK)
-#endif
-	gtk_main_quit();
 }
