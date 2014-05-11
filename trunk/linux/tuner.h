@@ -23,7 +23,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <math.h>
+
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
+
 #include <pthread.h>
 
 #include <ft2build.h>
@@ -42,7 +45,7 @@
 #define MINIMUM   0.5
 
 enum
-    {MARGIN = 10};
+    {MARGIN = 8};
 
 // PCM values
 
@@ -63,7 +66,7 @@ enum
 // Tuner reference values
 
 enum
-    {A5_REFNCE = 440,
+    {A5_REFERENCE = 440,
      C5_OFFSET = 57};
 
 // Structs
@@ -119,7 +122,6 @@ typedef struct
     double fr;
     double c;
     gboolean lock;
-    gboolean zoom;
     gboolean multiple;
     int count;
     int n;
@@ -163,7 +165,9 @@ typedef struct
     GtkWidget *filter;
     GtkWidget *multiple;
     GtkWidget *downsample;
-} Check;
+    GtkWidget *reference;
+    GtkWidget *correction;
+} Options;
 
 typedef struct
 {
@@ -176,6 +180,7 @@ typedef struct
     double reference;
 } Audio;
 
+void restoreOptions(void);
 void initAudio(void);
 void *readAudio(void *);
 
@@ -185,7 +190,10 @@ gboolean display_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 gboolean strobe_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 gboolean meter_draw_callback(GtkWidget *, GdkEventExpose *, void *);
 
+gboolean key_press(GtkWidget*, GdkEventKey*, void *);
+gboolean button_press(GtkWidget*, GdkEventButton*, void *);
+
 void options_clicked(GtkWidget *, GtkWindow *);
-void quit_clicked(GtkWidget *, GtkWindow *);
+void save_clicked(GtkWidget *, GtkWindow *);
 
 void fftr(complex[], int);
