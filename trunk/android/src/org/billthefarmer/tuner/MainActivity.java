@@ -23,7 +23,6 @@
 
 package org.billthefarmer.tuner;
 
-import java.util.Arrays;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -42,7 +41,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -595,13 +593,13 @@ public class MainActivity extends Activity
 	protected boolean downsample;
 
 	protected double reference;
-	protected double sample;
 
 	// Data
 
 	protected Thread thread;
 	protected double buffer[];
 	protected short data[];
+	protected int sample;
 
 	// Output data
 
@@ -663,7 +661,6 @@ public class MainActivity extends Activity
 	protected Audio()
 	{
 	    buffer = new double[SAMPLES];
-	    data = new short[STEP];
 	    
 	    xv = new double[2];
 	    yv = new double[2];
@@ -721,21 +718,30 @@ public class MainActivity extends Activity
 	    // Sample rates to try
 
 	    Resources resources = getResources();
-	    int rates[] = resources.getIntArray(R.array.sample_rates);
 
-	    int size;
+	    int rates[] = resources.getIntArray(R.array.sample_rates);
+	    int divisors[] = resources.getIntArray(R.array.divisors);
+
+	    int size = 0;
+	    int state = 0;
+	    int index = 0;
 	    for (int rate: rates)
 	    {
-		sample = rate;
+		// Check sample rate
+
 		size =
-		    AudioRecord.getMinBufferSize((int)sample,
+		    AudioRecord.getMinBufferSize(rate,
 						 AudioFormat.CHANNEL_IN_MONO,
 						 AudioFormat.ENCODING_PCM_16BIT);
-		if (size > 0)
-		    break;
+		// Loop if invalid sample rate
 
 		if (size == AudioRecord.ERROR_BAD_VALUE)
+		{
+		    index++;
 		    continue;
+		}
+
+		// Check valid input selected, or other error
 
 		if (size == AudioRecord.ERROR)
 		{
@@ -752,36 +758,50 @@ public class MainActivity extends Activity
 		    thread = null;
 		    return;
 		}
+
+		// Create the AudioRecord object
+
+		audioRecord =
+		    new AudioRecord(input, rate,
+				    AudioFormat.CHANNEL_IN_MONO,
+				    AudioFormat.ENCODING_PCM_16BIT,
+				    SIZE * divisor);
+		// Check state
+
+		state = audioRecord.getState(); 
+		if (state != AudioRecord.STATE_INITIALIZED)
+		{
+		    audioRecord.release();
+		    index++;
+		    continue;
+		}
+
+		// Must be a valid sample rate
+
+		sample = rate;
+		divisor = divisors[index];
+		break;
 	    }
 
-	    // Set divisor according to sample rate
+	    // Check valid sample rate
 
-	    // If you change the sample rates, make sure that this code
-	    // still works correctly, as both arrays get sorted as there
-	    // is no array.getIndexOf()
+	    if (size == AudioRecord.ERROR_BAD_VALUE)
+	    {
+		runOnUiThread(new Runnable()
+		    {
+			@Override
+			public void run()
+			{
+			    showAlert(R.string.app_name,
+				      R.string.error_buffer);
+			}
+		    });
 
-	    Arrays.sort(rates);
-	    int index = Arrays.binarySearch(rates, (int)sample);
-	    int divisors[] = resources.getIntArray(R.array.divisors);
-	    Arrays.sort(divisors);
-	    divisor = divisors[index];
+		thread = null;
+		return;
+	    }
 
-	    // Calculate fps
-
-	    fps = (sample / divisor) / SAMPLES;
-	    final double expect = 2.0 * Math.PI *
-		STEP / SAMPLES;
-
-	    // Create the AudioRecord object
-
-	    audioRecord =
-		new AudioRecord(input, (int)sample,
-				AudioFormat.CHANNEL_IN_MONO,
-				AudioFormat.ENCODING_PCM_16BIT,
-				SIZE * divisor);
-	    // Check state
-
-	    int state = audioRecord.getState(); 
+	    // Check AudioRecord initialised
 
 	    if (state != AudioRecord.STATE_INITIALIZED)
 	    {
@@ -790,7 +810,8 @@ public class MainActivity extends Activity
 			@Override
 			public void run()
 			{
-			    showAlert(R.string.app_name, R.string.error_init);
+			    showAlert(R.string.app_name,
+				      R.string.error_init);
 			}
 		    });
 
@@ -798,6 +819,16 @@ public class MainActivity extends Activity
 		thread = null;
 		return;
 	    }
+
+	    // Calculate fps and expect
+
+	    fps = ((double)sample / divisor) / SAMPLES;
+	    final double expect = 2.0 * Math.PI *
+		STEP / SAMPLES;
+
+	    // Create buffer for input data
+
+	    data = new short[STEP * divisor];
 
 	    // Start recording
 
