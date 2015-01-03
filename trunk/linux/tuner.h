@@ -44,8 +44,16 @@
 #define OCTAVE    12
 #define MINIMUM   0.5
 
+// Layout values
+
 enum
-    {MARGIN = 8};
+    {MARGIN = 8,
+     DISPLAY_WIDTH = 300,
+     SCOPE_HEIGHT = 32,
+     SPECTRUM_HEIGHT = 32,
+     DISPLAY_HEIGHT = 100,
+     STROBE_HEIGHT = 44,
+     METER_HEIGHT = 52};
 
 // PCM values
 
@@ -68,6 +76,13 @@ enum
 enum
     {A5_REFERENCE = 440,
      C5_OFFSET = 57};
+
+// Strobe colours
+
+enum
+    {BLUE,
+     OLIVE,
+     MAGENTA};
 
 // Structs
 
@@ -145,20 +160,12 @@ typedef struct
 
 typedef struct
 {
-    struct
-    {
-	GtkWidget *sample;
-	GtkWidget *actual;
-    } status;
-
-    struct
-    {
-	GtkWidget *reference;
-    } preferences;
-} Legend;
+    GtkWidget *widget;
+} Status;
 
 typedef struct
 {
+    GtkWidget *dialog;
     GtkWidget *zoom;
     GtkWidget *lock;
     GtkWidget *strobe;
@@ -178,6 +185,7 @@ typedef struct
     gboolean downsample;
     double correction;
     double reference;
+    gboolean save;
 } Audio;
 
 void restoreOptions(void);
@@ -195,5 +203,8 @@ gboolean button_press(GtkWidget*, GdkEventButton*, void *);
 
 void options_clicked(GtkWidget *, GtkWindow *);
 void save_clicked(GtkWidget *, GtkWindow *);
+
+void saveOptions();
+void restoreOptions();
 
 void fftr(complex[], int);
