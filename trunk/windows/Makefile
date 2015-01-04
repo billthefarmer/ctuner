@@ -15,8 +15,8 @@ clean:
 	rm *.exe
 
 %.exe:	%.c
-	$(GCC) -o $@ $(wordlist 1, 2, $^) -O2 -march=core2 -ffast-math \
-		 -std=gnu99 -mwindows -lcomctl32 -lwinmm -lmsimg32
+	$(GCC) -o $@ $(wordlist 1, 2, $^) -O2 -std=gnu99 \
+		 -mwin32 -mwindows -lcomctl32 -lwinmm -lmsimg32
 
 %.o:	%.rc
 	$(WINDRES) -o $@ $<

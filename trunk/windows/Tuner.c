@@ -272,7 +272,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Calculate desired window width and height
 
-	int border = (window.rwnd.right - window.rwnd.left) - window.rclt.right;
+	int border = (window.rwnd.right - window.rwnd.left) -
+	    window.rclt.right;
 	int width  = WIDTH + border;
 	int height = HEIGHT;
 
@@ -324,7 +325,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	tooltip.info.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
 
 	tooltip.info.uId = (UINT_PTR)volume.hwnd;
-	tooltip.info.lpszText = "Microphone volume";
+	tooltip.info.lpszText = (LPSTR)"Microphone volume";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -341,7 +342,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add scope to tooltip
 
 	tooltip.info.uId = (UINT_PTR)scope.hwnd;
-	tooltip.info.lpszText = "Scope, click to filter audio";
+	tooltip.info.lpszText = (LPSTR)"Scope, click to filter audio";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -358,7 +359,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add spectrum to tooltip
 
 	tooltip.info.uId = (UINT_PTR)spectrum.hwnd;
-	tooltip.info.lpszText = "Spectrum, click to zoom";
+	tooltip.info.lpszText = (LPSTR)"Spectrum, click to zoom";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -375,7 +376,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add display to tooltip
 
 	tooltip.info.uId = (UINT_PTR)display.hwnd;
-	tooltip.info.lpszText = "Display, click to lock";
+	tooltip.info.lpszText = (LPSTR)"Display, click to lock";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -392,7 +393,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Create tooltip for strobe
 
 	tooltip.info.uId = (UINT_PTR)strobe.hwnd;
-	tooltip.info.lpszText = "Strobe, click to disable/enable";
+	tooltip.info.lpszText = (LPSTR)"Strobe, click to disable/enable";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -409,7 +410,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add meter to tooltip
 
 	tooltip.info.uId = (UINT_PTR)meter.hwnd;
-	tooltip.info.lpszText = "Cents, click to lock";
+	tooltip.info.lpszText = (LPSTR)"Cents, click to lock";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -430,7 +431,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	// Add slider to tooltip
 
 	tooltip.info.uId = (UINT_PTR)meter.slider.hwnd;
-	tooltip.info.lpszText = "Cents";
+	tooltip.info.lpszText = (LPSTR)"Cents";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
 		    (LPARAM) &tooltip.info);
@@ -465,7 +466,8 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Start audio thread
 
-	audio.thread = CreateThread(NULL, 0, AudioThread, hWnd, 0, &audio.id);
+	audio.thread = CreateThread(NULL, 0, AudioThread, hWnd,
+				    0, &audio.id);
 
 	// Start meter timer
 
@@ -944,7 +946,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)zoom.hwnd;
-	tooltip.info.lpszText = "Zoom spectrum, "
+	tooltip.info.lpszText = (LPSTR)"Zoom spectrum, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -965,7 +967,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)enable.hwnd;
-	tooltip.info.lpszText = "Display strobe, "
+	tooltip.info.lpszText = (LPSTR)"Display strobe, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -986,7 +988,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)filter.hwnd;
-	tooltip.info.lpszText = "Audio filter, "
+	tooltip.info.lpszText = (LPSTR)"Audio filter, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1007,7 +1009,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)lock.hwnd;
-	tooltip.info.lpszText = "Downsample, "
+	tooltip.info.lpszText = (LPSTR)"Downsample, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1028,7 +1030,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)resize.hwnd;
-	tooltip.info.lpszText = "Resize display, "
+	tooltip.info.lpszText = (LPSTR)"Resize display, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1049,7 +1051,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)lock.hwnd;
-	tooltip.info.lpszText = "Lock display, "
+	tooltip.info.lpszText = (LPSTR)"Lock display, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1078,7 +1080,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add edit to tooltip
 
 	tooltip.info.uId = (UINT_PTR)legend.reference.hwnd;
-	tooltip.info.lpszText = "Reference, "
+	tooltip.info.lpszText = (LPSTR)"Reference, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1099,7 +1101,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add updown to tooltip
 
 	tooltip.info.uId = (UINT_PTR)reference.hwnd;
-	tooltip.info.lpszText = "Reference, "
+	tooltip.info.lpszText = (LPSTR)"Reference, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1120,7 +1122,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add tickbox to tooltip
 
 	tooltip.info.uId = (UINT_PTR)multiple.hwnd;
-	tooltip.info.lpszText = "Display multiple notes, "
+	tooltip.info.lpszText = (LPSTR)"Display multiple notes, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1158,7 +1160,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add edit to tooltip
 
 	tooltip.info.uId = (UINT_PTR)legend.correction.hwnd;
-	tooltip.info.lpszText = "Correction, "
+	tooltip.info.lpszText = (LPSTR)"Correction, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1181,7 +1183,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	// Add updown to tooltip
 
 	tooltip.info.uId = (UINT_PTR)correction.hwnd;
-	tooltip.info.lpszText = "Correction, "
+	tooltip.info.lpszText = (LPSTR)"Correction, "
 	    "click to change";
 
 	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
@@ -1851,7 +1853,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 
     static char s[64];
 
-    static char *notes[] =
+    static const char *notes[] =
 	{"C", "C#", "D", "Eb", "E", "F",
 	 "F#", "G", "Ab", "A", "Bb", "B"};
 
@@ -1876,7 +1878,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 
     // Lock the memory
 
-    LPTSTR text = GlobalLock(mem);
+    LPTSTR text = (LPSTR)GlobalLock(mem);
 
     // Check if multiple
 
@@ -2035,7 +2037,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetStockObject(BLACK_BRUSH));
+    FillRect(hbdc, &brct, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
     // Dark green graticule
 
@@ -2199,7 +2201,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetStockObject(BLACK_BRUSH));
+    FillRect(hbdc, &brct, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
     // Dark green graticule
 
@@ -2317,25 +2319,29 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     else
     {
-	float xscale = ((float)spectrum.length /
-			(float)spectrum.expand) / (float)width;
+	float xscale = log((float)spectrum.length /
+			   (float)spectrum.expand) / width;
 
+	int last = 1;
 	for (int x = 0; x < width; x++)
 	{
 	    float value = 0.0;
 
-	    // Don't show DC component
-
-	    if (x > 0)
+	    int index = (int)round(pow(M_E, x * xscale));
+	    for (int i = last; i <= index; i++)
 	    {
-		for (int j = 0; j < xscale; j++)
-		{
-		    int n = x * xscale + j;
+		// Don't show DC component
 
-		    if (value < spectrum.data[n])
-			value = spectrum.data[n];
+		if (i > 0 && i < spectrum.length)
+		{
+		    if (value < spectrum.data[i])
+			value = spectrum.data[i];
 		}
 	    }
+
+	    // Update last index
+
+	    last = index + 1;
 
 	    if (max < value)
 		max = value;
@@ -2357,7 +2363,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	{
 	    // Draw line for each
 
-	    int x = round(spectrum.values[i].f / xscale);
+	    int x = round(log(spectrum.values[i].f) / xscale);
 	    MoveToEx(hbdc, x, 0, NULL);
 	    LineTo(hbdc, x, -height);
 
@@ -2425,11 +2431,11 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
      LARGER_HEIGHT = 56,
      MEDIUM_HEIGHT = 28};
 
-    static TCHAR *notes[] =
+    static const TCHAR *notes[] =
 	{"C", "C", "D", "E", "E", "F",
 	 "F", "G", "A", "A", "B", "B"};
 
-    static TCHAR *sharps[] =
+    static const TCHAR *sharps[] =
 	{"", "#", "", "b", "", "",
 	 "#", "", "b", "", "b", ""};
 
@@ -2464,7 +2470,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	lf.lfHeight = MEDIUM_HEIGHT;
 	medium = CreateFontIndirect(&lf);
 
-	AddFontResource("Musica.ttf");
+	AddFontResourceEx("Musica.ttf", FR_PRIVATE, 0);
 	lf.lfHeight = MUSIC_HEIGHT;
 	// lf.lfWeight = FW_REGULAR;
 	strcat(lf.lfFaceName, "Musica");
@@ -2497,7 +2503,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
+    FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
     if (display.multiple)
     {
@@ -2780,7 +2786,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 
     RECT brct =
 	{0, 0, width, height};
-    FillRect(hbdc, &brct, GetStockObject(WHITE_BRUSH));
+    FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
     // Move origin
 
@@ -2909,7 +2915,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 10, 0, 20, 10);
 
-	sbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	sbrush = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 20, 10));
@@ -2937,7 +2944,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	GradientFill(hbdc, vertex, Length(vertex),
 		     gradient, Length(gradient), GRADIENT_FILL_RECT_H);
 
-	sshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	sshade = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
@@ -2949,7 +2957,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 20, 0, 40, 10);
 
-	mbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	mbrush = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 40, 10));
@@ -2959,7 +2968,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 
 	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
 
-	mshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	mshade = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
@@ -2971,7 +2981,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 40, 0, 80, 10);
 
-	lbrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	lbrush = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 80, 10));
@@ -2981,7 +2992,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 
 	GradientFill(hbdc, vertex, 3, gradient, 2, GRADIENT_FILL_RECT_H);
 
-	lshade = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	lshade = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	SelectObject(hbdc, CreateCompatibleBitmap(hdc, 160, 10));
@@ -2993,7 +3005,8 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	SetDCBrushColor(hbdc, background);
 	Rectangle(hbdc, 80, 0, 160, 10);
 
-	ebrush = CreatePatternBrush(GetCurrentObject(hbdc, OBJ_BITMAP));
+	ebrush = CreatePatternBrush((HBITMAP)GetCurrentObject(hbdc,
+							      OBJ_BITMAP));
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	DeleteDC(hbdc);
@@ -3002,7 +3015,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 
     // Erase background
 
-    FillRect(hdc, &rect, GetStockObject(WHITE_BRUSH));
+    FillRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
     SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
 
     if (strobe.enable)
