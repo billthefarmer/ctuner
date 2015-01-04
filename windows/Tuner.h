@@ -118,7 +118,7 @@ enum
 
 enum
     {BLUE,
-     GREEN,
+     OLIVE,
      MAGENTA};
 
 // Timer values
