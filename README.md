@@ -10,7 +10,7 @@ been released. An
 has been released. The android version may also be found on
 [Github](https://github.com/billthefarmer/tuner).
 
-![http://ctuner.googlecode.com/svn/wiki/images/Tuner.png](http://ctuner.googlecode.com/svn/wiki/images/Tuner.png)  ![http://ctuner.googlecode.com/svn/wiki/images/Options.png](http://ctuner.googlecode.com/svn/wiki/images/Options.png)
+![http://ctuner.googlecode.com/svn/wiki/images/Tuner.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![http://ctuner.googlecode.com/svn/wiki/images/Options.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
 
 
 ## Using ##
