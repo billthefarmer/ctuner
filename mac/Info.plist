@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>${EXECUTABLE_NAME}</string>
+	<string>Tuner</string>
 	<key>CFBundleGetInfoString</key>
 	<string>Copyright 2012 Bill Farmer</string>
 	<key>CFBundleIconFile</key>
@@ -15,16 +15,18 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>${PRODUCT_NAME}</string>
+	<string>Tuner</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.03</string>
+	<string>1.04</string>
 	<key>CFBundleSignature</key>
 	<string>TUNR</string>
 	<key>CFBundleVersion</key>
-	<string>Version 1.03</string>
+	<string>Version 1.04</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.music</string>
+	<key>ATSApplicationFontsPath</key>
+	<string>Fonts</string>
 </dict>
 </plist>

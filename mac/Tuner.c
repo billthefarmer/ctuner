@@ -80,13 +80,13 @@ int main(int argc, char *argv[])
 
     // Set menu title
 
-    CFStringRef apple =
-	CFStringCreateWithPascalString(kCFAllocatorDefault,
-				       "\p\024",
-				       kCFStringEncodingMacRoman);
+    CFStringRef apple = CFSTR("\024");
+    //	CFStringCreateWithPascalString(kCFAllocatorDefault,
+    //				       "\p\024",
+    //				       kCFStringEncodingMacRoman);
 
     SetMenuTitleWithCFString(menu, apple);
-    CFRelease(apple);
+    //  CFRelease(apple);
 
     // Create an about item
 
@@ -2334,7 +2334,7 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 				     s, strlen(s));
 	    // Display cents
 
-	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
+	    sprintf(s, "%+4.2lf\242", display.c * 100.0);
 	    CGContextShowTextAtPoint(context, 30, kTextSizeSmall,
 				     s, strlen(s));
 	    // Display reference
@@ -2382,7 +2382,7 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 				     s, strlen(s));
 	    // Display cents
 
-	    sprintf(s, "%+4.2lf¢", c * 100.0);
+	    sprintf(s, "%+4.2lf\242", c * 100.0);
 	    CGContextShowTextAtPoint(context, 30, (i + 1) * kTextSizeSmall,
 				     s, strlen(s));
 	    // Display reference
@@ -2431,7 +2431,7 @@ OSStatus DisplayDrawEventHandler(EventHandlerCallRef next,
 	CGContextSelectFont(context, "Arial Bold", kTextSizeLarge,
 			    kCGEncodingMacRoman);
 
-	sprintf(s, "%+4.2lf¢", display.c * 100.0);
+	sprintf(s, "%+4.2lf\242", display.c * 100.0);
 	RightJustifyTextAtPoint(context, width - 8, y, s, strlen(s));
 
 	y += kTextSizeMedium + 4;
@@ -2592,7 +2592,14 @@ OSStatus StrobeDrawEventHandler(EventHandlerCallRef next,
 
 	float rx = mx - 160;
 
-	if (fabsf(mc) > 0.2)
+
+	if (fabsf(mc) > 0.4)
+	{
+	    CGContextSetFillColorWithColor(context, background);
+	    CGContextFillRect(context, CGRectMake(0, 0, width, 10));	    
+	}
+
+	else if (fabsf(mc) > 0.2)
 	{
 	    CGContextSaveGState(context);
 	    CGContextClipToRect(context, CGRectMake(0, 0, width, 10));
