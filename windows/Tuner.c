@@ -1479,7 +1479,7 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 	    strobe.colours++;
 
 	    if (strobe.colours > MAGENTA)
-		strobe.colours = 0;
+		strobe.colours = BLUE;
 
 	    strobe.changed = TRUE;
 	}
