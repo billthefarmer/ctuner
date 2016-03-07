@@ -1,4 +1,4 @@
-# Musical instrument strobe tuner #
+# Musical instrument strobe tuner [![Build Status](https://travis-ci.org/billthefarmer/c-tuner.svg?branch=master)](https://travis-ci.org/billthefarmer/c-tuner)
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
