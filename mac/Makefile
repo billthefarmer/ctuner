@@ -1,9 +1,15 @@
+################################################################################
+#
+#  Makefile for Tuner
+#
+################################################################################
+
 RM=rm
 MD=mkdir
 CP=cp
 
 GCC=gcc
-CFLAGS=-framework Carbon -framework Audiounit -framework CoreAudio \
+CFLAGS=-Os -framework Carbon -framework Audiounit -framework CoreAudio \
 		-framework Accelerate -arch i386 \
 		-mmacosx-version-min=10.4
 
