@@ -6,8 +6,6 @@ os:
 
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      cd linux;
-      make;
       cd ../windows;
       make  GCC=i586-mingw32msvc-gcc WINDRES=i586-mingw32msvc-windres;
     fi
