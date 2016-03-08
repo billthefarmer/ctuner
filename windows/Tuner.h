@@ -101,9 +101,9 @@ enum
      MIN_VOL  = 0,
      STEP_VOL = 10,
 
-     MAX_REF  = 4500,
+     MAX_REF  = 4800,
      REF_REF  = 4400,
-     MIN_REF  = 4300,
+     MIN_REF  = 4200,
      STEP_REF = 10,
 
      MAX_METER = 200,
