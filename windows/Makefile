@@ -15,7 +15,7 @@ clean:
 	rm *.exe
 
 %.exe:	%.c
-	$(GCC) -o $@ $(wordlist 1, 2, $^) -O2 -std=gnu99 \
+	$(GCC) -o $@ $(wordlist 1, 2, $^) -Os -std=gnu99 \
 		 -mwin32 -mwindows -lcomctl32 -lwinmm -lmsimg32
 
 %.o:	%.rc

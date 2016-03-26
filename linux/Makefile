@@ -5,7 +5,7 @@
 ################################################################################
 
 GCC	= gcc
-CFLAGS  = -O2 -fPIC -std=gnu99 -Wl,-z,relro
+CFLAGS  = -O -fPIC -std=gnu99 -Wl,-z,relro
 LIBS    = -lX11 -lasound -lm
 
 all:	tuner
