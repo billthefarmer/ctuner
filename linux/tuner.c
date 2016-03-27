@@ -276,14 +276,14 @@ void restoreOptions()
     if (file == NULL)
 	return;
 
-    char line[64];
-    gboolean found = FALSE;
-
     // Scan the file
 
     while (!feof(file))
     {
-	fgets(line, sizeof(line), file);
+	char line[64];
+	gboolean found = FALSE;
+
+	char *l = fgets(line, sizeof(line), file);
 
 	// Look for [Options]
 
@@ -341,13 +341,13 @@ void restoreOptions()
 
 	    if (strncmp(line, "reference", strlen("reference")) == 0)
 	    {
-		sscanf(line, "reference=%f", &audio.reference);
+		sscanf(line, "reference=%lf", &audio.reference);
 		continue;
 	    }
 
 	    if (strncmp(line, "correction", strlen("correction")) == 0)
 	    {
-		sscanf(line, "correction=%f", &audio.correction);
+		sscanf(line, "correction=%lf", &audio.correction);
 
 		if (audio.correction != 1.0)
 		    audio.save = TRUE;
