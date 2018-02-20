@@ -6,7 +6,8 @@
 //  Copyright © 2018 Bill Farmer. All rights reserved.
 //
 
-#include <CoreFoundation/CoreFoundation.h>
+#include <AppKit/AppKit.h>
+#include <Foundation/Foundation.h>
 #include <AudioUnit/AudioUnit.h>
 #include <CoreAudio/CoreAudio.h>
 
@@ -48,5 +49,4 @@ OSStatus SetupAudio(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
-CFStringRef AudioUnitErrString(OSStatus status);
-void SendEvent();
+char *AudioUnitErrString(OSStatus status);

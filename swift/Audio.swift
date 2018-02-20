@@ -116,22 +116,7 @@ class Audio: NSObject
                                      mElement:
                                        kAudioObjectPropertyElementMaster)
 
-        var size: UInt32 = 0
-
-        // Get size
-        status =
-          AudioObjectGetPropertyDataSize(UInt32(kAudioObjectSystemObject),
-                                         &inputDeviceAOPA,
-                                         0, nil, &size)
-        if (status != noErr)
-        {
-	    // AudioObjectGetPropertyDataSize
-            NSLog("Error in AudioObjectGetPropertyData: " +
-	            "kAudioHardwarePropertyDefaultInputDevice %d", status)
-	    return status
-        }
-
-        NSLog("Unknown input device %d", id)
+        var size: UInt32 = UInt32(MemoryLayout.size(ofValue: id))
 
         // Get device
         status =
@@ -147,48 +132,6 @@ class Audio: NSObject
         }
 
         NSLog("System input device %d", id)
-/*
-        status =
-          AudioObjectGetPropertyDataSize(UInt32(kAudioObjectSystemObject),
-                                         &inputDeviceAOPA,
-                                         0, nil, &size)
-        if (status != noErr)
-        {
-	    // AudioObjectGetPropertyDataSize
-            NSLog("Error in AudioObjectGetPropertyData: " +
-	            "kAudioHardwarePropertyDefaultInputDevice %d", status)
-	    return status
-        }
-*/
-        // Get the audio unit device
-        status =
-          AudioUnitGetProperty(output!,
-			       kAudioOutputUnitProperty_CurrentDevice, 
-			       kAudioUnitScope_Global,
-                               0, &id, &size)
-        if (status != noErr)
-        {
-            // AudioUnitGetProperty
-            NSLog("Error in AudioUnitGetProperty: " +
-	            "kAudioOutputUnitProperty_CurrentDevice " +
-                    AudioUnitErrString(status))
-	    return status
-        }
-
-        NSLog("AudioUnit input device %d", id)
-
-        // Get device
-        status =
-          AudioObjectGetPropertyData(UInt32(kAudioObjectSystemObject),
-                                     &inputDeviceAOPA,
-                                     0, nil, &size, &id)
-        if (status != noErr)
-        {
-	    // AudioObjectGetPropertyData
-            NSLog("Error in AudioObjectGetPropertyData: " +
-	            "kAudioHardwarePropertyDefaultInputDevice %d", status)
-	    return status
-        }
 
         // Set the audio unit device
         status =
@@ -269,23 +212,7 @@ class Audio: NSObject
 	    }
         }
 
-        // Get sample rate size
-        audioDeviceAOPA =
-          AudioObjectPropertyAddress(mSelector:
-                                       kAudioDevicePropertyNominalSampleRate,
-                                     mScope: kAudioObjectPropertyScopeGlobal,
-                                     mElement:
-                                       kAudioObjectPropertyElementMaster)
-
-        status = AudioObjectGetPropertyDataSize(id, &audioDeviceAOPA,
-				         0, nil, &size)
-        if (status != noErr)
-        {
-            // AudioObjectGetPropertyDataSize
-            NSLog("Error in AudioObjectGetPropertyDataSize: " +
-	            "kAudioDevicePropertyNominalSampleRate %d", status)
-            return status
-        }
+        size = UInt32(MemoryLayout.size(ofValue: nominal))
 
         // Set the sample rate, if in range
         if (inRange)
@@ -321,17 +248,8 @@ class Audio: NSObject
                                      mElement:
                                        kAudioObjectPropertyElementMaster)
 
-        status = AudioObjectGetPropertyDataSize(id, &audioDeviceAOPA,
-                                                0, nil, &size)
-        if (status != noErr)
-        {
-            // AudioObjectGetPropertyDataSize
-            NSLog("Error in AudioObjectGetPropertyDataSize: " +
-	            "kAudioDevicePropertyBufferFrameSizeRange %d", status)
-            return status
-        }
-
         var sizes = AudioValueRange(mMinimum: 0.0, mMaximum: 0.0)
+        size = UInt32(MemoryLayout.size(ofValue: sizes))
 
         // Get the buffer size range
         status = AudioObjectGetPropertyData(id, &audioDeviceAOPA, 0, nil,

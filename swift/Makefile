@@ -34,7 +34,7 @@ SOURCES = AppDelegate.swift Scope.swift Spectrum.swift Strobe.swift \
 		Display.swift Meter.swift Status.swift TunerView.swift Audio.o
 
 SFLAGS = -g -target x86_64-apple-macosx10.9 \
-		-import-objc-header $(HEADER) -Xlinker "-v"
+		-import-objc-header $(HEADER)
 
 CFLAGS = -g -target x86_64-apple-macosx10.9
 
@@ -89,5 +89,5 @@ $(APPVDMG): $(APPBUNDLE)
 	$(HDIU) detach /Volumes/$(APPNAME) -quiet
 	$(HDIU) convert -format UDZO -o $(APPVDMG) -ov $(APPDMG) -quiet
 
-%.o: %.c
+%.o: %.m
 	$(CC) -c $(CFLAGS) $< -o $@

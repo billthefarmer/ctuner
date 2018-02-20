@@ -8,8 +8,6 @@
 
 #include "Audio.h"
 
-void NSLog(CFStringRef format, ...);
-
 Audio audio;
 
 // Setup audio
@@ -30,7 +28,7 @@ OSStatus SetupAudio()
     if (cp == NULL)
     {
         // AudioComponentFindNext
-        NSLog(CFSTR("Error in AudioComponentFindNext"));
+        NSLog(@"Error in AudioComponentFindNext");
 	return -1;
     }
 
@@ -39,7 +37,7 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
         // AudioComponentInstanceNew
-        NSLog(CFSTR("Error in AudioComponentInstanceNew %s (%d)"),
+        NSLog(@"Error in AudioComponentInstanceNew %s (%d)",
               AudioUnitErrString(status), status);
         return status;
     }
@@ -56,8 +54,8 @@ OSStatus SetupAudio()
     if (status != noErr)
     {
         // AudioUnitSetProperty
-        NSLog(CFSTR("Error in AudioUnitSetProperty: " 
-                    "kAudioOutputUnitProperty_EnableIO %d"), status);
+        NSLog(@"Error in AudioUnitSetProperty: " 
+                    "kAudioOutputUnitProperty_EnableIO %d", status);
         return status;
     }
 
@@ -181,7 +179,7 @@ OSStatus SetupAudio()
     if (status != noErr)
         return status;
 
-    NSLog(CFSTR("Frames %f, %f\n"), sizes.mMinimum, sizes.mMaximum);
+    NSLog(@"Frames %f, %f\n", sizes.mMinimum, sizes.mMaximum);
 
     UInt32 frames = kStep * audio.divisor;
     size = sizeof(frames);
@@ -190,7 +188,7 @@ OSStatus SetupAudio()
 	     (sizes.mMinimum <= frames)))
 	frames /= 2;
 
-    NSLog(CFSTR("Frames %d\n"), frames);
+    NSLog(@"Frames %d\n", frames);
 
     // Set the max frames
     status = AudioUnitSetProperty(audio.output,
@@ -296,7 +294,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     // static Boolean rendered = false;
     // if (!rendered)
     // {
-    //     NSLog(CFSTR("Rendered, frames %d\n"), inNumberFrames);
+    //     NSLog(@"Rendered, frames %d\n", inNumberFrames);
     //     rendered = true;
     // }
 
@@ -327,12 +325,21 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     }
 
     // Send an event to post to the main event queue
-    // SendEvent();
+    NSEvent *event = [NSEvent otherEventWithType: NSApplicationDefined
+                                        location: NSZeroPoint
+                                   modifierFlags: 0
+                                       timestamp: 0
+                                    windowNumber: 0
+                                         context: nil
+                                         subtype: kEventAudioUpdate 
+                                           data1: 0
+                                           data2: 0];
+    [NSApp sendEvent: event];
 
     return noErr;
 }
 
-CFStringRef AudioUnitErrString(OSStatus status)
+char *AudioUnitErrString(OSStatus status)
 {
     static UInt32 audioUnitErrCodes[] =
         {kAudioUnitErr_CannotDoInCurrentContext,
@@ -356,32 +363,32 @@ CFStringRef AudioUnitErrString(OSStatus status)
          kAudioUnitErr_UnknownFileType,
          kAudioUnitErr_RenderTimeout};
 
-    static CFStringRef audioUnitErrStrings[] =
-        {CFSTR("AudioUnitErr_CannotDoInCurrentContext"),
-         CFSTR("AudioUnitErr_FailedInitialization"),
-         CFSTR("AudioUnitErr_FileNotSpecified"),
-         CFSTR("AudioUnitErr_FormatNotSupported"),
-         CFSTR("AudioUnitErr_Initialized"),
-         CFSTR("AudioUnitErr_InvalidElement"),
-         CFSTR("AudioUnitErr_InvalidFile"),
-         CFSTR("AudioUnitErr_InvalidOfflineRender"),
-         CFSTR("AudioUnitErr_InvalidParameter"),
-         CFSTR("AudioUnitErr_InvalidProperty"),
-         CFSTR("AudioUnitErr_InvalidPropertyValue"),
-         CFSTR("AudioUnitErr_InvalidScope"),
-         CFSTR("AudioUnitErr_NoConnection"),
-         CFSTR("AudioUnitErr_PropertyNotInUse"),
-         CFSTR("AudioUnitErr_PropertyNotWritable"),
-         CFSTR("AudioUnitErr_TooManyFramesToProcess"),
-         CFSTR("AudioUnitErr_Unauthorized"),
-         CFSTR("AudioUnitErr_Uninitialized"),
-         CFSTR("AudioUnitErr_UnknownFileType"),
-         CFSTR("AudioUnitErr_RenderTimeout")};
+    static char *audioUnitErrStrings[] =
+        {"AudioUnitErr_CannotDoInCurrentContext",
+         "AudioUnitErr_FailedInitialization",
+         "AudioUnitErr_FileNotSpecified",
+         "AudioUnitErr_FormatNotSupported",
+         "AudioUnitErr_Initialized",
+         "AudioUnitErr_InvalidElement",
+         "AudioUnitErr_InvalidFile",
+         "AudioUnitErr_InvalidOfflineRender",
+         "AudioUnitErr_InvalidParameter",
+         "AudioUnitErr_InvalidProperty",
+         "AudioUnitErr_InvalidPropertyValue",
+         "AudioUnitErr_InvalidScope",
+         "AudioUnitErr_NoConnection",
+         "AudioUnitErr_PropertyNotInUse",
+         "AudioUnitErr_PropertyNotWritable",
+         "AudioUnitErr_TooManyFramesToProcess",
+         "AudioUnitErr_Unauthorized",
+         "AudioUnitErr_Uninitialized",
+         "AudioUnitErr_UnknownFileType",
+         "AudioUnitErr_RenderTimeout"};
 
     for (int i = 0; i < sizeof(audioUnitErrCodes) / sizeof(UInt32); i++)
         if (audioUnitErrCodes[i] == status)
             return audioUnitErrStrings[i];
 
-    return CFSTR("");
+    return "";
 }
 

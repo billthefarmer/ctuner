@@ -137,8 +137,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         NSEvent.addLocalMonitorForEvents(matching: .applicationDefined,
          handler:
            {(event) -> NSEvent in
+               if (!received)
+               {
                    NSLog("Event received " +
                            String(describing: event))
+                   received = true;
+               }
 
                return event
            })
@@ -154,7 +158,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         let error = (status > 0) ? UTCreateStringForOSType(OSType(status))
           .takeRetainedValue() as String :
-          AudioUnitErrString(status).takeRetainedValue() as String
+          NSString(utf8String: AudioUnitErrString(status))! as String
 
         alert.informativeText = informativeText + ": " + error +
           " (" + String(status) + ")"
@@ -167,21 +171,4 @@ class AppDelegate: NSObject, NSApplicationDelegate
         // Insert code here to tear down your application
         // let _ = audio.shutdown()
     }
-}
-
-// Send event
-func SendEvent()
-{
-    // Create an event to post to the main event queue
-    let event = NSEvent.otherEvent(with: .applicationDefined,
-                                   location: NSZeroPoint,
-                                   modifierFlags:
-                                     NSEvent.ModifierFlags(rawValue: 0),
-                                   timestamp: 0,
-                                   windowNumber: 0,
-                                   context: nil,
-                                   subtype: Int16(kEventAudioUpdate),
-                                   data1: 0,
-                                   data2: 0)
-    NSApp.sendEvent(event!)
 }
