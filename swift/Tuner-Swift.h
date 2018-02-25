@@ -187,9 +187,21 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #pragma clang diagnostic ignored "-Wnullability"
 
 SWIFT_MODULE_NAMESPACE_PUSH("Tuner")
+@class Scope;
+@class Spectrum;
+@class Display;
+@class Strobe;
+@class Meter;
+@class Status;
 
 SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 @interface AppDelegate : NSObject <NSApplicationDelegate>
+@property (nonatomic, strong) Scope * _Null_unspecified scope;
+@property (nonatomic, strong) Spectrum * _Null_unspecified spectrum;
+@property (nonatomic, strong) Display * _Null_unspecified display;
+@property (nonatomic, strong) Strobe * _Null_unspecified strobe;
+@property (nonatomic, strong) Meter * _Null_unspecified meter;
+@property (nonatomic, strong) Status * _Null_unspecified status;
 - (void)applicationDidFinishLaunching:(NSNotification * _Nonnull)aNotification;
 - (void)applicationWillTerminate:(NSNotification * _Nonnull)aNotification;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
@@ -204,9 +216,11 @@ SWIFT_CLASS("_TtC5Tuner9TunerView")
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
 @end
 
+@class NSEvent;
 
 SWIFT_CLASS("_TtC5Tuner7Display")
 @interface Display : TunerView
+- (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
@@ -223,6 +237,7 @@ SWIFT_CLASS("_TtC5Tuner5Meter")
 
 SWIFT_CLASS("_TtC5Tuner5Scope")
 @interface Scope : TunerView
+- (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
@@ -231,6 +246,8 @@ SWIFT_CLASS("_TtC5Tuner5Scope")
 
 SWIFT_CLASS("_TtC5Tuner8Spectrum")
 @interface Spectrum : TunerView
+- (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
+- (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;

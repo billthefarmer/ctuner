@@ -5,11 +5,34 @@
 //  Created by Bill Farmer on 18/02/2018.
 //  Copyright © 2018 Bill Farmer. All rights reserved.
 //
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <AppKit/AppKit.h>
-#include <Foundation/Foundation.h>
+#include <pthread.h>
+#include <Cocoa/Cocoa.h>
 #include <AudioUnit/AudioUnit.h>
 #include <CoreAudio/CoreAudio.h>
+#include <Accelerate/Accelerate.h>
+
+#include "Tuner-Swift.h"
+
+// Macros
+#define Length(a) (sizeof(a) / sizeof(a[0]))
+
+// Constants
+#define kMin        0.5
+#define kScale   2048.0
+#define kTimerDelay 0.1
 
 // Audio in values
 enum
@@ -30,10 +53,93 @@ enum
      kRange = kSamples * 3 / 8,
      kStep = kSamples / kOversample};
 
+// Tuner reference values
+enum
+    {kA5Reference = 440,
+     kC5Offset    = 57,
+     kOctave      = 12};
+
 // Event value
 enum
-    {kEventAudioUpdate = 1};
+    {kEventAudioUpdate = 1,
+     kEventAudioRate   = 2};
 
+// Maximum
+typedef struct
+{
+    float f;
+    float fr;
+    int n;
+} maximum;
+
+// App
+AppDelegate *app;
+
+// Scope data
+typedef struct
+{
+    float *data;
+    int length;
+} ScopeData;
+ScopeData scopeData;
+
+// Spectrum data
+typedef struct
+{
+    int length;
+    int expand;
+    int count;
+    bool zoom;
+    float f;
+    float r;
+    float l;
+    float h;
+    float *data;
+    float *values;
+} SpectrumData;
+SpectrumData spectrumData;
+
+// Display data
+typedef struct
+{
+    maximum *maxima;
+    float f;
+    float fr;
+    float c;
+    bool lock;
+    bool zoom;
+    bool multiple;
+    int count;
+    int n;
+} DisplayData;
+DisplayData displayData;
+
+// Strobe data
+typedef struct
+{
+    bool changed;
+    bool enable;
+    int colours;
+    float c;
+} StrobeData;
+StrobeData strobeData;
+
+// Meter data
+typedef struct
+{
+    float c;
+} MeterData;
+MeterData meterData;
+
+// Status data
+typedef struct
+{
+    float sample;
+    float actual;
+} StatusData;
+StatusData statusData;
+
+// Audio data
 typedef struct
 {
     AudioUnit output;
@@ -42,11 +148,17 @@ typedef struct
     int frames;
     float *buffer;
     float sample;
-    Boolean filter;
+    float reference;
+    pthread_mutex_t mutex;
+    bool filter;
+    bool downsample;
 } Audio;
+Audio audio;
 
+// Functions
 OSStatus SetupAudio(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
 char *AudioUnitErrString(OSStatus status);
+void (^ProcessAudio)();
