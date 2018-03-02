@@ -76,7 +76,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let spectrumHeight = NSLayoutConstraint(item: spectrumView,
                                                 attribute: .height,
                                                 relatedBy: .equal,
-                                                toItem: scope,
+                                                toItem: scopeView,
                                                 attribute: .height,
                                                 multiplier: 1,
                                                 constant: 0)
@@ -84,7 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let displayHeight = NSLayoutConstraint(item: displayView,
                                                attribute: .height,
                                                relatedBy: .equal,
-                                               toItem: spectrum,
+                                               toItem: spectrumView,
                                                attribute: .height,
                                                multiplier: 3.25,
                                                constant: 0)
@@ -92,7 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let strobeHeight = NSLayoutConstraint(item: strobeView,
                                               attribute: .height,
                                               relatedBy: .equal,
-                                              toItem: spectrum,
+                                              toItem: spectrumView,
                                               attribute: .height,
                                               multiplier: 1.375,
                                               constant: 0)
@@ -100,7 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let meterHeight = NSLayoutConstraint(item: meterView,
                                              attribute: .height,
                                              relatedBy: .equal,
-                                             toItem: strobe,
+                                             toItem: strobeView,
                                              attribute: .height,
                                              multiplier: 1.625,
                                              constant: 0)

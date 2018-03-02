@@ -43,7 +43,7 @@ OSStatus SetupAudio()
     }
 
     // Open it
-    OSStatus status = AudioComponentInstanceNew(cp, &audio.output);
+    OSStatus status = AudioComponentInstanceNew(cp, &audioData.output);
     if (status != noErr)
     {
         // AudioComponentInstanceNew
@@ -57,7 +57,7 @@ OSStatus SetupAudio()
 
     // Enable input
     enable = true;
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
 				  kAudioOutputUnitProperty_EnableIO,
 				  kAudioUnitScope_Input,
 				  1, &enable, sizeof(enable));
@@ -72,7 +72,7 @@ OSStatus SetupAudio()
 
     // Disable output
     enable = false;
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
 				  kAudioOutputUnitProperty_EnableIO,
 				  kAudioUnitScope_Output,
 				  0, &enable, sizeof(enable));
@@ -108,7 +108,7 @@ OSStatus SetupAudio()
     }
 
     // Set the audio unit device
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
                                   kAudioOutputUnitProperty_CurrentDevice, 
                                   kAudioUnitScope_Global,
                                   0, &id, size);
@@ -205,10 +205,10 @@ OSStatus SetupAudio()
     }
 
     // Set the divisor
-    audio.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
+    audioData.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
 
     // Set the rate
-    audio.sample = nominal / audio.divisor;
+    audioData.sample = nominal / audioData.divisor;
 
     // Get the buffer size range
 
@@ -230,7 +230,7 @@ OSStatus SetupAudio()
         return status;
     }
 
-    UInt32 frames = kStep * audio.divisor;
+    UInt32 frames = kStep * audioData.divisor;
     size = sizeof(frames);
 
     while (!((sizes.mMaximum >= frames) &&
@@ -238,7 +238,7 @@ OSStatus SetupAudio()
 	frames /= 2;
 
     // Set the max frames
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
 				  kAudioUnitProperty_MaximumFramesPerSlice,
 				  kAudioUnitScope_Global, 0,
 				  &frames, sizeof(frames));
@@ -260,10 +260,10 @@ OSStatus SetupAudio()
     if (status != noErr)
         return status;
 
-    audio.frames = frames;
+    audioData.frames = frames;
 
     // Get the frames
-    status = AudioUnitGetProperty(audio.output,
+    status = AudioUnitGetProperty(audioData.output,
 				  kAudioUnitProperty_MaximumFramesPerSlice,
 				  kAudioUnitScope_Global, 0, &frames, &size);
     if (status != noErr)
@@ -275,13 +275,13 @@ OSStatus SetupAudio()
         return status;
     }
 
-    audio.frames = frames;
+    audioData.frames = frames;
 
     AudioStreamBasicDescription format;
     size = sizeof(format);
 
     // Get stream format
-    status = AudioUnitGetProperty(audio.output,
+    status = AudioUnitGetProperty(audioData.output,
 				  kAudioUnitProperty_StreamFormat,
 				  kAudioUnitScope_Input, 1,
 				  &format, &size);
@@ -301,7 +301,7 @@ OSStatus SetupAudio()
     format.mChannelsPerFrame = kChannelsPerFrame;
 
     // Set stream format
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
 				  kAudioUnitProperty_StreamFormat,
 				  kAudioUnitScope_Output, 1,
 				  &format, sizeof(format));
@@ -315,13 +315,13 @@ OSStatus SetupAudio()
     }
 
     // Create the mutex for locking
-    pthread_mutex_init(&audio.mutex, nil);
+    pthread_mutex_init(&audioData.mutex, nil);
 
     AURenderCallbackStruct input =
-	{InputProc, &audio.output};
+	{InputProc, &audioData.output};
 
     // Set callback
-    status = AudioUnitSetProperty(audio.output,
+    status = AudioUnitSetProperty(audioData.output,
 				  kAudioOutputUnitProperty_SetInputCallback,
 				  kAudioUnitScope_Global, 0,
 				  &input, sizeof(input));
@@ -335,7 +335,7 @@ OSStatus SetupAudio()
     }
 
     // Init the audio unit
-    status = AudioUnitInitialize(audio.output);
+    status = AudioUnitInitialize(audioData.output);
 
     if (status != noErr)
     {
@@ -346,7 +346,7 @@ OSStatus SetupAudio()
     }
 
     // Start the audio unit
-    status = AudioOutputUnitStart(audio.output);
+    status = AudioOutputUnitStart(audioData.output);
 
     if (status != noErr)
     {
@@ -370,8 +370,8 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     // Initialise data structs
     static Float32 buffer[kSamples];
 
-    if (audio.buffer == nil)
-	audio.buffer = buffer;
+    if (audioData.buffer == nil)
+	audioData.buffer = buffer;
 
     // Render data
     OSStatus status
@@ -392,16 +392,17 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     }
 
     // Copy the input data
-    memmove(buffer, buffer + (audio.frames / audio.divisor),
-	    (kSamples - (audio.frames / audio.divisor)) * sizeof(Float32));
+    memmove(buffer, buffer + (audioData.frames / audioData.divisor),
+	    (kSamples - (audioData.frames / audioData.divisor)) *
+            sizeof(Float32));
 
     Float32 *data = abl.mBuffers[0].mData;
 
     // Lock the mutex
-    pthread_mutex_lock(&audio.mutex);
+    pthread_mutex_lock(&audioData.mutex);
 
     // Butterworth filter, 3dB/octave
-    for (int i = 0; i < (audio.frames / audio.divisor); i++)
+    for (int i = 0; i < (audioData.frames / audioData.divisor); i++)
     {
 	static float G = 3.023332184e+01;
 	static float K = 0.9338478249;
@@ -410,18 +411,18 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	static float yv[2];
 
 	xv[0] = xv[1];
-	xv[1] = data[i * audio.divisor] / G;
+	xv[1] = data[i * audioData.divisor] / G;
 
 	yv[0] = yv[1];
 	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
 
 	// Choose filtered/unfiltered data
-	buffer[(kSamples - (audio.frames / audio.divisor)) + i] =
-	    audio.filter? yv[1]: data[i * audio.divisor];
+	buffer[(kSamples - (audioData.frames / audioData.divisor)) + i] =
+	    audioData.filter? yv[1]: data[i * audioData.divisor];
     }
 
     // Unlock the mutex
-    pthread_mutex_unlock(&audio.mutex);
+    pthread_mutex_unlock(&audioData.mutex);
 
     // Run in main queue
     dispatch_async(dispatch_get_main_queue(), ProcessAudio);
@@ -467,20 +468,20 @@ void (^ProcessAudio)() = ^
     static float expect;
 
     // Initialise structures
-    if (scope.data == nil)
+    if (scopeData.data == nil)
     {
-	scope.data = audio.buffer + kSamples -
-        (audio.frames / audio.divisor);
-	scope.length = audio.frames / audio.divisor;
+	scopeData.data = audioData.buffer + kSamples -
+        (audioData.frames / audioData.divisor);
+	scopeData.length = audioData.frames / audioData.divisor;
 
-	spectrum.data = xa;
-	spectrum.length = kRange;
-	spectrum.values = values;
+	spectrumData.data = xa;
+	spectrumData.length = kRange;
+	spectrumData.values = values;
 
 	displayData.maxima = maxima;
 
-	fps = audio.sample / (float)kSamples;
-	expect = 2.0 * M_PI * (float)(audio.frames / audio.divisor) /
+	fps = audioData.sample / (float)kSamples;
+	expect = 2.0 * M_PI * (float)(audioData.frames / audioData.divisor) /
 	    (float)kSamples;
 
 	// Init Hamming window
@@ -503,10 +504,10 @@ void (^ProcessAudio)() = ^
     float norm = dmax;
 
     // Get max magitude
-    vDSP_maxmgv(audio.buffer, 1, &dmax, kSamples);
+    vDSP_maxmgv(audioData.buffer, 1, &dmax, kSamples);
 
     // Divide by normalisation
-    vDSP_vsdiv(audio.buffer, 1, &norm, input, 1, kSamples);
+    vDSP_vsdiv(audioData.buffer, 1, &norm, input, 1, kSamples);
 
     // Multiply by window
     vDSP_vmul(input, 1, window, 1, input, 1, kSamples);
@@ -569,7 +570,7 @@ void (^ProcessAudio)() = ^
     memmove(xp, xq, kRange * sizeof(float));
 
     // Downsample
-    if (audio.downsample)
+    if (audioData.downsample)
     {
 	// x2 = xa << 2
 	for (int i = 0; i < Length(x2); i++)
@@ -652,16 +653,16 @@ void (^ProcessAudio)() = ^
 
 	    // Cents relative to reference
 	    float cf =
-		-12.0 * log2f(audio.reference / xf[i]);
+		-12.0 * log2f(audioData.reference / xf[i]);
 
 	    // Reference note
-	    maxima[count].fr = audio.reference * powf(2.0, round(cf) / 12.0);
+	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) / 12.0);
 
 	    // Note number
 	    maxima[count].n = round(cf) + kC5Offset;
 
 	    // Set limit to octave above
-	    if (!audio.downsample && (limit > i * 2))
+	    if (!audioData.downsample && (limit > i * 2))
 		limit = i * 2 - 1;
 
 	    count++;
@@ -686,19 +687,19 @@ void (^ProcessAudio)() = ^
 	found = true;
 
 	// Frequency
-	if (!audio.downsample)
+	if (!audioData.downsample)
 	    f = maxima[0].f;
 
 	// Cents relative to reference
 	float cf =
-	    -12.0 * log2f(audio.reference / f);
+	    -12.0 * log2f(audioData.reference / f);
 
 	// Reference note
-	fr = audio.reference * powf(2.0, round(cf) / 12.0);
+	fr = audioData.reference * powf(2.0, round(cf) / 12.0);
 
 	// Lower and upper freq
-	fl = audio.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
-	fh = audio.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
+	fl = audioData.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
+	fh = audioData.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 	n = round(cf) + kC5Offset;
@@ -740,14 +741,14 @@ void (^ProcessAudio)() = ^
 	for (int i = 0; i < count; i++)
 	    values[i] = maxima[i].f / fps;
 
-	spectrum.count = count;
+	spectrumData.count = count;
 
 	if (found)
 	{
-	    spectrum.f = f  / fps;
-	    spectrum.r = fr / fps;
-	    spectrum.l = fl / fps;
-	    spectrum.h = fh / fps;
+	    spectrumData.f = f  / fps;
+	    spectrumData.r = fr / fps;
+	    spectrumData.l = fl / fps;
+	    spectrumData.h = fh / fps;
 	}
 
 	spectrumView.needsDisplay = true;
@@ -773,10 +774,10 @@ void (^ProcessAudio)() = ^
             displayView.needsDisplay = true;
 
 	    // Update meter
-	    meter.c = c;
+	    meterData.c = c;
 
 	    // Update strobe
-	    strobe.c = c;
+	    strobeData.c = c;
 	}
 
 	// Reset count;
@@ -802,16 +803,16 @@ void (^ProcessAudio)() = ^
                 displayView.needsDisplay = true;
 
 		// Update meter
-		meter.c = 0.0;
+		meterData.c = 0.0;
 
 		// Update strobe
-		strobe.c = 0.0;
+		strobeData.c = 0.0;
 
 		// Update spectrum
-		spectrum.f = 0.0;
-		spectrum.r = 0.0;
-		spectrum.l = 0.0;
-		spectrum.h = 0.0;
+		spectrumData.f = 0.0;
+		spectrumData.r = 0.0;
+		spectrumData.l = 0.0;
+		spectrumData.h = 0.0;
 	    }
 	}
     }

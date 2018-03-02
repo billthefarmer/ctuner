@@ -80,8 +80,8 @@ typedef struct
 {
     float *data;
     int length;
-} Scope;
-Scope scope;
+} ScopeData;
+ScopeData scopeData;
 ScopeView *scopeView;
 
 // Spectrum data
@@ -97,8 +97,8 @@ typedef struct
     float h;
     float *data;
     float *values;
-} Spectrum;
-Spectrum spectrum;
+} SpectrumData;
+SpectrumData spectrumData;
 SpectrumView *spectrumView;
 
 // Display data
@@ -113,8 +113,8 @@ typedef struct
     bool multiple;
     int count;
     int n;
-} Display;
-Display displayData;
+} DisplayData;
+DisplayData displayData;
 DisplayView *displayView;
 
 // Strobe data
@@ -124,16 +124,16 @@ typedef struct
     bool enable;
     int colours;
     float c;
-} Strobe;
-Strobe strobe;
+} StrobeData;
+StrobeData strobeData;
 StrobeView *strobeView;
 
 // Meter data
 typedef struct
 {
     float c;
-} Meter;
-Meter meter;
+} MeterData;
+MeterData meterData;
 MeterView *meterView;
 
 // Status data
@@ -141,8 +141,8 @@ typedef struct
 {
     float sample;
     float actual;
-} Status;
-Status status;
+} StatusData;
+StatusData statusData;
 StatusView *statusView;
 
 // Audio data
@@ -158,8 +158,8 @@ typedef struct
     pthread_mutex_t mutex;
     bool filter;
     bool downsample;
-} Audio;
-Audio audio;
+} AudioData;
+AudioData audioData;
 
 // Audio filter
 typedef struct

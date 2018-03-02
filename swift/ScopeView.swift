@@ -29,7 +29,7 @@ class ScopeView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            audio.filter = !audio.filter
+            audioData.filter = !audioData.filter
         }
     }
 
@@ -66,7 +66,7 @@ class ScopeView: TunerView
 
         path.stroke()
 
-        if (scope.data == nil)
+        if (scopeData.data == nil)
         {
             return
         }
@@ -83,7 +83,7 @@ class ScopeView: TunerView
 
         for i in 1 ..< Int(width)
         {
-	    dx = scope.data[i] - scope.data[i - 1]
+	    dx = scopeData.data[i] - scopeData.data[i - 1]
 	    if (maxdx < dx)
 	    {
 	        maxdx = dx
@@ -114,19 +114,19 @@ class ScopeView: TunerView
 
         for i in 0 ..< Int(width)
         {
-	    if (max < abs(scope.data[n + i]))
+	    if (max < abs(scopeData.data[n + i]))
             {
-	        max = abs(scope.data[n + i])
+	        max = abs(scopeData.data[n + i])
             }
 
-	    let y = scope.data[n + i] / yscale
+	    let y = scopeData.data[n + i] / yscale
 	    path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(i), y: CGFloat(y)))
         }
 
             path.stroke()
 
         // Show F if filtered
-        if (audio.filter == true)
+        if (audioData.filter == true)
         {
 	    // Yellow text
             NSColor.yellow.set()

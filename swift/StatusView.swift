@@ -10,8 +10,6 @@ import Cocoa
 
 class StatusView: NSView
 {
-    var audio: Audio!
-
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)
