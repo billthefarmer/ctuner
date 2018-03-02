@@ -31,8 +31,9 @@ APPVDMG = $(APPNAME)-$(APPVERSION).dmg
 HEADER = Tuner-Bridging-Header.h
 SWIFTH = Tuner-Swift.h
 
-SOURCES = AppDelegate.swift Scope.swift Spectrum.swift Strobe.swift \
-		Display.swift Meter.swift Status.swift TunerView.swift Audio.o
+SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
+		StrobeView.swift DisplayView.swift MeterView.swift \
+		StatusView.swift TunerView.swift Audio.o
 
 SFLAGS = -g -target x86_64-apple-macosx10.9 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH)

@@ -26,18 +26,10 @@ var received = false;
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     var window: NSWindow!
-
     var menu: NSMenu!
 
     var container: NSStackView!
     var stack: NSStackView!
-
-    @objc var scope: Scope!
-    @objc var spectrum: Spectrum!
-    @objc var display: Display!
-    @objc var strobe: Strobe!
-    @objc var meter: Meter!
-    @objc var status: Status!
 
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
@@ -71,17 +63,17 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
-        scope = Scope()
-        spectrum = Spectrum()
-        display = Display()
-        strobe = Strobe()
-        meter = Meter()
-        status = Status()
+        scopeView = ScopeView()
+        spectrumView = SpectrumView()
+        displayView = DisplayView()
+        strobeView = StrobeView()
+        meterView = MeterView()
+        statusView = StatusView()
 
-        stack = NSStackView(views: [scope, spectrum, display,
-                                    strobe, meter])
+        stack = NSStackView(views: [scopeView, spectrumView, displayView,
+                                    strobeView, meterView])
 
-        let spectrumHeight = NSLayoutConstraint(item: spectrum,
+        let spectrumHeight = NSLayoutConstraint(item: spectrumView,
                                                 attribute: .height,
                                                 relatedBy: .equal,
                                                 toItem: scope,
@@ -89,7 +81,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                                 multiplier: 1,
                                                 constant: 0)
 
-        let displayHeight = NSLayoutConstraint(item: display,
+        let displayHeight = NSLayoutConstraint(item: displayView,
                                                attribute: .height,
                                                relatedBy: .equal,
                                                toItem: spectrum,
@@ -97,7 +89,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                                multiplier: 3.25,
                                                constant: 0)
 
-        let strobeHeight = NSLayoutConstraint(item: strobe,
+        let strobeHeight = NSLayoutConstraint(item: strobeView,
                                               attribute: .height,
                                               relatedBy: .equal,
                                               toItem: spectrum,
@@ -105,7 +97,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                               multiplier: 1.375,
                                               constant: 0)
 
-        let meterHeight = NSLayoutConstraint(item: meter,
+        let meterHeight = NSLayoutConstraint(item: meterView,
                                              attribute: .height,
                                              relatedBy: .equal,
                                              toItem: strobe,
@@ -123,9 +115,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
 
-        container = NSStackView(views: [stack, status])
+        container = NSStackView(views: [stack, statusView])
 
-        let statusHeight = NSLayoutConstraint(item: status,
+        let statusHeight = NSLayoutConstraint(item: statusView,
                                               attribute: .height,
                                               relatedBy: .equal,
                                               toItem: stack,
@@ -137,12 +129,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         window.contentView = container
 
-        scope.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        spectrum.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        display.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        strobe.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        meter.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        status.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        statusView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Start audio
         let result = SetupAudio()

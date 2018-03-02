@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class Display: TunerView
+class DisplayView: TunerView
 {
 
     override func mouseDown(with event: NSEvent)

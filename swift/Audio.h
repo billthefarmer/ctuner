@@ -80,8 +80,9 @@ typedef struct
 {
     float *data;
     int length;
-} ScopeData;
-ScopeData scopeData;
+} Scope;
+Scope scope;
+ScopeView *scopeView;
 
 // Spectrum data
 typedef struct
@@ -96,8 +97,9 @@ typedef struct
     float h;
     float *data;
     float *values;
-} SpectrumData;
-SpectrumData spectrumData;
+} Spectrum;
+Spectrum spectrum;
+SpectrumView *spectrumView;
 
 // Display data
 typedef struct
@@ -111,8 +113,9 @@ typedef struct
     bool multiple;
     int count;
     int n;
-} DisplayData;
-DisplayData displayData;
+} Display;
+Display displayData;
+DisplayView *displayView;
 
 // Strobe data
 typedef struct
@@ -121,23 +124,26 @@ typedef struct
     bool enable;
     int colours;
     float c;
-} StrobeData;
-StrobeData strobeData;
+} Strobe;
+Strobe strobe;
+StrobeView *strobeView;
 
 // Meter data
 typedef struct
 {
     float c;
-} MeterData;
-MeterData meterData;
+} Meter;
+Meter meter;
+MeterView *meterView;
 
 // Status data
 typedef struct
 {
     float sample;
     float actual;
-} StatusData;
-StatusData statusData;
+} Status;
+Status status;
+StatusView *statusView;
 
 // Audio data
 typedef struct
@@ -154,6 +160,19 @@ typedef struct
     bool downsample;
 } Audio;
 Audio audio;
+
+// Audio filter
+typedef struct
+{
+    bool note[12];
+    bool octave[8];
+} Filter;
+// Filter filter =
+//     {{true, true, true, true,
+//       true, true, true, true,
+//       true, true, true, true},
+//      {true, true, true, true,
+//       true, true, true, true}};
 
 // Functions
 OSStatus SetupAudio(void);

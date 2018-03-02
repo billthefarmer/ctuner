@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class Status: NSView
+class StatusView: NSView
 {
     var audio: Audio!
 

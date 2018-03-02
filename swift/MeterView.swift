@@ -1,5 +1,5 @@
 //
-//  Strobe.swift
+//  Meter.swift
 //  Tuner
 //
 //  Created by Bill Farmer on 08/10/2017.
@@ -8,7 +8,7 @@
 
 import Cocoa
 
-class Strobe: TunerView
+class MeterView: TunerView
 {
 
     override func draw(_ dirtyRect: NSRect)
@@ -17,11 +17,7 @@ class Strobe: TunerView
 
         // Drawing code here.
 
+        NSEraseRect(rect)
     }
-
-    override func resize(withOldSuperviewSize oldSize: NSSize)
-    {
-        super.resize(withOldSuperviewSize: oldSize)
-
-    }
+    
 }

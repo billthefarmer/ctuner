@@ -467,15 +467,15 @@ void (^ProcessAudio)() = ^
     static float expect;
 
     // Initialise structures
-    if (scopeData.data == nil)
+    if (scope.data == nil)
     {
-	scopeData.data = audio.buffer + kSamples -
+	scope.data = audio.buffer + kSamples -
         (audio.frames / audio.divisor);
-	scopeData.length = audio.frames / audio.divisor;
+	scope.length = audio.frames / audio.divisor;
 
-	spectrumData.data = xa;
-	spectrumData.length = kRange;
-	spectrumData.values = values;
+	spectrum.data = xa;
+	spectrum.length = kRange;
+	spectrum.values = values;
 
 	displayData.maxima = maxima;
 
@@ -491,7 +491,7 @@ void (^ProcessAudio)() = ^
     }
 
     // Refresh scope
-    app.scope.needsDisplay = true;
+    scopeView.needsDisplay = true;
 
     // Maximum data value
     static float dmax;
@@ -734,23 +734,23 @@ void (^ProcessAudio)() = ^
     if (!displayData.lock)
     {
 	// Update scope window
-	app.scope.needsDisplay = true;
+	scopeView.needsDisplay = true;
 
 	// Update spectrum window
 	for (int i = 0; i < count; i++)
 	    values[i] = maxima[i].f / fps;
 
-	spectrumData.count = count;
+	spectrum.count = count;
 
 	if (found)
 	{
-	    spectrumData.f = f  / fps;
-	    spectrumData.r = fr / fps;
-	    spectrumData.l = fl / fps;
-	    spectrumData.h = fh / fps;
+	    spectrum.f = f  / fps;
+	    spectrum.r = fr / fps;
+	    spectrum.l = fl / fps;
+	    spectrum.h = fh / fps;
 	}
 
-	app.spectrum.needsDisplay = true;
+	spectrumView.needsDisplay = true;
     }
 
     // Timer
@@ -770,13 +770,13 @@ void (^ProcessAudio)() = ^
 	    displayData.count = count;
 
 	    // Update display
-            app.display.needsDisplay = true;
+            displayView.needsDisplay = true;
 
 	    // Update meter
-	    meterData.c = c;
+	    meter.c = c;
 
 	    // Update strobe
-	    strobeData.c = c;
+	    strobe.c = c;
 	}
 
 	// Reset count;
@@ -799,19 +799,19 @@ void (^ProcessAudio)() = ^
 		displayData.count = 0;
 
 		// Update display
-                app.display.needsDisplay = true;
+                displayView.needsDisplay = true;
 
 		// Update meter
-		meterData.c = 0.0;
+		meter.c = 0.0;
 
 		// Update strobe
-		strobeData.c = 0.0;
+		strobe.c = 0.0;
 
 		// Update spectrum
-		spectrumData.f = 0.0;
-		spectrumData.r = 0.0;
-		spectrumData.l = 0.0;
-		spectrumData.h = 0.0;
+		spectrum.f = 0.0;
+		spectrum.r = 0.0;
+		spectrum.l = 0.0;
+		spectrum.h = 0.0;
 	    }
 	}
     }

@@ -20,7 +20,7 @@
 
 import Cocoa
 
-class Scope: TunerView
+class ScopeView: TunerView
 {
     let kTextSize: CGFloat = 10
     var max: Float = 0
@@ -66,7 +66,7 @@ class Scope: TunerView
 
         path.stroke()
 
-        if (scopeData.data == nil)
+        if (scope.data == nil)
         {
             return
         }
@@ -83,7 +83,7 @@ class Scope: TunerView
 
         for i in 1 ..< Int(width)
         {
-	    dx = scopeData.data[i] - scopeData.data[i - 1]
+	    dx = scope.data[i] - scope.data[i - 1]
 	    if (maxdx < dx)
 	    {
 	        maxdx = dx
@@ -114,12 +114,12 @@ class Scope: TunerView
 
         for i in 0 ..< Int(width)
         {
-	    if (max < abs(scopeData.data[n + i]))
+	    if (max < abs(scope.data[n + i]))
             {
-	        max = abs(scopeData.data[n + i])
+	        max = abs(scope.data[n + i])
             }
 
-	    let y = scopeData.data[n + i] / yscale
+	    let y = scope.data[n + i] / yscale
 	    path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(i), y: CGFloat(y)))
         }
 

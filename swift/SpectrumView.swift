@@ -20,7 +20,7 @@
 
 import Cocoa
 
-class Spectrum: TunerView
+class SpectrumView: TunerView
 {
     let kTextSize: CGFloat = 10
     var max: Float = 0
@@ -29,15 +29,15 @@ class Spectrum: TunerView
     {
         super.resize(withOldSuperviewSize: oldSize)
 
-        spectrumData.expand = 1
-        spectrumData.zoom = false;
+        spectrum.expand = 1
+        spectrum.zoom = false;
     }
 
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
-            spectrumData.zoom = !spectrumData.zoom
+            spectrum.zoom = !spectrum.zoom
         }
     }
 
@@ -67,7 +67,7 @@ class Spectrum: TunerView
 
         path.stroke()
 
-        if (spectrumData.data == nil)
+        if (spectrum.data == nil)
         {
             return
         }
@@ -93,17 +93,17 @@ class Spectrum: TunerView
         path.removeAllPoints()
         path.move(to: NSZeroPoint)
 
-        if (spectrumData.zoom)
+        if (spectrum.zoom)
         {
 	    // Calculate scale
-	    let xscale = (width / (spectrumData.r - spectrumData.l)) / 2.0
+	    let xscale = (width / (spectrum.r - spectrum.l)) / 2.0
 
 	    // Draw trace
-	    for i in Int(floor(spectrumData.l)) ..< Int(ceil(spectrumData.h))
+	    for i in Int(floor(spectrum.l)) ..< Int(ceil(spectrum.h))
 	    {
-	        if (i > 0 && i < spectrumData.length)
+	        if (i > 0 && i < spectrum.length)
 	        {
-		    let value = spectrumData.data[i]
+		    let value = spectrum.data[i]
 
 		    if (max < value)
                     {
@@ -111,7 +111,7 @@ class Spectrum: TunerView
                     }
 
 		    let y = value * yscale
-		    let x = (Float(i) - spectrumData.l) * xscale 
+		    let x = (Float(i) - spectrum.l) * xscale 
 
 		    path.line(to: NSPoint(x: Int(x), y: Int(y)))
 	        }
@@ -127,14 +127,14 @@ class Spectrum: TunerView
             path.removeAllPoints()
 
 	    // Draw line for nearest frequency
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< spectrum.count
 	    {
 	        // Draw line for values that are in range
-	        if (spectrumData.values[Int(i)] > spectrumData.l &&
-		      spectrumData.values[Int(i)] < spectrumData.h)
+	        if (spectrum.values[Int(i)] > spectrum.l &&
+		      spectrum.values[Int(i)] < spectrum.h)
 	        {
-		    let x = (spectrumData.values[Int(i)] -
-                               spectrumData.l) * xscale
+		    let x = (spectrum.values[Int(i)] -
+                               spectrum.l) * xscale
 		    path.move(to: NSPoint(x: Int(x), y: 0))
 		    path.line(to: NSPoint(x: Int(x), y: Int(height)))
 	        }
@@ -146,12 +146,12 @@ class Spectrum: TunerView
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             font.set()
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< spectrum.count
 	    {
 	        // Show value for values that are in range
 
-	        if (spectrumData.values[Int(i)] > spectrumData.l &&
-		      spectrumData.values[Int(i)] < spectrumData.h)
+	        if (spectrum.values[Int(i)] > spectrum.l &&
+		      spectrum.values[Int(i)] < spectrum.h)
 	        {
 		    let f = displayData.maxima[Int(i)].f
 
@@ -166,8 +166,8 @@ class Spectrum: TunerView
 		        continue
                     }
 
-		    let x = (spectrumData.values[Int(i)] -
-                               spectrumData.l) * xscale
+		    let x = (spectrum.values[Int(i)] -
+                               spectrum.l) * xscale
 
 		    let s = String(format: "%+0.0f", c * 100.0)
 		    s.draw(at: NSPoint(x: Int(x), y: 1))
@@ -177,8 +177,8 @@ class Spectrum: TunerView
 
         else
         {
-	    let xscale = Float(spectrumData.length /
-			    spectrumData.expand) / width
+	    let xscale = Float(spectrum.length /
+			    spectrum.expand) / width
 
 	    for x in 0 ..< Int(width)
 	    {
@@ -191,9 +191,9 @@ class Spectrum: TunerView
 		    {
 		        let n = x * Int(xscale) + j
 
-		        if (value < spectrumData.data[n])
+		        if (value < spectrum.data[n])
                         {
-			    value = spectrumData.data[n]
+			    value = spectrum.data[n]
                         }
 		    }
 	        }
@@ -214,11 +214,11 @@ class Spectrum: TunerView
 	    NSColor.yellow.set()
             path.removeAllPoints()
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< spectrum.count
 	    {
 	        // Draw line for values
 
-	        let x = spectrumData.values[Int(i)] / xscale
+	        let x = spectrum.values[Int(i)] / xscale
 	        path.move(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
                                       y: NSMinY(rect)))
 	        path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
@@ -231,7 +231,7 @@ class Spectrum: TunerView
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             font.set()
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< spectrum.count
 	    {
 	        // Show value for values
 
@@ -250,14 +250,14 @@ class Spectrum: TunerView
 		    continue
                 }
 
-	        let x = spectrumData.values[Int(i)] / xscale
+	        let x = spectrum.values[Int(i)] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
 	        s.draw(at: NSPoint(x: Int(x), y: 1))
 	    }
 
-	    if (spectrumData.expand > 1)
+	    if (spectrum.expand > 1)
 	    {
-	        let s = String(format: "x%d", spectrumData.expand)
+	        let s = String(format: "x%d", spectrum.expand)
 	        s.draw(at: NSPoint(x: 0, y: 1))
 	    }
         }

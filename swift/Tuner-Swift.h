@@ -187,21 +187,9 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #pragma clang diagnostic ignored "-Wnullability"
 
 SWIFT_MODULE_NAMESPACE_PUSH("Tuner")
-@class Scope;
-@class Spectrum;
-@class Display;
-@class Strobe;
-@class Meter;
-@class Status;
 
 SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 @interface AppDelegate : NSObject <NSApplicationDelegate>
-@property (nonatomic, strong) Scope * _Null_unspecified scope;
-@property (nonatomic, strong) Spectrum * _Null_unspecified spectrum;
-@property (nonatomic, strong) Display * _Null_unspecified display;
-@property (nonatomic, strong) Strobe * _Null_unspecified strobe;
-@property (nonatomic, strong) Meter * _Null_unspecified meter;
-@property (nonatomic, strong) Status * _Null_unspecified status;
 - (void)applicationDidFinishLaunching:(NSNotification * _Nonnull)aNotification;
 - (void)applicationWillTerminate:(NSNotification * _Nonnull)aNotification;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
@@ -218,8 +206,8 @@ SWIFT_CLASS("_TtC5Tuner9TunerView")
 
 @class NSEvent;
 
-SWIFT_CLASS("_TtC5Tuner7Display")
-@interface Display : TunerView
+SWIFT_CLASS("_TtC5Tuner11DisplayView")
+@interface DisplayView : TunerView
 - (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
@@ -227,16 +215,16 @@ SWIFT_CLASS("_TtC5Tuner7Display")
 @end
 
 
-SWIFT_CLASS("_TtC5Tuner5Meter")
-@interface Meter : TunerView
+SWIFT_CLASS("_TtC5Tuner9MeterView")
+@interface MeterView : TunerView
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-SWIFT_CLASS("_TtC5Tuner5Scope")
-@interface Scope : TunerView
+SWIFT_CLASS("_TtC5Tuner9ScopeView")
+@interface ScopeView : TunerView
 - (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
@@ -244,8 +232,8 @@ SWIFT_CLASS("_TtC5Tuner5Scope")
 @end
 
 
-SWIFT_CLASS("_TtC5Tuner8Spectrum")
-@interface Spectrum : TunerView
+SWIFT_CLASS("_TtC5Tuner12SpectrumView")
+@interface SpectrumView : TunerView
 - (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
 - (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
@@ -254,16 +242,16 @@ SWIFT_CLASS("_TtC5Tuner8Spectrum")
 @end
 
 
-SWIFT_CLASS("_TtC5Tuner6Status")
-@interface Status : NSView
+SWIFT_CLASS("_TtC5Tuner10StatusView")
+@interface StatusView : NSView
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
 @end
 
 
-SWIFT_CLASS("_TtC5Tuner6Strobe")
-@interface Strobe : TunerView
+SWIFT_CLASS("_TtC5Tuner10StrobeView")
+@interface StrobeView : TunerView
 - (void)drawRect:(NSRect)dirtyRect;
 - (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
