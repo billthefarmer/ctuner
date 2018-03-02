@@ -1765,6 +1765,12 @@ void zoom_clicked(GtkWidget widget, void *data)
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(options.zoom));
 }
 
+// Correction changed
+void correction_changed(GtkWidget widget, void *data)
+{
+    audio.correction = gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.correction));
+}
+
 // Widget clicked
 void widget_clicked(GtkWidget *widget, GdkEventButton *event, void *data)
 {
@@ -1932,6 +1938,10 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.correction),
 			      audio.correction);
     gtk_box_pack_start(GTK_BOX(hbox), options.correction, FALSE, FALSE, 0);
+
+    // Correction changed
+    g_signal_connect(G_OBJECT(options.correction), "value-changed",
+		     G_CALLBACK(correction_changed), window);
 
     // Save button
     save = gtk_button_new_with_label("  Save  ");
