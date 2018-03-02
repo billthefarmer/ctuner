@@ -45,7 +45,6 @@
 #define MINIMUM   0.5
 
 // Layout values
-
 enum
     {MARGIN = 8,
      DISPLAY_WIDTH = 300,
@@ -56,14 +55,12 @@ enum
      METER_HEIGHT = 52};
 
 // PCM values
-
 enum
     {SAMPLE_RATE = 11025,
      LATENCY = 50000,
      CHANNELS = 1};
 
 // Audio processing values
-
 enum
     {MAXIMA = 8,
      OVERSAMPLE = 16,
@@ -72,20 +69,17 @@ enum
      STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
-
 enum
     {A5_REFERENCE = 440,
      C5_OFFSET = 57};
 
 // Strobe colours
-
 enum
     {BLUE,
      OLIVE,
      MAGENTA};
 
 // Structs
-
 typedef struct
 {
     double r;
