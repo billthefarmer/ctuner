@@ -25,7 +25,6 @@
 #include "tuner.h"
 
 // Data
-
 Scope scope;
 Spectrum spectrum;
 Display display;
@@ -38,11 +37,9 @@ Options options;
 Audio audio;
 
 // Main function
-
 int main(int argc, char *argv[])
 {
     // Widgets
-
     GtkWidget *window;
     GtkWidget *vbox;
     GtkWidget *wbox;
@@ -52,55 +49,45 @@ int main(int argc, char *argv[])
     GtkWidget *separator;
 
     // Restore options
-
     restoreOptions();
 
     // Initialise threads
-
     gdk_threads_init();
     gdk_threads_enter();
 
     // Initialise GTK
-
     gtk_init(&argc, &argv);
 
     // Create main window
-
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Tuner");
     gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
 
     // V box, this contains the fake status bar and the rest of the
     // display
-
     vbox = gtk_vbox_new(FALSE, MARGIN);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     // Label, this label and separator are a fake status bar that can
     // have small text
-
     status.widget = gtk_label_new(NULL);
     gtk_label_set_text(GTK_LABEL(status.widget), "  Sample rate: 11025");
     gtk_misc_set_alignment(GTK_MISC(status.widget), 0, 0.5);
     gtk_box_pack_end(GTK_BOX(vbox), status.widget, FALSE, FALSE, 0);
 
     // Separator
-
     // separator = gtk_hseparator_new();
     // gtk_box_pack_end(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
 
     // H box
-
     hbox = gtk_hbox_new(FALSE, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
 
     // V box
-
     vbox = gtk_vbox_new(FALSE, MARGIN);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, FALSE, FALSE, MARGIN);
 
     // Scope
-
     scope.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(scope.widget, DISPLAY_WIDTH, SCOPE_HEIGHT);
     gtk_widget_set_name(scope.widget, "scope");
@@ -110,14 +97,12 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(scope_draw_callback), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(scope.widget), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
     gtk_widget_add_events(scope.widget, GDK_BUTTON_PRESS_MASK);
 
     // Spectrum
-
     spectrum.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(spectrum.widget,
 				DISPLAY_WIDTH, SPECTRUM_HEIGHT);
@@ -128,14 +113,12 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(spectrum_draw_callback), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(spectrum.widget), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
     gtk_widget_add_events(spectrum.widget, GDK_BUTTON_PRESS_MASK);
 
     // Display
-
     display.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(display.widget, DISPLAY_WIDTH, DISPLAY_HEIGHT);
     gtk_widget_set_name(display.widget, "display");
@@ -145,14 +128,12 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(display_draw_callback), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(display.widget), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
     gtk_widget_add_events(display.widget, GDK_BUTTON_PRESS_MASK);
 
     // Strobe
-
     strobe.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(strobe.widget, DISPLAY_WIDTH, STROBE_HEIGHT);
     gtk_widget_set_name(strobe.widget, "strobe");
@@ -162,14 +143,12 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(strobe_draw_callback), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(strobe.widget), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
     gtk_widget_add_events(strobe.widget, GDK_BUTTON_PRESS_MASK);
 
     // Meter
-
     meter.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(meter.widget, DISPLAY_WIDTH, METER_HEIGHT);
     gtk_widget_set_name(meter.widget, "meter");
@@ -179,17 +158,14 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(meter_draw_callback), NULL);
 
     // H box
-
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     // Options button
-
     options = gtk_button_new_with_label(" Options... ");
     gtk_box_pack_start(GTK_BOX(hbox), options, FALSE, FALSE, 0);
 
     // Options clicked
-
     g_signal_connect(G_OBJECT(options), "clicked",
 		     G_CALLBACK(options_clicked), window);
 
@@ -199,12 +175,10 @@ int main(int argc, char *argv[])
     gtk_box_pack_end(GTK_BOX(hbox), quit, FALSE, FALSE, 0);
 
     // Quit clicked
-
     g_signal_connect(G_OBJECT(quit), "clicked",
 		     G_CALLBACK(gtk_main_quit), NULL);
 
     // Key pressed callback
-
     g_signal_connect(G_OBJECT(window), "key-press-event",
 		     G_CALLBACK(key_press), NULL);
 
@@ -216,26 +190,20 @@ int main(int argc, char *argv[])
     gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 
     // Destroy window callback
-
     g_signal_connect(G_OBJECT(window), "destroy",
 		     G_CALLBACK(gtk_main_quit), NULL);
 
     // Show the window
-
     gtk_widget_show_all(window);
 
     // Start audio
-
     initAudio();
 
     // Interact with user
-
     gtk_main();
 
     // Stop audio
-
     audio.done = TRUE;
-
     snd_pcm_close(audio.handle);
 
     gdk_threads_leave();
@@ -248,11 +216,9 @@ int main(int argc, char *argv[])
 }
 
 // Restore options
-
 void restoreOptions()
 {
     // Initial values
-
     spectrum.zoom = TRUE;
     spectrum.expand = 1;
 
@@ -260,24 +226,20 @@ void restoreOptions()
     audio.correction = 1.0;
 
     // Get user home
-
     char *home = getenv("HOME");
     char name[64];
 
     // Build options path
-
     strcpy(name, home);
     strcat(name, "/.tuner.ini");
 
     // Open options file
-
     FILE *file = fopen(name, "r");
 
     if (file == NULL)
 	return;
 
     // Scan the file
-
     while (!feof(file))
     {
 	char line[64];
@@ -286,7 +248,6 @@ void restoreOptions()
 	char *l = fgets(line, sizeof(line), file);
 
 	// Look for [Options]
-
 	if (strncmp(line, "[Options]", strlen("[Options]")) == 0)
 	{
 	    found = TRUE;
@@ -294,7 +255,6 @@ void restoreOptions()
 	}
 
 	// Look for option values
-
 	if (found)
 	{
 	    if (strncmp(line, "filter", strlen("filter")) == 0)
@@ -361,7 +321,6 @@ void restoreOptions()
 }
 
 // Save options
-
 void saveOptions()
 {
     char *home = getenv("HOME");
@@ -389,7 +348,6 @@ void saveOptions()
 }
 
 // Init audio
-
 void initAudio(void)
 {
     int err, dir;
@@ -444,7 +402,6 @@ void initAudio(void)
     }
 
     // Create the audio thread
-
     pthread_create(&audio.thread, NULL, readAudio, NULL);
 
 }
@@ -460,7 +417,6 @@ void *readAudio(void *dummy)
     snd_pcm_sframes_t frames;
 
     // Create buffers for processing the audio data
-
     static double buffer[SAMPLES];
     static complex x[SAMPLES];
 
@@ -483,8 +439,7 @@ void *readAudio(void *dummy)
 
     static short data[STEP];
 
-    // initialise data structs
-
+    // Initialise data structs
     if (scope.data == NULL)
     {
 	scope.data = data;
@@ -503,11 +458,9 @@ void *readAudio(void *dummy)
 	    break;
 
 	// Copy the input data
-
 	memmove(buffer, buffer + STEP, (SAMPLES - STEP) * sizeof(double));
 
 	// Butterworth filter, 3dB/octave
-
 	for (int i = 0; i < STEP; i++)
 	{
 	    static double G = 3.023332184e+01;
@@ -523,49 +476,40 @@ void *readAudio(void *dummy)
 	    yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
 
 	    // Choose filtered/unfiltered data
-
 	    buffer[(SAMPLES - STEP) + i] =
 		audio.filter? yv[1]: (double)data[i];
 	}
 
 	// Maximum data value
-
 	static double dmax;
 
 	if (dmax < 4096.0)
 	    dmax = 4096.0;
 
 	// Calculate normalising value
-
 	double norm = dmax;
 	dmax = 0.0;
 
 	// Copy data to FFT input arrays for tuner
-
 	for (int i = 0; i < SAMPLES; i++)
 	{
 	    // Find the magnitude
-
 	    if (dmax < fabs(buffer[i]))
 		dmax = fabs(buffer[i]);
 
 	    // Calculate the window
-
 	    double window =
 		0.5 - 0.5 * cos(2.0 * M_PI *
 				i / SAMPLES);
 
 	    // Normalise and window the input data
-
 	    x[i].r = (double)buffer[i] / norm * window;
 	}
 
 	// do FFT for tuner
-
 	fftr(x, SAMPLES);
 
 	// Process FFT output for tuner
-
 	for (int i = 1; i < RANGE; i++)
 	{
 	    double real = x[i].r;
@@ -574,13 +518,11 @@ void *readAudio(void *dummy)
 	    xa[i] = hypot(real, imag);
 
 	    // Do frequency calculation
-
 	    double p = atan2(imag, real);
 	    double dp = xp[i] - p;
 	    xp[i] = p;
 
 	    // Calculate phase difference
-
 	    dp -= (double)i * expect;
 
 	    int qpd = dp / M_PI;
@@ -594,25 +536,20 @@ void *readAudio(void *dummy)
 	    dp -=  M_PI * (double)qpd;
 
 	    // Calculate frequency difference
-
 	    double df = OVERSAMPLE * dp / (2.0 * M_PI);
 
 	    // Calculate actual frequency from slot frequency plus
 	    // frequency difference and correction value
-
 	    xf[i] = (i * fps + df * fps) / audio.correction;
 
 	    // Calculate differences for finding maxima
-
 	    dx[i] = xa[i] - xa[i - 1];
 	}
 
 	// Downsample
-
 	if (audio.downsample)
 	{
 	    // x2 = xa << 2
-
 	    for (int i = 0; i < Length(x2); i++)
 	    {
 		x2[i] = 0.0;
@@ -622,7 +559,6 @@ void *readAudio(void *dummy)
 	    }
 
 	    // x3 = xa << 3
-
 	    for (int i = 0; i < Length(x3); i++)
 	    {
 		x3[i] = 0.0;
@@ -632,7 +568,6 @@ void *readAudio(void *dummy)
 	    }
 
 	    // x4 = xa << 4
-
 	    for (int i = 0; i < Length(x4); i++)
 	    {
 		x4[i] = 0.0;
@@ -642,7 +577,6 @@ void *readAudio(void *dummy)
 	    }
 
 	    // x5 = xa << 5
-
 	    for (int i = 0; i < Length(x5); i++)
 	    {
 		x5[i] = 0.0;
@@ -652,7 +586,6 @@ void *readAudio(void *dummy)
 	    }
 
 	    // Add downsamples
-
 	    for (int i = 1; i < Length(xa); i++)
 	    {
 		if (i < Length(x2))
@@ -668,13 +601,11 @@ void *readAudio(void *dummy)
 		    xa[i] += x5[i];
 
 		// Recalculate differences
-
 		dx[i] = xa[i] - xa[i - 1];
 	    }
 	}
 
 	// Maximum FFT output
-
 	double max = 0.0;
 	double f = 0.0;
 
@@ -682,7 +613,6 @@ void *readAudio(void *dummy)
 	int limit = RANGE - 1;
 
 	// Find maximum value, and list of maxima
-
 	for (int i = 1; i < limit; i++)
 	{
 	    if (xa[i] > max)
@@ -692,7 +622,6 @@ void *readAudio(void *dummy)
 	    }
 
 	    // If display not locked, find maxima and add to list
-
 	    if (!display.lock && count < Length(maxima) &&
 		xa[i] > MINIMUM && xa[i] > (max / 4.0) &&
 		dx[i] > 0.0 && dx[i + 1] < 0.0)
@@ -700,20 +629,16 @@ void *readAudio(void *dummy)
 		maxima[count].f = xf[i];
 
 		// Cents relative to reference
-
 		double cf =
 		    -12.0 * log2(audio.reference / xf[i]);
 
 		// Reference note
-
 		maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
 		// Note number
-
 		maxima[count].n = round(cf) + C5_OFFSET;
 
 		// Set limit to octave above
-
 		if (!audio.downsample && (limit > i * 2))
 		    limit = i * 2 - 1;
 
@@ -722,28 +647,23 @@ void *readAudio(void *dummy)
 	}
 
 	// Reference note frequency and lower and upper limits
-
 	double fr = 0.0;
 	double fl = 0.0;
 	double fh = 0.0;
 
 	// Note number
-
 	int n = 0;
 
 	// Found flag and cents value
-
 	gboolean found = FALSE;
 	double c = 0.0;
 
 	// Do the note and cents calculations
-
 	if (max > MINIMUM)
 	{
 	    found = TRUE;
 
 	    // Frequency
-
 	    if (!audio.downsample)
 		f = maxima[0].f;
 
@@ -753,23 +673,19 @@ void *readAudio(void *dummy)
 		-12.0 * log2(audio.reference / f);
 
 	    // Reference note
-
 	    fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
 	    // Lower and upper freq
-
 	    fl = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
 	    fh = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
 
 	    // Note number
-
 	    n = round(cf) + C5_OFFSET;
 
 	    if (n < 0)
 		found = FALSE;
 
 	    // Find nearest maximum to reference note
-
 	    double df = 1000.0;
 
 	    for (int i = 0; i < count; i++)
@@ -782,32 +698,26 @@ void *readAudio(void *dummy)
 	    }
 
 	    // Cents relative to reference note
-
 	    c = -12.0 * log2(fr / f);
 
 	    // Ignore silly values
-
 	    if (!isfinite(c))
 		c = 0.0;
 
 	    // Ignore if not within 50 cents of reference note
-
 	    if (fabs(c) > 0.5)
 		found = FALSE;
 	}
 
 	// If display not locked
-
 	gdk_threads_enter();
 
 	if (!display.lock)
 	{
 	    // Update scope window
-
 	    gtk_widget_queue_draw(scope.widget);
 
 	    // Update spectrum window
-
 	    for (int i = 0; i < count; i++)
 		values[i].f = maxima[i].f / fps * audio.correction;
 
@@ -829,11 +739,9 @@ void *readAudio(void *dummy)
 	if (found)
 	{
 	    // If display not locked
-
 	    if (!display.lock)
 	    {
 		// Update the display struct
-
 		display.f = f;
 		display.fr = fr;
 		display.c = c;
@@ -841,27 +749,22 @@ void *readAudio(void *dummy)
 		display.count = count;
 
 		// Update meter
-
 		meter.c = c;
 
 		// Update strobe
-
 		strobe.c = c;
 	    }
 
 	    // Update display
-
 	    gtk_widget_queue_draw(display.widget);
 
 	    // Reset count;
-
 	    timer = 0;
 	}
 
 	else
 	{
 	    // If display not locked
-
 	    if (!display.lock)
 	    {
 
@@ -874,15 +777,12 @@ void *readAudio(void *dummy)
 		    display.count = 0;
 
 		    // Update meter
-
 		    meter.c = 0.0;
 
 		    // Update strobe
-
 		    strobe.c = 0.0;
 
 		    // Update spectrum
-
 		    spectrum.f = 0.0;
 		    spectrum.r = 0.0;
 		    spectrum.l = 0.0;
@@ -890,7 +790,6 @@ void *readAudio(void *dummy)
 		}
 
 		// Update display
-
 		gtk_widget_queue_draw(display.widget);
 	    }
 	}
@@ -913,7 +812,6 @@ void *readAudio(void *dummy)
 }
 
 // Real to complex FFT, ignores imaginary values in input array
-
 void fftr(complex a[], int n)
 {
     double norm = sqrt(1.0 / n);
@@ -965,7 +863,6 @@ void fftr(complex a[], int n)
 }
 
 // Round rect
-
 void cairo_round_rect(cairo_t *cr, double x, double y,
 		      double w, double h, double r)
 {
@@ -981,7 +878,6 @@ void cairo_round_rect(cairo_t *cr, double x, double y,
 }
 
 // Draw edge
-
 void cairo_edge(cairo_t *cr, int w, int h)
 {
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
@@ -995,7 +891,6 @@ void cairo_edge(cairo_t *cr, int w, int h)
 }
 
 // Right justify text
-
 void cairo_right_justify_text(cairo_t *cr, char *t)
 {
     double x, y;
@@ -1009,7 +904,6 @@ void cairo_right_justify_text(cairo_t *cr, char *t)
 }
 
 // Centre text
-
 void cairo_centre_text(cairo_t *cr, char *t)
 {
     double x, y;
@@ -1023,7 +917,6 @@ void cairo_centre_text(cairo_t *cr, char *t)
 }
 
 // Scope draw callback
-
 gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			     void *data)
 {
@@ -1058,12 +951,10 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_stroke(cr);
 
     // Don't attempt the trace until there's a buffer
-
     if (scope.data == NULL)
 	return TRUE;
 
     // Initialise sync
-
     int maxdx = 0;
     int dx = 0;
     int n = 0;
@@ -1106,7 +997,6 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_stroke(cr);
 
     // Show F for filter
-
     if (audio.filter)
     {
 	cairo_set_source_rgb(cr, 1, 1, 0);
@@ -1120,7 +1010,6 @@ gboolean scope_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 }
 
 // Spectrum draw callback
-
 gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 				void *data)
 {
@@ -1158,12 +1047,10 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_stroke(cr);
 
     // Don't attempt the trace until there's a buffer
-
     if (spectrum.data == NULL)
 	return TRUE;
 
     // Green pen for spectrum trace
-
     cairo_set_source_rgb(cr, 0, 1, 0);
 
     static float max;
@@ -1172,19 +1059,16 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	max = 1.0;
 
     // Calculate the scaling
-
     float yscale = (float)height / max;
 
     max = 0.0;
 
     // Draw the spectrum
-
     cairo_move_to(cr, 0, 0);
 
     if (spectrum.zoom)
     {
 	// Calculate scale
-
 	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
 
 	for (int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
@@ -1209,15 +1093,12 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_stroke(cr);
 
 	// Yellow pen for frequency trace
-
 	cairo_set_source_rgb(cr, 1, 1, 0);
 
 	// Draw lines for each frequency
-
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each that are in range
-
 	    if (spectrum.values[i].f > spectrum.l &&
 		spectrum.values[i].f < spectrum.h)
 	    {
@@ -1228,12 +1109,10 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 		double f = display.maxima[i].f;
 
 		// Reference freq
-
 		double fr = display.maxima[i].fr;
 		double c = -12.0 * log2(fr / f);
 
 		// Ignore silly values
-
 		if (!isfinite(c))
 		    continue;
 
@@ -1254,7 +1133,6 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	    float value = 0.0;
 
 	    // Don't show DC component
-
 	    if (x > 0)
 	    {
 		for (int j = 0; j < xscale; j++)
@@ -1277,15 +1155,12 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_stroke(cr);
 
 	// Yellow pen for frequency trace
-
 	cairo_set_source_rgb(cr, 1, 1, 0);
 
 	// Draw lines for each frequency
-
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each
-
 	    int x = round(spectrum.values[i].f / xscale);
 	    cairo_move_to(cr, x, 0);
 	    cairo_line_to(cr, x, -height);
@@ -1293,12 +1168,10 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	    double f = display.maxima[i].f;
 
 	    // Reference freq
-
 	    double fr = display.maxima[i].fr;
 	    double c = -12.0 * log2(fr / f);
 
 	    // Ignore silly values
-
 	    if (!isfinite(c))
 		continue;
 
@@ -1318,7 +1191,6 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     cairo_stroke(cr);
 
     // Show D for downsample
-
     if (audio.downsample)
     {
 	cairo_move_to(cr, 0, 10 - height);
@@ -1331,7 +1203,6 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 }
 
 // Display draw callback
-
 gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			       void *data)
 {
@@ -1380,43 +1251,36 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     if (display.multiple)
     {
 	// Select font
-
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, FONT_HEIGHT);
 
 	// Set text align
-
 	if (display.count == 0)
 	{
 	    // Display note
-
 	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
 		    sharps[display.n % Length(notes)], display.n / 12);
 	    cairo_move_to(cr, 8, FONT_HEIGHT);
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-
 	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
 	    cairo_move_to(cr, 36, FONT_HEIGHT);
 	    cairo_show_text(cr, s);
 
 	    // Display reference
-
 	    sprintf(s, "%4.2lfHz", display.fr);
 	    cairo_move_to(cr, 90, FONT_HEIGHT);
 	    cairo_show_text(cr, s);
 
 	    // Display frequency
-
 	    sprintf(s, "%4.2lfHz", display.f);
 	    cairo_move_to(cr, 162, FONT_HEIGHT);
 	    cairo_show_text(cr, s);
 
 	    // Display difference
-
 	    sprintf(s, "%+4.2lfHz", display.f - display.fr);
 	    cairo_move_to(cr, 234, FONT_HEIGHT);
 	    cairo_show_text(cr, s);
@@ -1427,7 +1291,6 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	    double f = display.maxima[i].f;
 
 	    // Reference freq
-
 	    double fr = display.maxima[i].fr;
 
 	    int n = display.maxima[i].n;
@@ -1438,37 +1301,31 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	    double c = -12.0 * log2(fr / f);
 
 	    // Ignore silly values
-
 	    if (!isfinite(c))
 		continue;
 
 	    // Display note
-
 	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
 		    sharps[n % Length(notes)], n / 12);
 	    cairo_move_to(cr, 8, FONT_HEIGHT + (FONT_HEIGHT * i));
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-
 	    sprintf(s, "%+4.2lf¢", c * 100.0);
 	    cairo_move_to(cr, 36, FONT_HEIGHT + (FONT_HEIGHT * i));
 	    cairo_show_text(cr, s);
 
 	    // Display reference
-
 	    sprintf(s, "%4.2lfHz", fr);
 	    cairo_move_to(cr, 90, FONT_HEIGHT + (FONT_HEIGHT * i));
 	    cairo_show_text(cr, s);
 
 	    // Display frequency
-
 	    sprintf(s, "%4.2lfHz", f);
 	    cairo_move_to(cr, 162, FONT_HEIGHT + (FONT_HEIGHT * i));
 	    cairo_show_text(cr, s);
 
 	    // Display difference
-
 	    sprintf(s, "%+4.2lfHz", f - fr);
 	    cairo_move_to(cr, 234, FONT_HEIGHT + (FONT_HEIGHT * i));
 	    cairo_show_text(cr, s);
@@ -1484,7 +1341,6 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_matrix_t matrix;
 
 	// Select larger font
-
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_BOLD);
@@ -1493,7 +1349,6 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_set_font_size(cr, LARGER_HEIGHT);
 
 	// Display note
-
 	sprintf(s, "%s", notes[display.n % Length(notes)]);
 	cairo_move_to(cr, 8, LARGE_HEIGHT);
 	cairo_show_text(cr, s);
@@ -1501,14 +1356,12 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_get_current_point(cr, &x, &y);
 
 	// Select medium font
-
 	cairo_set_font_size(cr, MEDIUM_HEIGHT);
 
 	sprintf(s, "%d", display.n / 12);
 	cairo_show_text(cr, s);
 
 	// Select musica font
-
 	cairo_save(cr);
 	cairo_set_font_face(cr, musica);
 	cairo_set_font_size(cr, MUSIC_HEIGHT);
@@ -1518,12 +1371,10 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_show_text(cr, s);
 
 	// Select large font
-
 	cairo_restore(cr);
 	cairo_set_font_size(cr, LARGE_HEIGHT);
 
 	// Display cents
-
 	sprintf(s, "%+4.2f¢", display.c * 100.0);
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
@@ -1531,20 +1382,17 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	y += MEDIUM_HEIGHT;
 
 	// Select medium font
-
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, MEDIUM_HEIGHT);
 
 	// Display reference frequency
-
 	sprintf(s, "%4.2fHz", display.fr);
 	cairo_move_to(cr, 8, y);
 	cairo_show_text(cr, s);
 
 	// Display actual frequency
-
 	sprintf(s, "%4.2fHz", display.f);
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
@@ -1552,20 +1400,17 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	y += 24;
 
 	// Display reference
-
 	sprintf(s, "%4.2fHz", audio.reference);
 	cairo_move_to(cr, 8, y);
 	cairo_show_text(cr, s);
 
 	// Display frequency difference
-
 	sprintf(s, "%+4.2lfHz", display.f - display.fr);
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
     }
 
     // Show lock
-
     if (display.lock)
 	// DrawLock(hbdc, -1, height + 1);
 	;
@@ -1576,14 +1421,12 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 }
 
 // Strobe draw callback
-
 gboolean strobe_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			      void *data)
 {
     static cairo_pattern_t *cp;
 
     // Colours
-
     static double colours[][2][3] =
 	{{{0.25, 0.25, 1.0}, {0.25, 1.0, 1.0}},
 	 {{0.5, 0.5, 0}, {0.5, 1.0, 0.828}},
@@ -1677,7 +1520,6 @@ gboolean strobe_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 }
 
 // Meter draw callback
-
 gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			     void *data)
 {
@@ -1692,19 +1534,16 @@ gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     int height = widget->allocation.height - 4;
 
     // Select font
-
     cairo_select_font_face(cr, "sans-serif",
 			   CAIRO_FONT_SLANT_NORMAL,
 			   CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr, FONT_HEIGHT);
 
     // Move origin
-
     cairo_translate(cr, width / 2, 0);
     cairo_set_source_rgb(cr, 0, 0, 0);
 
     // Draw the meter scale
-
     for (int i = 0; i < 6; i++)
     {
 	int x = width / 11 * i;
@@ -1748,11 +1587,9 @@ gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
     static float mc;
 
     // Do calculation
-
     mc = ((mc * 3.0) + meter.c) / 4.0;
 
     // Calculate x
-
     float x = width / 11 * mc * 10;
     cairo_translate(cr, x, 40);
 
@@ -1787,7 +1624,6 @@ gboolean meter_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 }
 
 // Update options
-
 void update_options()
 {
     if (options.dialog == NULL)
@@ -1876,14 +1712,18 @@ gboolean key_press(GtkWidget *window, GdkEventKey *event, void *data)
     }
 
     // Update options
-
     update_options();
 
     return TRUE;
 }
 
-// Filter clicked
+// Reference changed
+void reference_changed(GtkWidget widget, void *data)
+{
+    audio.reference = gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.reference));
+}
 
+// Filter clicked
 void filter_clicked(GtkWidget widget, void *data)
 {
     audio.filter =
@@ -1891,7 +1731,6 @@ void filter_clicked(GtkWidget widget, void *data)
 }
 
 // Lock clicked
-
 void lock_clicked(GtkWidget widget, void *data)
 {
     display.lock =
@@ -1899,7 +1738,6 @@ void lock_clicked(GtkWidget widget, void *data)
 }
 
 // Strobe clicked
-
 void strobe_clicked(GtkWidget widget, void *data)
 {
     strobe.enable =
@@ -1907,7 +1745,6 @@ void strobe_clicked(GtkWidget widget, void *data)
 }
 
 // Downsample clicked
-
 void downsample_clicked(GtkWidget widget, void *data)
 {
     audio.downsample =
@@ -1915,7 +1752,6 @@ void downsample_clicked(GtkWidget widget, void *data)
 }
 
 // Multiple clicked
-
 void multiple_clicked(GtkWidget widget, void *data)
 {
     display.multiple =
@@ -1923,7 +1759,6 @@ void multiple_clicked(GtkWidget widget, void *data)
 }
 
 // Zoom clicked
-
 void zoom_clicked(GtkWidget widget, void *data)
 {
     spectrum.zoom =
@@ -1931,7 +1766,6 @@ void zoom_clicked(GtkWidget widget, void *data)
 }
 
 // Widget clicked
-
 void widget_clicked(GtkWidget *widget, GdkEventButton *event, void *data)
 {
     const char *name;
@@ -1948,77 +1782,65 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, void *data)
 	display.lock = !display.lock;
 
     if (strcmp(name, "strobe") == 0)
-	strobe.enable = ! strobe.enable;
+	strobe.enable = !strobe.enable;
 
     update_options();
 }
 
 // Options menu
-
 void options_menu(GtkWidget *widget, GdkEventButton *event, void *data)
 {
     GtkWidget *menu;
     GtkWidget *item;
 
     // Menu
-
     menu = gtk_menu_new();
 
     // Downsample
-
     item = gtk_check_menu_item_new_with_label("Downsample audio");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), audio.downsample);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Filter
-
     item = gtk_check_menu_item_new_with_label("Filter audio");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), audio.filter);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Lock
-
     item = gtk_check_menu_item_new_with_label("Display lock");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), display.lock);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Multiple
-
     item = gtk_check_menu_item_new_with_label("Multiple notes");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), display.multiple);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Strobe
-
     item = gtk_check_menu_item_new_with_label("Show strobe");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), strobe.enable);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Zoom
-
     item = gtk_check_menu_item_new_with_label("Zoom spectrum");
     gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(item), spectrum.zoom);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Separator
-
     item = gtk_separator_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Options
-
     item = gtk_menu_item_new_with_label("Options...");
     g_signal_connect(G_OBJECT(item), "activate",
 		     G_CALLBACK(options_clicked), NULL);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Separator
-
     item = gtk_separator_menu_item_new();
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Quit
-
     item = gtk_menu_item_new_with_label("Quit");
     g_signal_connect(G_OBJECT(item), "activate",
 		     G_CALLBACK(gtk_main_quit), NULL);
@@ -2029,11 +1851,9 @@ void options_menu(GtkWidget *widget, GdkEventButton *event, void *data)
 }
 
 // Button press
-
 gboolean button_press(GtkWidget *widget, GdkEventButton *event, void *data)
 {
     // Check button
-
     switch (event->button)
     {
     case 1:
@@ -2057,7 +1877,6 @@ gboolean button_press(GtkWidget *widget, GdkEventButton *event, void *data)
 }
 
 // Options callback
-
 void options_clicked(GtkWidget *widget, GtkWindow *window)
 {
     GtkWidget *hbox;
@@ -2075,48 +1894,39 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     }
 	
     // Create options dialog
-
     options.dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(options.dialog), "Tuner Options");
     gtk_window_set_resizable(GTK_WINDOW(options.dialog), FALSE);
     gtk_window_set_transient_for(GTK_WINDOW(options.dialog), window);
 
     // V box
-
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_container_add(GTK_CONTAINER(options.dialog), vbox);
 
     // H box
-
     hbox = gtk_hbox_new(FALSE, MARGIN);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
 
     // Label
-
     label = gtk_label_new("Sample rate: 11025.0");
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
 
     // Close button
-
     close = gtk_button_new_with_label("  Close  ");
     gtk_box_pack_end(GTK_BOX(hbox), close, FALSE, FALSE, MARGIN);
 
     // Close clicked
-
     g_signal_connect_swapped(G_OBJECT(close), "clicked",
 			     G_CALLBACK(gtk_widget_hide), options.dialog);
     // H box
-
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     // Label
-
     label = gtk_label_new("Correction:");
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
 
     // Correction
-
     options.correction = gtk_spin_button_new_with_range(0.9999, 1.0001,
 							0.000001);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.correction),
@@ -2124,100 +1934,86 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(hbox), options.correction, FALSE, FALSE, 0);
 
     // Save button
-
     save = gtk_button_new_with_label("  Save  ");
     gtk_box_pack_end(GTK_BOX(hbox), save, FALSE, FALSE, MARGIN);
 
     // Save clicked
-
     g_signal_connect(G_OBJECT(save), "clicked",
 		     G_CALLBACK(save_clicked), window);
     // H box
-
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
 
     // Label
-
     label = gtk_label_new("Use correction if your sound card clock is\n"
 			  "significantly inaccurate");
     gtk_box_pack_start(GTK_BOX(hbox), label, FALSE, FALSE, MARGIN);
 
     // Separator
-
     separator = gtk_hseparator_new();
     gtk_box_pack_end(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
 
     // H box
-
     hbox = gtk_hbox_new(TRUE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 
     // V box
-
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
 
     // Filter
-
     options.filter = gtk_check_button_new_with_label("Filter audio");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
 				 audio.filter);
     gtk_box_pack_start(GTK_BOX(vbox), options.filter, FALSE, FALSE, 0);
 
     // Filter clicked
-
     g_signal_connect(G_OBJECT(options.filter), "toggled",
 		     G_CALLBACK(filter_clicked), window);
 
     // Lock
-
     options.lock = gtk_check_button_new_with_label("Lock display");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.lock),
 				 display.lock);
     gtk_box_pack_start(GTK_BOX(vbox), options.lock, FALSE, FALSE, 0);
 
     // Lock clicked
-
     g_signal_connect(G_OBJECT(options.lock), "toggled",
 		     G_CALLBACK(lock_clicked), window);
 
     // Strobe
-
     options.strobe = gtk_check_button_new_with_label("Show strobe");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
 				 strobe.enable);
     gtk_box_pack_start(GTK_BOX(vbox), options.strobe, FALSE, FALSE, 0);
 
     // Strobe clicked
-
     g_signal_connect(G_OBJECT(options.strobe), "toggled",
 		     G_CALLBACK(strobe_clicked), window);
 
     // I box
-
     ibox = gtk_hbox_new(FALSE, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), ibox, FALSE, FALSE, 0);
 
     // Label
-
     label = gtk_label_new("Reference:");
     gtk_box_pack_start(GTK_BOX(ibox), label, FALSE, FALSE, 0);
 
     // Reference
-
     options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
 			      audio.reference);
     gtk_box_pack_start(GTK_BOX(ibox), options.reference, FALSE, FALSE, 0);
 
-    // V box
+    // Reference changed
+    g_signal_connect(G_OBJECT(options.reference), "value-changed",
+		     G_CALLBACK(reference_changed), window);
 
+    // V box
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
 
     // Downsample
-
     options.downsample = gtk_check_button_new_with_label("Downsample audio");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.downsample),
 				 audio.downsample);
@@ -2241,19 +2037,16 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 		     G_CALLBACK(multiple_clicked), window);
 
     // Zoom
-
     options.zoom = gtk_check_button_new_with_label("Zoom spectrum");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.zoom),
 				 spectrum.zoom);
     gtk_box_pack_start(GTK_BOX(vbox), options.zoom, FALSE, FALSE, 0);
 
     // Zoom clicked
-
     g_signal_connect(G_OBJECT(options.zoom), "toggled",
 		     G_CALLBACK(zoom_clicked), window);
 
     // Destroy dialog callback
-
     g_signal_connect(G_OBJECT(options.dialog), "destroy",
 		     G_CALLBACK(gtk_widget_destroyed), &options.dialog);
 
@@ -2261,7 +2054,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 }
 
 // Save callback
-
 void save_clicked(GtkWidget *widget, GtkWindow *window)
 {
     audio.save = TRUE;
