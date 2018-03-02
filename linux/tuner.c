@@ -211,7 +211,6 @@ int main(int argc, char *argv[])
     saveOptions();
 
     // Exit
-
     return 0;
 }
 
