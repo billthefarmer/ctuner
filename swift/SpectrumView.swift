@@ -110,16 +110,17 @@ class SpectrumView: TunerView
 		        max = value
                     }
 
-		    let y = value * yscale
-		    let x = (Float(i) - spectrumData.l) * xscale 
+		    let y = NSMinY(rect) + CGFloat(value * yscale)
+		    let x = NSMinX(rect) + CGFloat((Float(i) - spectrumData.l) *
+                                                     xscale)
 
-		    path.line(to: NSPoint(x: Int(x), y: Int(y)))
+		    path.line(to: NSPoint(x: x, y: y))
 	        }
 	    }
 
             // Draw vertical centre line
-	    path.move(to: NSPoint(x: Int(width / 2), y: 0))
-	    path.line(to: NSPoint(x: Int(width / 2), y: Int(-height)))
+	    path.move(to: NSPoint(x: NSMidX(rect), y: NSMinY(rect)))
+	    path.line(to: NSPoint(x: NSMidX(rect), y: NSMaxY(rect)))
 	    path.stroke()
 
 	    // Yellow pen for frequency trace
@@ -127,16 +128,17 @@ class SpectrumView: TunerView
             path.removeAllPoints()
 
 	    // Draw line for nearest frequency
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< Int(spectrumData.count)
 	    {
 	        // Draw line for values that are in range
-	        if (spectrumData.values[Int(i)] > spectrumData.l &&
-		      spectrumData.values[Int(i)] < spectrumData.h)
+	        if (spectrumData.values[i] > spectrumData.l &&
+		      spectrumData.values[i] < spectrumData.h)
 	        {
-		    let x = (spectrumData.values[Int(i)] -
-                               spectrumData.l) * xscale
-		    path.move(to: NSPoint(x: Int(x), y: 0))
-		    path.line(to: NSPoint(x: Int(x), y: Int(height)))
+		    let x = NSMidX(rect) +
+                      CGFloat((spectrumData.values[i] -
+                                 spectrumData.l) * xscale)
+		    path.move(to: NSPoint(x: x, y: NSMinY(rect)))
+		    path.line(to: NSPoint(x: x, y: NSMaxY(rect)))
 	        }
 	    }
 
@@ -144,19 +146,21 @@ class SpectrumView: TunerView
 
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            font.set()
+            let attribs: [NSAttributedStringKey: Any] =
+              [.foregroundColor: NSColor.yellow,
+               .font: font]
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< Int(spectrumData.count)
 	    {
 	        // Show value for values that are in range
 
-	        if (spectrumData.values[Int(i)] > spectrumData.l &&
-		      spectrumData.values[Int(i)] < spectrumData.h)
+	        if (spectrumData.values[i] > spectrumData.l &&
+		      spectrumData.values[i] < spectrumData.h)
 	        {
-		    let f = displayData.maxima[Int(i)].f
+		    let f = displayData.maxima[i].f
 
 		    // Reference freq
-		    let fr = displayData.maxima[Int(i)].fr
+		    let fr = displayData.maxima[i].fr
 
 		    let c = -12.0 * log2f(fr / f)
 
@@ -166,11 +170,13 @@ class SpectrumView: TunerView
 		        continue
                     }
 
-		    let x = (spectrumData.values[Int(i)] -
-                               spectrumData.l) * xscale
+		    let x = NSMinX(rect) +
+                      CGFloat((spectrumData.values[i] -
+                                 spectrumData.l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
-		    s.draw(at: NSPoint(x: Int(x), y: 1))
+		    s.draw(at: NSPoint(x: x, y: NSMinY(rect) + 1),
+                           withAttributes: attribs)
 	        }
 	    }
         }
@@ -214,11 +220,11 @@ class SpectrumView: TunerView
 	    NSColor.yellow.set()
             path.removeAllPoints()
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< Int(spectrumData.count)
 	    {
 	        // Draw line for values
 
-	        let x = spectrumData.values[Int(i)] / xscale
+	        let x = spectrumData.values[i] / xscale
 	        path.move(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
                                       y: NSMinY(rect)))
 	        path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
@@ -229,17 +235,19 @@ class SpectrumView: TunerView
 
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            font.set()
+            let attribs: [NSAttributedStringKey: Any] =
+              [.foregroundColor: NSColor.yellow,
+               .font: font]
 
-	    for i in 0 ..< spectrumData.count
+	    for i in 0 ..< Int(spectrumData.count)
 	    {
 	        // Show value for values
 
-	        let f = displayData.maxima[Int(i)].f
+	        let f = displayData.maxima[i].f
 
 	        // Reference freq
 
-	        let fr = displayData.maxima[Int(i)].fr
+	        let fr = displayData.maxima[i].fr
 
 	        let c = -12.0 * log2f(fr / f)
 
@@ -250,27 +258,30 @@ class SpectrumView: TunerView
 		    continue
                 }
 
-	        let x = spectrumData.values[Int(i)] / xscale
+	        let x = spectrumData.values[i] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
-	        s.draw(at: NSPoint(x: Int(x), y: 1))
+	        s.draw(at: NSPoint(x: NSMinX(rect) + CGFloat(x),
+                                   y: NSMinY(rect) + 1),
+                       withAttributes: attribs)
 	    }
 
 	    if (spectrumData.expand > 1)
 	    {
 	        let s = String(format: "x%d", spectrumData.expand)
-	        s.draw(at: NSPoint(x: 0, y: 1))
+	        s.draw(at: NSPoint(x: NSMinX(rect), y: NSMinY(rect) + 1),
+                       withAttributes: attribs)
 	    }
         }
 
         if (audioData.downsample == false)
         {
-	    NSColor.yellow.set()
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            font.set()
+            let attribs: [NSAttributedStringKey: Any] =
+              [.foregroundColor: NSColor.yellow,
+               .font: font]
 
-	    "D".draw(at: NSPoint(x: 2, y: 2))
+	    "D".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect) + 2),
+                     withAttributes: attribs)
         }
-
-        // NSLog("Spectrum displayed")
     }    
 }

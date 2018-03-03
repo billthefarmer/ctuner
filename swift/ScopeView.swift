@@ -128,15 +128,13 @@ class ScopeView: TunerView
         // Show F if filtered
         if (audioData.filter == true)
         {
-	    // Yellow text
-            NSColor.yellow.set()
-
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            font.set()
-            "F".draw(at: NSPoint(x: 0, y: Int(height) / 2 - 2))
+            let attribs: [NSAttributedStringKey: Any] =
+              [.foregroundColor: NSColor.yellow,
+               .font: font]
+            "F".draw(at: NSPoint(x: NSMinX(rect) + 2, y: -NSMidY(rect) + 2),
+                     withAttributes: attribs)
         }
-
-        // NSLog("Scope displayed");
     }
 }

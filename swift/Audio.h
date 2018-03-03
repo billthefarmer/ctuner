@@ -157,6 +157,7 @@ typedef struct
     float reference;
     pthread_mutex_t mutex;
     bool filter;
+    bool filters;
     bool downsample;
 } AudioData;
 AudioData audioData;
@@ -166,13 +167,13 @@ typedef struct
 {
     bool note[12];
     bool octave[8];
-} Filter;
-// Filter filter =
-//     {{true, true, true, true,
-//       true, true, true, true,
-//       true, true, true, true},
-//      {true, true, true, true,
-//       true, true, true, true}};
+} FilterData;
+FilterData filterData =
+    {{true, true, true, true,
+      true, true, true, true,
+      true, true, true, true},
+     {true, true, true, true,
+      true, true, true, true}};
 
 // Functions
 OSStatus SetupAudio(void);

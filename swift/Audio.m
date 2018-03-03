@@ -643,8 +643,31 @@ void (^ProcessAudio)() = ^
     // Find maximum value, and list of maxima
     for (int i = 1; i < limit; i++)
     {
-	// If display not locked, find maxima and add to list
+        if (audioData.filters)
+        {
+            // Cents relative to reference
+	    float cf = -12.0 * log2f(audioData.reference / xf[i]);
+            int n = round(cf) + kC5Offset;
 
+            // Ignore negative
+            if (n < 0)
+                continue;
+
+            // Get note and octave
+            int note = n % kOctave;
+            int octave = n / kOctave;
+
+            // Ignore too high
+            if (octave >= Length(filterData.octave))
+                continue;
+
+            // Ignore if filtered
+            if (!filterData.note[note] ||
+                !filterData.octave[octave])
+                continue;
+        }
+
+        // If display not locked, find maxima and add to list
 	if (!displayData.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 2) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
@@ -652,14 +675,13 @@ void (^ProcessAudio)() = ^
 	    maxima[count].f = xf[i];
 
 	    // Cents relative to reference
-	    float cf =
-		-12.0 * log2f(audioData.reference / xf[i]);
-
-	    // Reference note
-	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) / 12.0);
+	    float cf = -12.0 * log2f(audioData.reference / xf[i]);
 
 	    // Note number
 	    maxima[count].n = round(cf) + kC5Offset;
+
+	    // Reference note
+	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) / 12.0);
 
 	    // Set limit to octave above
 	    if (!audioData.downsample && (limit > i * 2))
