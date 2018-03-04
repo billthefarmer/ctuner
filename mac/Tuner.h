@@ -28,7 +28,6 @@
 #include <Accelerate/Accelerate.h>
 
 // Macros
-
 #define Length(a) (sizeof(a) / sizeof(a[0]))
 
 #define kMin        0.5
@@ -38,7 +37,6 @@
 #define DEBUG
 
 // Audio in values
-
 enum
     {kSampleRate1      = 11025,
      kSampleRate2      = 12000,
@@ -47,33 +45,29 @@ enum
      kChannelsPerFrame = 1};
 
 // Audio processing values
-
 enum
     {kOversample = 16,
-     kSamples = 16384,
+     kSamples     = 16384,
      kLog2Samples = 14,
-     kSamples2 = kSamples / 2,
-     kMaxima = 8,
-     kFrames = 512,
-     kRange = kSamples * 3 / 8,
-     kStep = kSamples / kOversample};
+     kSamples2    = kSamples / 2,
+     kMaxima      = 8,
+     kFrames      = 512,
+     kRange       = kSamples * 3 / 8,
+     kStep        = kSamples / kOversample};
 
 // Tuner reference values
-
 enum
     {kA5Reference = 440,
      kC5Offset    = 57,
      kOctave      = 12};
 
 // Slider values
-
 enum
     {kMeterMax   = 200,
      kMeterValue = 100,
      kMeterMin   = 0};
 
 // Arrows values
-
 enum
     {kReferenceMax   = 4500,
      kReferenceValue = 4400,
@@ -81,7 +75,6 @@ enum
      kReferenceStep  = 1};
 
 // Command IDs
-
 enum
     {kCommandReference  = 'Rfnc',
      kCommandStrobe     = 'Strb',
@@ -92,20 +85,17 @@ enum
      kCommandFilter     = 'Fltr'};
 
 // Audio event constants
-
 enum
     {kEventAudioUpdate = 'Updt',
      kEventAudioRate   = 'Rate'};
 
 // Strobe colours
-
 enum
     {kColourBlue,
      kColourOlive,
      kColourMagenta};
 
 // Structs
-
 typedef struct
 {
     float f;
@@ -209,7 +199,6 @@ typedef struct
 } Audio;
 
 // Function prototypes.
-
 OSStatus ScopeDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus SpectrumDrawEventHandler(EventHandlerCallRef, EventRef, void *);
 OSStatus DisplayDrawEventHandler(EventHandlerCallRef, EventRef, void *);
