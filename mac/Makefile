@@ -29,8 +29,8 @@ APPDMG = $(APPNAME).dmg
 APPVDMG = $(APPNAME)-$(APPVERSION).dmg
 
 $(APPVDMG): $(APPBUNDLE)
-	$(HDIU) create -size 5m -fs HFS+ -volname $(APPNAME) -ov $(APPNAME)
-	$(HDIU) attach $(APPDMG)
+	$(HDIU) create -size 5m -fs HFS+ -volname $(APPNAME) -ov $(APPNAME) -quiet
+	$(HDIU) attach $(APPDMG) -quiet
 	$(CP) -r $(APPBUNDLE) /Volumes/$(APPNAME)
 	$(LN) -s /Applications /Volumes/$(APPNAME)/Applications
 	$(CP) Readme.rtf /Volumes/$(APPNAME)
@@ -38,8 +38,8 @@ $(APPVDMG): $(APPBUNDLE)
 	$(CP) CHANGES COPYING Makefile $(APPNAME).c $(APPNAME).h Info.plist \
 	PkgInfo $(APPNAME).icns $(APPNAME).png /Volumes/$(APPNAME)/Sources
 	$(CP) -r Fonts /Volumes/$(APPNAME)/Sources
-	$(HDIU) detach /Volumes/$(APPNAME)
-	$(HDIU) convert -format UDZO -o $(APPVDMG) -ov $(APPDMG)
+	$(HDIU) detach /Volumes/$(APPNAME) -quiet
+	$(HDIU) convert -format UDZO -o $(APPVDMG) -ov $(APPDMG) -quiet
 
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns
 	$(RM) -rf $(APPBUNDLE)
