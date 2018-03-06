@@ -29,8 +29,10 @@ class SpectrumView: TunerView
     {
         super.resize(withOldSuperviewSize: oldSize)
 
-        spectrumData.expand = 1
-        spectrumData.zoom = false;
+        if (spectrumData.expand == 0)
+        {
+            spectrumData.expand = 1
+        }
     }
 
     override func mouseDown(with event: NSEvent)
@@ -273,9 +275,9 @@ class SpectrumView: TunerView
 	    }
         }
 
-        if (audioData.downsample == false)
+        if (audioData.downsample == true)
         {
-            let font = NSFont.boldSystemFont(ofSize: kTextSize)
+            let font = NSFont.systemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]

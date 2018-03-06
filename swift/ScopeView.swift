@@ -1,3 +1,4 @@
+
 //
 //  Scope.swift
 //  Tuner
@@ -129,7 +130,7 @@ class ScopeView: TunerView
         if (audioData.filter == true)
         {
 	    // Select font
-            let font = NSFont.boldSystemFont(ofSize: kTextSize)
+            let font = NSFont.systemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]

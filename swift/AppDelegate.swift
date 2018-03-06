@@ -31,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
     var container: NSStackView!
     var stack: NSStackView!
 
+    // applicationDidFinishLaunching
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
         // Insert code here to initialize your application
@@ -144,6 +145,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
     }
 
+    // DisplayAlert
     func DisplayAlert(_ message: String, _ informativeText: String,
                       _ status: OSStatus)
     {
@@ -161,9 +163,39 @@ class AppDelegate: NSObject, NSApplicationDelegate
         alert.runModal()
     }
 
+    // applicationWillTerminate
     func applicationWillTerminate(_ aNotification: Notification)
     {
         // Insert code here to tear down your application
-        // let _ = audio.shutdown()
+        ShutdownAudio()
+    }
+
+    // keyDown
+    func keyDown(event: NSEvent)
+    {
+        let key = event.characters
+        switch key!.lowercased()
+        {
+        case "d":
+            audioData.downsample = !audioData.downsample
+
+        case "f":
+            audioData.filter = !audioData.filter
+
+        case "l":
+            displayData.lock = !displayData.lock
+
+        case "m":
+            displayData.multiple = !displayData.multiple
+
+        case "s":
+            strobeData.enable = !strobeData.enable
+
+        case "z":
+            spectrumData.zoom = !spectrumData.zoom
+
+        default:
+            NSLog("Key %s", key!)
+        }
     }
 }
