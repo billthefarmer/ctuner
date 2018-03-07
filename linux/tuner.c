@@ -170,7 +170,6 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(options_clicked), window);
 
     // Quit button
-
     quit = gtk_button_new_with_label("  Quit  ");
     gtk_box_pack_end(GTK_BOX(hbox), quit, FALSE, FALSE, 0);
 
@@ -205,9 +204,7 @@ int main(int argc, char *argv[])
     // Stop audio
     audio.done = TRUE;
     snd_pcm_close(audio.handle);
-
     gdk_threads_leave();
-
     saveOptions();
 
     // Exit
@@ -406,7 +403,6 @@ void initAudio(void)
 }
 
 // Read audio
-
 void *readAudio(void *dummy)
 {
     enum
