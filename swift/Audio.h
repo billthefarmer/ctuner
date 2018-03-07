@@ -177,6 +177,7 @@ FilterData filterData =
 
 // Functions
 OSStatus SetupAudio(void);
+OSStatus ShutdownAudio(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
