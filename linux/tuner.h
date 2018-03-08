@@ -38,7 +38,6 @@
 #include <alsa/asoundlib.h>
 
 // Macros
-
 #define Length(a) (sizeof(a) / sizeof(a[0]))
 
 #define OCTAVE    12
@@ -46,32 +45,32 @@
 
 // Layout values
 enum
-    {MARGIN = 8,
-     DISPLAY_WIDTH = 300,
-     SCOPE_HEIGHT = 32,
+    {MARGIN          = 8,
+     DISPLAY_WIDTH   = 300,
+     SCOPE_HEIGHT    = 32,
      SPECTRUM_HEIGHT = 32,
-     DISPLAY_HEIGHT = 100,
-     STROBE_HEIGHT = 44,
-     METER_HEIGHT = 52};
+     DISPLAY_HEIGHT  = 100,
+     STROBE_HEIGHT   = 44,
+     METER_HEIGHT    = 52};
 
 // PCM values
 enum
     {SAMPLE_RATE = 11025,
-     LATENCY = 50000,
-     CHANNELS = 1};
+     LATENCY     = 50000,
+     CHANNELS    = 1};
 
 // Audio processing values
 enum
-    {MAXIMA = 8,
+    {MAXIMA     = 8,
      OVERSAMPLE = 16,
-     SAMPLES = 16384,
-     RANGE = SAMPLES * 7 / 16,
-     STEP = SAMPLES / OVERSAMPLE};
+     SAMPLES    = 16384,
+     RANGE      = SAMPLES * 7 / 16,
+     STEP       = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
 enum
     {A5_REFERENCE = 440,
-     C5_OFFSET = 57};
+     C5_OFFSET    = 57};
 
 // Strobe colours
 enum
