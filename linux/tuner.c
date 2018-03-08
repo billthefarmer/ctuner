@@ -24,18 +24,6 @@
 
 #include "tuner.h"
 
-// Data
-Scope scope;
-Spectrum spectrum;
-Display display;
-Strobe strobe;
-Meter meter;
-Status status;
-
-Options options;
-
-Audio audio;
-
 // Main function
 int main(int argc, char *argv[])
 {

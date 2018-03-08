@@ -182,6 +182,19 @@ typedef struct
     gboolean save;
 } Audio;
 
+// Data
+Scope scope;
+Spectrum spectrum;
+Display display;
+Strobe strobe;
+Meter meter;
+Status status;
+
+Options options;
+
+Audio audio;
+
+// Functions
 void restoreOptions(void);
 void initAudio(void);
 void *readAudio(void *);
