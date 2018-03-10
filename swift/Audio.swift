@@ -36,7 +36,7 @@ let kEventAudioUpdate = 1
 
 class Audio: NSObject
 {
-    var output: AudioUnit? = nil
+    var output: AudioUnit = kAudioObjectUnknown
     var id: AudioDeviceID = kAudioObjectUnknown
     var downsample: Bool!
     var filter: Bool!
@@ -135,11 +135,10 @@ class Audio: NSObject
 
         // Set the audio unit device
         status =
-          AudioUnitSetProperty(output!,
+          AudioUnitSetProperty(output,
 			       kAudioOutputUnitProperty_CurrentDevice, 
 			       kAudioUnitScope_Global,
                                0, &id, size)
-        /*
         if (status != noErr)
         {
             // AudioUnitSetProperty
@@ -148,7 +147,7 @@ class Audio: NSObject
                     AudioUnitErrString(status))
 	    return status
         }
-        */
+
         // Get nominal sample rates size
         var audioDeviceAOPA: AudioObjectPropertyAddress =
           AudioObjectPropertyAddress(mSelector:
