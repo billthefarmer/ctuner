@@ -52,7 +52,7 @@ enum
      kSamples2    = kSamples / 2,
      kMaxima      = 8,
      kFrames      = 512,
-     kRange       = kSamples * 3 / 8,
+     kRange       = kSamples * 7 / 16,
      kStep        = kSamples / kOversample};
 
 // Tuner reference values

@@ -24,18 +24,6 @@
 
 #include "tuner.h"
 
-// Data
-Scope scope;
-Spectrum spectrum;
-Display display;
-Strobe strobe;
-Meter meter;
-Status status;
-
-Options options;
-
-Audio audio;
-
 // Main function
 int main(int argc, char *argv[])
 {
@@ -170,7 +158,6 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(options_clicked), window);
 
     // Quit button
-
     quit = gtk_button_new_with_label("  Quit  ");
     gtk_box_pack_end(GTK_BOX(hbox), quit, FALSE, FALSE, 0);
 
@@ -205,9 +192,7 @@ int main(int argc, char *argv[])
     // Stop audio
     audio.done = TRUE;
     snd_pcm_close(audio.handle);
-
     gdk_threads_leave();
-
     saveOptions();
 
     // Exit
@@ -406,7 +391,6 @@ void initAudio(void)
 }
 
 // Read audio
-
 void *readAudio(void *dummy)
 {
     enum
@@ -1881,12 +1865,18 @@ gboolean button_press(GtkWidget *widget, GdkEventButton *event, void *data)
     return TRUE;
 }
 
+// Note filter callback
+void note_clicked(GtkWidget *widget, GtkWindow *window)
+{
+}
+
 // Options callback
 void options_clicked(GtkWidget *widget, GtkWindow *window)
 {
     GtkWidget *hbox;
     GtkWidget *ibox;
     GtkWidget *vbox;
+    GtkWidget *note;
     GtkWidget *close;
     GtkWidget *label;
     GtkWidget *save;
@@ -1979,7 +1969,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Filter clicked
     g_signal_connect(G_OBJECT(options.filter), "toggled",
 		     G_CALLBACK(filter_clicked), window);
-
     // Lock
     options.lock = gtk_check_button_new_with_label("Lock display");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.lock),
@@ -1989,7 +1978,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Lock clicked
     g_signal_connect(G_OBJECT(options.lock), "toggled",
 		     G_CALLBACK(lock_clicked), window);
-
     // Strobe
     options.strobe = gtk_check_button_new_with_label("Show strobe");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
@@ -1999,7 +1987,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Strobe clicked
     g_signal_connect(G_OBJECT(options.strobe), "toggled",
 		     G_CALLBACK(strobe_clicked), window);
-
     // I box
     ibox = gtk_hbox_new(FALSE, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), ibox, FALSE, FALSE, 0);
@@ -2017,7 +2004,13 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
+    // Note filter
+    note = gtk_button_new_with_label("  Note  ");
+    gtk_box_pack_end(GTK_BOX(ibox), note, FALSE, FALSE, 0);
 
+    // Note clicked
+    g_signal_connect(G_OBJECT(note), "clicked",
+		     G_CALLBACK(note_clicked), window);
     // V box
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
@@ -2029,22 +2022,17 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), options.downsample, FALSE, FALSE, 0);
 
     // Downsample clicked
-
     g_signal_connect(G_OBJECT(options.downsample), "toggled",
 		     G_CALLBACK(downsample_clicked), window);
-
     // Multiple
-
     options.multiple = gtk_check_button_new_with_label("Multiple notes");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.multiple),
 				 display.multiple);
     gtk_box_pack_start(GTK_BOX(vbox), options.multiple, FALSE, FALSE, 0);
 
     // Multiple clicked
-
     g_signal_connect(G_OBJECT(options.multiple), "toggled",
 		     G_CALLBACK(multiple_clicked), window);
-
     // Zoom
     options.zoom = gtk_check_button_new_with_label("Zoom spectrum");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.zoom),
