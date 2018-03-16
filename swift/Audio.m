@@ -314,9 +314,6 @@ OSStatus SetupAudio()
         return status;
     }
 
-    // Create the mutex for locking
-    pthread_mutex_init(&audioData.mutex, nil);
-
     AURenderCallbackStruct input =
 	{InputProc, &audioData.output};
 
@@ -404,9 +401,6 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
     Float32 *data = abl.mBuffers[0].mData;
 
-    // Lock the mutex
-    pthread_mutex_lock(&audioData.mutex);
-
     // Butterworth filter, 3dB/octave
     for (int i = 0; i < (audioData.frames / audioData.divisor); i++)
     {
@@ -426,9 +420,6 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	buffer[(kSamples - (audioData.frames / audioData.divisor)) + i] =
 	    audioData.filter? yv[1]: data[i * audioData.divisor];
     }
-
-    // Unlock the mutex
-    pthread_mutex_unlock(&audioData.mutex);
 
     // Run in main queue
     dispatch_async(dispatch_get_main_queue(), ProcessAudio);
@@ -649,16 +640,22 @@ void (^ProcessAudio)() = ^
     // Find maximum value, and list of maxima
     for (int i = 1; i < limit; i++)
     {
+        // Cents relative to reference
+        float cf = -12.0 * log2f(audioData.reference / xf[i]);
+        int n = round(cf) + kC5Offset;
+
+        // Ignore negative
+        if (n < 0)
+            continue;
+
+        // Fundamental filter
+        if ((audioData.fund) && (n > 0) &&
+            ((n % kOctave) != (maxima[count].n % kOctave)))
+            continue;
+
+        // Note filter
         if (audioData.filters)
         {
-            // Cents relative to reference
-	    float cf = -12.0 * log2f(audioData.reference / xf[i]);
-            int n = round(cf) + kC5Offset;
-
-            // Ignore negative
-            if (n < 0)
-                continue;
-
             // Get note and octave
             int note = n % kOctave;
             int octave = n / kOctave;
@@ -678,13 +675,11 @@ void (^ProcessAudio)() = ^
 	    xa[i] > kMin && xa[i] > (max / 2) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	{
+            // Frequency
 	    maxima[count].f = xf[i];
 
-	    // Cents relative to reference
-	    float cf = -12.0 * log2f(audioData.reference / xf[i]);
-
 	    // Note number
-	    maxima[count].n = round(cf) + kC5Offset;
+	    maxima[count].n = n;
 
 	    // Reference note
 	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) / 12.0);
