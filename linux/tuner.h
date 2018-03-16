@@ -159,6 +159,7 @@ typedef struct
 typedef struct
 {
     GtkWidget *dialog;
+    GtkWidget *note;
     GtkWidget *zoom;
     GtkWidget *lock;
     GtkWidget *strobe;
@@ -168,6 +169,14 @@ typedef struct
     GtkWidget *reference;
     GtkWidget *correction;
 } Options;
+
+typedef struct
+{
+  gboolean fund;
+  gboolean note;
+  gboolean notes[12];
+  gboolean octaves[9];
+} Filters;
 
 typedef struct
 {
@@ -190,6 +199,7 @@ Meter meter;
 Status status;
 
 Options options;
+Filters filters;
 
 Audio audio;
 

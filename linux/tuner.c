@@ -1189,9 +1189,9 @@ gboolean spectrum_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 			       void *data)
 {
-    static FT_Library library;
-    static FT_Face face;
-    static cairo_font_face_t *musica;
+    // static FT_Library library;
+    // static FT_Face face;
+    // static cairo_font_face_t *musica;
     static char s[16];
 
     enum
@@ -1206,21 +1206,21 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	 "F", "G", "A", "A", "B", "B"};
 
     static char *sharps[] =
-	{"", "#", "", "b", "", "",
-	 "#", "", "b", "", "b", ""};
+	{"", "\u266F", "", "\u266D", "", "",
+	 "\u266F", "", "\u266D", "", "\u266D", ""};
 
-    if (library == NULL)
-    {
-	int err;
+    // if (library == NULL)
+    // {
+    // 	int err;
 
-	err = FT_Init_FreeType(&library);
+	// err = FT_Init_FreeType(&library);
 
 	// err = FT_New_Face(library, "/usr/share/fonts/truetype/musica.ttf",
 	// 		  0, &face);
-	err = FT_New_Face(library, "Musica.ttf", 0, &face);
+	// err = FT_New_Face(library, "Musica.ttf", 0, &face);
 
-	musica = cairo_ft_font_face_create_for_ft_face(face, 0);
-    }
+	// musica = cairo_ft_font_face_create_for_ft_face(face, 0);
+    // }
 
     cairo_t *cr = gdk_cairo_create(event->window);
 
@@ -1339,18 +1339,18 @@ gboolean display_draw_callback(GtkWidget *widget, GdkEventExpose *event,
 	cairo_get_current_point(cr, &x, &y);
 
 	// Select medium font
-	cairo_set_font_size(cr, MEDIUM_HEIGHT);
+	cairo_set_font_size(cr, LARGER_HEIGHT / 2);
 
 	sprintf(s, "%d", display.n / 12);
 	cairo_show_text(cr, s);
 
 	// Select musica font
 	cairo_save(cr);
-	cairo_set_font_face(cr, musica);
-	cairo_set_font_size(cr, MUSIC_HEIGHT);
+	// cairo_set_font_face(cr, musica);
+	// cairo_set_font_size(cr, MEDIUM_HEIGHT);
 
 	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
-	cairo_move_to(cr, x, MEDIUM_HEIGHT);
+	cairo_move_to(cr, x, LARGER_HEIGHT / 2);
 	cairo_show_text(cr, s);
 
 	// Select large font
@@ -1865,9 +1865,84 @@ gboolean button_press(GtkWidget *widget, GdkEventButton *event, void *data)
     return TRUE;
 }
 
+// Fundamental clicked
+void fund_toggled(GtkWidget *widget, void *data)
+{
+    filters.fund =
+	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+}
+
+// Note clicked
+void note_toggled(GtkWidget *widget, void *data)
+{
+    filters.note =
+	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
+}
+
 // Note filter callback
 void note_clicked(GtkWidget *widget, GtkWindow *window)
 {
+    GtkWidget *hbox;
+    GtkWidget *ibox;
+    GtkWidget *vbox;
+    GtkWidget *fund;
+    GtkWidget *note;
+    GtkWidget *close;
+    GtkWidget *separator;
+
+    if (options.note != NULL)
+    {
+	gtk_widget_show_all(options.note);
+	return;
+    }
+
+    // Create note filter dialog
+    options.note = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(options.note), "Tuner note filter");
+    gtk_window_set_resizable(GTK_WINDOW(options.note), FALSE);
+    gtk_window_set_transient_for(GTK_WINDOW(options.note), window);
+
+    // V box
+    vbox = gtk_vbox_new(FALSE, 0);
+    gtk_container_add(GTK_CONTAINER(options.note), vbox);
+
+    // H box
+    hbox = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, TRUE, TRUE, MARGIN);
+
+    // Fundamental
+    fund = gtk_check_button_new_with_label("Fundamental filter");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(fund),
+				 filters.fund);
+    gtk_box_pack_start(GTK_BOX(hbox), fund, TRUE, TRUE, MARGIN);
+
+    // Fundamental clicked
+    g_signal_connect(G_OBJECT(fund), "toggled",
+		     G_CALLBACK(fund_toggled), window);
+
+    // Note
+    note = gtk_check_button_new_with_label("Note filter");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(note),
+				 filters.note);
+    gtk_box_pack_start(GTK_BOX(hbox), note, TRUE, TRUE, MARGIN);
+
+    // Note clicked
+    g_signal_connect(G_OBJECT(note), "toggled",
+		     G_CALLBACK(note_toggled), window);
+
+    // Separator
+    separator = gtk_hseparator_new();
+    gtk_box_pack_start(GTK_BOX(vbox), separator, FALSE, FALSE, 0);
+
+    // H box
+    hbox = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, MARGIN);
+
+    // Destroy dialog callback
+    g_signal_connect(G_OBJECT(options.note), "destroy",
+		     G_CALLBACK(gtk_widget_destroyed), &options.note);
+
+    gtk_widget_show_all(options.note);
 }
 
 // Options callback
@@ -1887,7 +1962,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 	gtk_widget_show_all(options.dialog);
 	return;
     }
-	
+
     // Create options dialog
     options.dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(options.dialog), "Tuner Options");
@@ -1933,7 +2008,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 		     G_CALLBACK(correction_changed), window);
 
     // Save button
-    save = gtk_button_new_with_label("  Save  ");
+    save = gtk_button_new_with_label("   Save   ");
     gtk_box_pack_end(GTK_BOX(hbox), save, FALSE, FALSE, MARGIN);
 
     // Save clicked
@@ -2004,13 +2079,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
-    // Note filter
-    note = gtk_button_new_with_label("  Note  ");
-    gtk_box_pack_end(GTK_BOX(ibox), note, FALSE, FALSE, 0);
-
-    // Note clicked
-    g_signal_connect(G_OBJECT(note), "clicked",
-		     G_CALLBACK(note_clicked), window);
     // V box
     vbox = gtk_vbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, MARGIN);
@@ -2042,6 +2110,17 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Zoom clicked
     g_signal_connect(G_OBJECT(options.zoom), "toggled",
 		     G_CALLBACK(zoom_clicked), window);
+    // I box
+    ibox = gtk_hbox_new(FALSE, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), ibox, FALSE, FALSE, 0);
+
+    // Note filter
+    note = gtk_button_new_with_label("  Note...  ");
+    gtk_box_pack_end(GTK_BOX(ibox), note, FALSE, FALSE, 0);
+
+    // Note clicked
+    g_signal_connect(G_OBJECT(note), "clicked",
+		     G_CALLBACK(note_clicked), window);
 
     // Destroy dialog callback
     g_signal_connect(G_OBJECT(options.dialog), "destroy",
