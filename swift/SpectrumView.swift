@@ -23,7 +23,7 @@ import Cocoa
 class SpectrumView: TunerView
 {
     let kTextSize: CGFloat = 10
-    var max: Float = 0
+    var max: Double = 0
 
     override func resize(withOldSuperviewSize oldSize: NSSize)
     {
@@ -32,6 +32,7 @@ class SpectrumView: TunerView
         if (spectrumData.expand == 0)
         {
             spectrumData.expand = 1
+            spectrumData.zoom = true
         }
     }
 
@@ -85,7 +86,7 @@ class SpectrumView: TunerView
         }
 
         // Calculate the scaling
-        let yscale = height / max
+        let yscale = Double(height) / max
         max = 0.0
 
         // Green trace
@@ -98,7 +99,8 @@ class SpectrumView: TunerView
         if (spectrumData.zoom)
         {
 	    // Calculate scale
-	    let xscale = (width / (spectrumData.r - spectrumData.l)) / 2.0
+	    let xscale = (Double(width) / (spectrumData.r -
+                                             spectrumData.l)) / 2.0
 
 	    // Draw trace
 	    for i in Int(floor(spectrumData.l)) ..< Int(ceil(spectrumData.h))
@@ -113,7 +115,7 @@ class SpectrumView: TunerView
                     }
 
 		    let y = NSMinY(rect) + CGFloat(value * yscale)
-		    let x = NSMinX(rect) + CGFloat((Float(i) - spectrumData.l) *
+		    let x = NSMinX(rect) + CGFloat((Double(i) - spectrumData.l) *
                                                      xscale)
 
 		    path.line(to: NSPoint(x: x, y: y))
@@ -136,7 +138,7 @@ class SpectrumView: TunerView
 	        if (spectrumData.values[i] > spectrumData.l &&
 		      spectrumData.values[i] < spectrumData.h)
 	        {
-		    let x = NSMidX(rect) +
+		    let x = NSMinX(rect) +
                       CGFloat((spectrumData.values[i] -
                                  spectrumData.l) * xscale)
 		    path.move(to: NSPoint(x: x, y: NSMinY(rect)))
@@ -149,8 +151,7 @@ class SpectrumView: TunerView
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =
-              [.foregroundColor: NSColor.yellow,
-               .font: font]
+              [.foregroundColor: NSColor.yellow, .font: font]
 
 	    for i in 0 ..< Int(spectrumData.count)
 	    {
@@ -164,7 +165,7 @@ class SpectrumView: TunerView
 		    // Reference freq
 		    let fr = displayData.maxima[i].fr
 
-		    let c = -12.0 * log2f(fr / f)
+		    let c = -12.0 * log2(fr / f)
 
 		    // Ignore silly values
 		    if (!c.isFinite)
@@ -177,7 +178,7 @@ class SpectrumView: TunerView
                                  spectrumData.l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
-		    s.draw(at: NSPoint(x: x, y: NSMinY(rect) + 1),
+		    s.draw(at: NSPoint(x: x, y: NSMinY(rect)),
                            withAttributes: attribs)
 	        }
 	    }
@@ -185,19 +186,19 @@ class SpectrumView: TunerView
 
         else
         {
-	    let xscale = Float(spectrumData.length /
-			    spectrumData.expand) / width
+	    let xscale = Double(spectrumData.length /
+			          spectrumData.expand) / Double(width)
 
 	    for x in 0 ..< Int(width)
 	    {
-	        var value: Float = 0
+	        var value: Double = 0
 
 	        // Don't show DC component
 	        if (x > 0)
 	        {
 		    for j in 0 ..< Int(xscale)
 		    {
-		        let n = x * Int(xscale) + j
+		        let n = Int(Double(x) * xscale) + j
 
 		        if (value < spectrumData.data[n])
                         {
@@ -251,7 +252,7 @@ class SpectrumView: TunerView
 
 	        let fr = displayData.maxima[i].fr
 
-	        let c = -12.0 * log2f(fr / f)
+	        let c = -12.0 * log2(fr / f)
 
 	        // Ignore silly values
 
@@ -263,14 +264,14 @@ class SpectrumView: TunerView
 	        let x = spectrumData.values[i] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
 	        s.draw(at: NSPoint(x: NSMinX(rect) + CGFloat(x),
-                                   y: NSMinY(rect) + 1),
+                                   y: NSMinY(rect)),
                        withAttributes: attribs)
 	    }
 
 	    if (spectrumData.expand > 1)
 	    {
 	        let s = String(format: "x%d", spectrumData.expand)
-	        s.draw(at: NSPoint(x: NSMinX(rect), y: NSMinY(rect) + 1),
+	        s.draw(at: NSPoint(x: NSMinX(rect), y: NSMinY(rect)),
                        withAttributes: attribs)
 	    }
         }
@@ -279,10 +280,9 @@ class SpectrumView: TunerView
         {
             let font = NSFont.systemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =
-              [.foregroundColor: NSColor.yellow,
-               .font: font]
+              [.foregroundColor: NSColor.yellow, .font: font]
 
-	    "D".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect) + 2),
+	    "D".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect)),
                      withAttributes: attribs)
         }
     }    

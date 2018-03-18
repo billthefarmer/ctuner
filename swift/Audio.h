@@ -67,8 +67,8 @@ enum
 // Maximum
 typedef struct
 {
-    float f;
-    float fr;
+    double f;
+    double fr;
     int n;
 } maximum;
 
@@ -78,7 +78,7 @@ AppDelegate *app;
 // Scope data
 typedef struct
 {
-    float *data;
+    double *data;
     int length;
 } ScopeData;
 ScopeData scopeData;
@@ -91,12 +91,12 @@ typedef struct
     int expand;
     int count;
     bool zoom;
-    float f;
-    float r;
-    float l;
-    float h;
-    float *data;
-    float *values;
+    double f;
+    double r;
+    double l;
+    double h;
+    double *data;
+    double *values;
 } SpectrumData;
 SpectrumData spectrumData;
 SpectrumView *spectrumView;
@@ -105,9 +105,9 @@ SpectrumView *spectrumView;
 typedef struct
 {
     maximum *maxima;
-    float f;
-    float fr;
-    float c;
+    double f;
+    double fr;
+    double c;
     bool lock;
     bool zoom;
     bool multiple;
@@ -123,7 +123,7 @@ typedef struct
     bool changed;
     bool enable;
     int colours;
-    float c;
+    double c;
 } StrobeData;
 StrobeData strobeData;
 StrobeView *strobeView;
@@ -131,7 +131,7 @@ StrobeView *strobeView;
 // Meter data
 typedef struct
 {
-    float c;
+    double c;
 } MeterData;
 MeterData meterData;
 MeterView *meterView;
@@ -139,8 +139,8 @@ MeterView *meterView;
 // Status data
 typedef struct
 {
-    float sample;
-    float actual;
+    double sample;
+    double actual;
 } StatusData;
 StatusData statusData;
 StatusView *statusView;
@@ -152,9 +152,9 @@ typedef struct
     AudioDeviceID id;
     int divisor;
     int frames;
-    float *buffer;
-    float sample;
-    float reference;
+    double *buffer;
+    double sample;
+    double reference;
     bool fund;
     bool filter;
     bool filters;

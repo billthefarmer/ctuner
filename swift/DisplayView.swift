@@ -17,8 +17,8 @@ class DisplayView: TunerView
        "F", "G", "A", "A", "B", "B"]
 
     let sharps =
-      [" ", "/u{0266F}", " ", "/u{0266D}", " ", " ",
-       "/u{0266F}", " ", "/u{0266D}", " ", "/u{0266D}", " "]
+      [" ", "\u{0266F}", " ", "\u{0266D}", " ", " ",
+       "\u{0266F}", " ", "\u{0266D}", " ", "\u{0266D}", " "]
 
     override func mouseDown(with event: NSEvent)
     {
@@ -34,11 +34,11 @@ class DisplayView: TunerView
         super.draw(dirtyRect)
 
         // Text sizes
-        let textSizeLarger: CGFloat = height / 2
-        let textSizeLarge : CGFloat = height / 3
+        let textSizeLarger: CGFloat = CGFloat(height / 2)
+        let textSizeLarge : CGFloat = CGFloat(height / 3)
         // let textSizeMusic : CGFloat = 26
-        let textSizeMedium: CGFloat = height / 5
-        let textSizeSmall : CGFloat = height / 9
+        let textSizeMedium: CGFloat = CGFloat(height / 5)
+        let textSizeSmall : CGFloat = CGFloat(height / 9)
 
         // Drawing code here.
         NSEraseRect(rect)
@@ -110,7 +110,7 @@ class DisplayView: TunerView
                 }
 
                 // Cents
-	        let c = -12.0 * log2f(fr / f)
+	        let c = -12.0 * log2(fr / f)
 
 	        // Ignore silly values
 	        if (!c.isFinite)
@@ -171,8 +171,6 @@ class DisplayView: TunerView
 
 	    s = String(format: "%d", displayData.n / kOctave) 
             s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
-            x += s.size(withAttributes: attribs).width +
-              "  ".size(withAttributes: attribs).width
 
 	    // Select font
             font = NSFont.boldSystemFont(ofSize: textSizeLarger / 2)
@@ -180,7 +178,7 @@ class DisplayView: TunerView
 
 	    s = String(format: "%@",
                        sharps[Int(displayData.n) % sharps.endIndex])
-            s.draw(at: NSPoint(x: x + 8, y: y + textSizeLarger / 2),
+            s.draw(at: NSPoint(x: x, y: y + textSizeLarger / 2),
                    withAttributes: attribs)
 
 	    // Select font
@@ -224,11 +222,9 @@ class DisplayView: TunerView
         if (displayData.lock == true)
         {
             let font = NSFont.boldSystemFont(ofSize: textSizeSmall)
-            let attribs: [NSAttributedStringKey: Any] =
-              [.foregroundColor: NSColor.yellow,
-               .font: font]
+            let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
-            "L".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect) + 2),
+            "L".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect)),
                      withAttributes: attribs)
         }
     }

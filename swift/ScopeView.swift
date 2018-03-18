@@ -24,7 +24,7 @@ import Cocoa
 class ScopeView: TunerView
 {
     let kTextSize: CGFloat = 10
-    var max: Float = 0
+    var max: Double = 0
 
     override func mouseDown(with event: NSEvent)
     {
@@ -73,8 +73,8 @@ class ScopeView: TunerView
         }
 
         // Initialise sync
-        var maxdx: Float = 0
-        var dx: Float = 0
+        var maxdx: Double = 0
+        var dx: Double = 0
         var n = 0
 
         if (width < 1)
@@ -103,7 +103,7 @@ class ScopeView: TunerView
 	    max = 0.125
         }
 
-        let yscale = max / (height / 2)
+        let yscale = max / Double(height / 2)
         max = 0.0
 
         // Green trace
@@ -124,7 +124,7 @@ class ScopeView: TunerView
 	    path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(i), y: CGFloat(y)))
         }
 
-            path.stroke()
+        path.stroke()
 
         // Show F if filtered
         if (audioData.filter == true)
@@ -134,7 +134,7 @@ class ScopeView: TunerView
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]
-            "F".draw(at: NSPoint(x: NSMinX(rect) + 2, y: -NSMidY(rect) + 2),
+            "F".draw(at: NSPoint(x: NSMinX(rect) + 2, y: -NSMidY(rect)),
                      withAttributes: attribs)
         }
     }

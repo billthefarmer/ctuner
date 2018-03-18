@@ -353,6 +353,8 @@ OSStatus SetupAudio()
         return status;
     }
 
+    audioData.reference = kA5Reference;
+
     return status;
 }
 
@@ -371,7 +373,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	{1, {1, 0, nil}};
 
     // Initialise data structs
-    static Float32 buffer[kSamples];
+    static double buffer[kSamples];
 
     if (audioData.buffer == nil)
 	audioData.buffer = buffer;
@@ -397,18 +399,18 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     // Copy the input data
     memmove(buffer, buffer + (audioData.frames / audioData.divisor),
 	    (kSamples - (audioData.frames / audioData.divisor)) *
-            sizeof(Float32));
+            sizeof(double));
 
     Float32 *data = abl.mBuffers[0].mData;
 
     // Butterworth filter, 3dB/octave
     for (int i = 0; i < (audioData.frames / audioData.divisor); i++)
     {
-	static float G = 3.023332184e+01;
-	static float K = 0.9338478249;
+	static double G = 3.023332184e+01;
+	static double K = 0.9338478249;
 
-	static float xv[2];
-	static float yv[2];
+	static double xv[2];
+	static double yv[2];
 
 	xv[0] = xv[1];
 	xv[1] = data[i * audioData.divisor] / G;
@@ -434,41 +436,41 @@ void (^ProcessAudio)() = ^
     {kTimerCount = 16};
 
     // Arrays for processing input
-    static float xa[kRange];
-    static float xp[kRange];
-    static float xq[kRange];
-    static float xf[kRange];
+    static double xa[kRange];
+    static double xp[kRange];
+    static double xq[kRange];
+    static double xf[kRange];
 
-    static float x2[kRange / 2];
-    static float x3[kRange / 3];
-    static float x4[kRange / 4];
-    static float x5[kRange / 5];
+    static double x2[kRange / 2];
+    static double x3[kRange / 3];
+    static double x4[kRange / 4];
+    static double x5[kRange / 5];
 
-    static float dxa[kRange];
-    static float dxp[kRange];
+    static double dxa[kRange];
+    static double dxp[kRange];
 
     static maximum maxima[kMaxima];
-    static float   values[kMaxima];
+    static double   values[kMaxima];
 
-    static float window[kSamples];
-    static float input[kSamples];
+    static double window[kSamples];
+    static double input[kSamples];
 
-    static float re[kSamples2];
-    static float im[kSamples2];
+    static double re[kSamples2];
+    static double im[kSamples2];
 
-    static DSPSplitComplex x =
+    static DSPDoubleSplitComplex x =
 	{re, im};
 
-    static FFTSetup setup;
+    static FFTSetupD setup;
 
-    static float fps;
-    static float expect;
+    static double fps;
+    static double expect;
 
     // Initialise structures
     if (scopeData.data == nil)
     {
 	scopeData.data = audioData.buffer + kSamples -
-        (audioData.frames / audioData.divisor);
+            (2 * (audioData.frames / audioData.divisor));
 	scopeData.length = audioData.frames / audioData.divisor;
 
 	spectrumData.data = xa;
@@ -477,70 +479,67 @@ void (^ProcessAudio)() = ^
 
 	displayData.maxima = maxima;
 
-	fps = audioData.sample / (float)kSamples;
-	expect = 2.0 * M_PI * (float)(audioData.frames / audioData.divisor) /
-	    (float)kSamples;
+	fps = audioData.sample / (double)kSamples;
+	expect = 2.0 * M_PI * (double)(audioData.frames / audioData.divisor) /
+	    (double)kSamples;
 
 	// Init Hamming window
-	vDSP_hamm_window(window, kSamples, 0);
+	vDSP_hamm_windowD(window, kSamples, 0);
 
 	// Init FFT
-	setup = vDSP_create_fftsetup(kLog2Samples, kFFTRadix2);
+	setup = vDSP_create_fftsetupD(kLog2Samples, kFFTRadix2);
     }
 
-    // Refresh scope
-    scopeView.needsDisplay = true;
-
     // Maximum data value
-    static float dmax;
+    static double dmax;
 
     if (dmax < 0.125)
 	dmax = 0.125;
 
     // Calculate normalising value
-    float norm = dmax;
+    double norm = dmax;
 
     // Get max magitude
-    vDSP_maxmgv(audioData.buffer, 1, &dmax, kSamples);
+    vDSP_maxmgvD(audioData.buffer, 1, &dmax, kSamples);
 
     // Divide by normalisation
-    vDSP_vsdiv(audioData.buffer, 1, &norm, input, 1, kSamples);
+    vDSP_vsdivD(audioData.buffer, 1, &norm, input, 1, kSamples);
 
     // Multiply by window
-    vDSP_vmul(input, 1, window, 1, input, 1, kSamples);
+    vDSP_vmulD(input, 1, window, 1, input, 1, kSamples);
 
     // Copy input to split complex vector
-    vDSP_ctoz((COMPLEX *)input, 2, &x, 1, kSamples2);
+    vDSP_ctozD((DSPDoubleComplex *)input, 2, &x, 1, kSamples2);
 
     // Do FFT
-    vDSP_fft_zrip(setup, &x, 1, kLog2Samples, kFFTDirection_Forward);
+    vDSP_fft_zripD(setup, &x, 1, kLog2Samples, kFFTDirection_Forward);
 
     // Zero the zeroth part
     x.realp[0] = 0.0;
     x.imagp[0] = 0.0;
 
     // Scale the output
-    float scale = kScale;
+    double scale = kScale;
 
-    vDSP_vsdiv(x.realp, 1, &scale, x.realp, 1, kSamples2);
-    vDSP_vsdiv(x.imagp, 1, &scale, x.imagp, 1, kSamples2);
+    vDSP_vsdivD(x.realp, 1, &scale, x.realp, 1, kSamples2);
+    vDSP_vsdivD(x.imagp, 1, &scale, x.imagp, 1, kSamples2);
 
     // Magnitude
-    vDSP_vdist(x.realp, 1, x.imagp, 1, xa, 1, kRange);
+    vDSP_vdistD(x.realp, 1, x.imagp, 1, xa, 1, kRange);
 
     // Phase
-    vDSP_zvphas(&x, 1, xq, 1, kRange);
+    vDSP_zvphasD(&x, 1, xq, 1, kRange);
 
     // Phase difference
-    vDSP_vsub(xp, 1, xq, 1, dxp, 1, kRange);
+    vDSP_vsubD(xp, 1, xq, 1, dxp, 1, kRange);
 
     for (int i = 1; i < kRange; i++)
     {
 	// Do frequency calculation
-	float dp = dxp[i];
+	double dp = dxp[i];
 
 	// Calculate phase difference
-	dp -= (float)i * expect;
+	dp -= (double)i * expect;
 
 	int qpd = dp / M_PI;
 
@@ -550,10 +549,10 @@ void (^ProcessAudio)() = ^
 	else
 	    qpd -= qpd & 1;
 
-	dp -=  M_PI * (float)qpd;
+	dp -=  M_PI * (double)qpd;
 
 	// Calculate frequency difference
-	float df = kOversample * dp / (2.0 * M_PI);
+	double df = kOversample * dp / (2.0 * M_PI);
 
 	// Calculate actual frequency from slot frequency plus
 	// frequency difference
@@ -564,7 +563,7 @@ void (^ProcessAudio)() = ^
     }
 
     // Copy phase vector
-    memmove(xp, xq, kRange * sizeof(float));
+    memmove(xp, xq, kRange * sizeof(double));
 
     // Downsample
     if (audioData.downsample)
@@ -627,12 +626,12 @@ void (^ProcessAudio)() = ^
     }
 
     // Maximum FFT output
-    float  max;
+    double  max;
     vDSP_Length imax;
 
-    vDSP_maxmgvi(xa, 1, &max, &imax, kRange);
+    vDSP_maxmgviD(xa, 1, &max, &imax, kRange);
 
-    float f = xf[imax];
+    double f = xf[imax];
 
     int count = 0;
     int limit = kRange - 1;
@@ -641,15 +640,15 @@ void (^ProcessAudio)() = ^
     for (int i = 1; i < limit; i++)
     {
         // Cents relative to reference
-        float cf = -12.0 * log2f(audioData.reference / xf[i]);
+        double cf = -12.0 * log2f(audioData.reference / xf[i]);
         int n = round(cf) + kC5Offset;
-
+        /*
         // Ignore negative
         if (n < 0)
             continue;
 
         // Fundamental filter
-        if ((audioData.fund) && (n > 0) &&
+        if ((audioData.fund) && (count > 0) &&
             ((n % kOctave) != (maxima[count].n % kOctave)))
             continue;
 
@@ -669,7 +668,7 @@ void (^ProcessAudio)() = ^
                 !filterData.octave[octave])
                 continue;
         }
-
+        */
         // If display not locked, find maxima and add to list
 	if (!displayData.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 2) &&
@@ -682,7 +681,8 @@ void (^ProcessAudio)() = ^
 	    maxima[count].n = n;
 
 	    // Reference note
-	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) / 12.0);
+	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) /
+                                                          12.0);
 
 	    // Set limit to octave above
 	    if (!audioData.downsample && (limit > i * 2))
@@ -693,16 +693,16 @@ void (^ProcessAudio)() = ^
     }
 
     // Reference note frequency and lower and upper limits
-    float fr = 0.0;
-    float fl = 0.0;
-    float fh = 0.0;
+    double fr = 0.0;
+    double fl = 0.0;
+    double fh = 0.0;
 
     // Note number
     int n = 0;
 
     // Found flag and cents value
     bool found = false;
-    float c = 0.0;
+    double c = 0.0;
 
     // Do the note and cents calculations
     if (max > kMin)
@@ -714,8 +714,7 @@ void (^ProcessAudio)() = ^
 	    f = maxima[0].f;
 
 	// Cents relative to reference
-	float cf =
-	    -12.0 * log2f(audioData.reference / f);
+	double cf = -12.0 * log2f(audioData.reference / f);
 
 	// Reference note
 	fr = audioData.reference * powf(2.0, round(cf) / 12.0);
@@ -731,26 +730,26 @@ void (^ProcessAudio)() = ^
 	    found = false;
 
 	// Find nearest maximum to reference note
-	float df = 1000.0;
+	double df = 1000.0;
 
 	for (int i = 0; i < count; i++)
 	{
 	    if (fabs(maxima[i].f - fr) < df)
 	    {
-		df = fabsf(maxima[i].f - fr);
+		df = fabs(maxima[i].f - fr);
 		f = maxima[i].f;
 	    }
 	}
 
 	// Cents relative to reference note
-	c = -12.0 * log2f(fr / f);
+	c = -12.0 * log2(fr / f);
 
 	// Ignore silly values
 	if (!isfinite(c))
 	    c = 0.0;
 
 	// Ignore if not within 50 cents of reference note
-	if (fabsf(c) > 0.5)
+	if (fabs(c) > 0.5)
 	    found = false;
     }
 

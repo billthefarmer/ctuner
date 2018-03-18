@@ -36,7 +36,7 @@ let kEventAudioUpdate = 1
 
 class Audio: NSObject
 {
-    var output: AudioUnit = kAudioObjectUnknown
+    var output: AudioUnit? = nil
     var id: AudioDeviceID = kAudioObjectUnknown
     var downsample: Bool!
     var filter: Bool!
@@ -46,8 +46,6 @@ class Audio: NSObject
 
     func setup() -> OSStatus
     {
-        audio = self;
-
         // Specify an output unit
         var dc = AudioComponentDescription(componentType:
                                              kAudioUnitType_Output,
@@ -58,7 +56,7 @@ class Audio: NSObject
                                            componentFlags: 0,
                                            componentFlagsMask: 0)
         // Find an output unit
-        let cp = AudioComponentFindNext(nil, &dc)
+        let cp! = AudioComponentFindNext(nil, &dc)
 
         if (cp == nil)
         {
@@ -67,7 +65,7 @@ class Audio: NSObject
             return -1
         }
 
-        var status = AudioComponentInstanceNew(cp!, &output)
+        var status = AudioComponentInstanceNew(cp, &output)
 
         if (status != noErr)
         {
@@ -79,7 +77,7 @@ class Audio: NSObject
         // Enable input
         var enable = true
         status =
-          AudioUnitSetProperty(output!,
+          AudioUnitSetProperty(output,
 			       kAudioOutputUnitProperty_EnableIO,
 			       kAudioUnitScope_Input,
 			       1, &enable,
@@ -95,7 +93,7 @@ class Audio: NSObject
         // Disable output
         enable = false
         status =
-          AudioUnitSetProperty(output!,
+          AudioUnitSetProperty(output,
 			       kAudioOutputUnitProperty_EnableIO,
 			       kAudioUnitScope_Output,
 			       0, &enable,
@@ -274,7 +272,7 @@ class Audio: NSObject
         }
 
         // Set the max frames
-        status = AudioUnitSetProperty(output!,
+        status = AudioUnitSetProperty(output,
 				      kAudioUnitProperty_MaximumFramesPerSlice,
 				      kAudioUnitScope_Global, 0,
 				      &frames, size)
@@ -288,7 +286,7 @@ class Audio: NSObject
         }
 
         // Get the frames
-        status = AudioUnitGetProperty(output!,
+        status = AudioUnitGetProperty(output,
 				      kAudioUnitProperty_MaximumFramesPerSlice,
 				      kAudioUnitScope_Global, 0,
                                       &frames, &size)
@@ -309,7 +307,7 @@ class Audio: NSObject
         size = UInt32(MemoryLayout.size(ofValue: format))
 
         // Get stream format
-        status = AudioUnitGetProperty(output!,
+        status = AudioUnitGetProperty(output,
 				      kAudioUnitProperty_StreamFormat,
 				      kAudioUnitScope_Input, 1,
 				      &format, &size)
@@ -328,7 +326,7 @@ class Audio: NSObject
         format.mChannelsPerFrame = UInt32(kChannelsPerFrame)
 
         // Set stream format
-        status = AudioUnitSetProperty(output!,
+        status = AudioUnitSetProperty(output,
 				      kAudioUnitProperty_StreamFormat,
 				      kAudioUnitScope_Output, 1,
 				      &format, size)
@@ -346,9 +344,9 @@ class Audio: NSObject
 
         var input =
           AURenderCallbackStruct(inputProc: InputProc,
-                                 inputProcRefCon: output!)
+                                 inputProcRefCon: output)
         // Set callback
-        status = AudioUnitSetProperty(output!,
+        status = AudioUnitSetProperty(output,
 				      kAudioOutputUnitProperty_SetInputCallback,
 				      kAudioUnitScope_Global, 0,
 				      &input,
@@ -363,7 +361,7 @@ class Audio: NSObject
         }
 
         // Initialize the audio unit
-        status = AudioUnitInitialize(output!)
+        status = AudioUnitInitialize(output)
         if (status != noErr)
         {
             // AudioUnitInitialize
@@ -373,7 +371,7 @@ class Audio: NSObject
         }
 
         // Start the audio unit
-        status = AudioOutputUnitStart(output!)
+        status = AudioOutputUnitStart(output)
         if (status != noErr)
         {
             // AudioOutputUnitStart
@@ -417,13 +415,13 @@ class Audio: NSObject
     {
         var status: OSStatus!
 
-        status = AudioOutputUnitStop(output!)
+        status = AudioOutputUnitStop(output)
         if (status != noErr)
         {
             return status
         }
 
-        status = AudioUnitUninitialize(output!)
+        status = AudioUnitUninitialize(output)
 
         return status
     }
@@ -525,7 +523,7 @@ private func InputProc(inRefCon: UnsafeMutableRawPointer,
     {
         // AudioUnitRender
         NSLog("Error in AudioUnitRender: " +
-                audio.AudioUnitErrString(status))
+                AudioUnitErrString(status))
 	return status
     }
 

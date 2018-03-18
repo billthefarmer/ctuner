@@ -64,6 +64,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
+        window.setContentSize(NSMakeSize(400, 480))
+        window.contentMinSize = NSMakeSize(400, 480)
+        window.contentAspectRatio = NSMakeSize(1.0, 1.2)
+        window.showsResizeIndicator = true
+
         scopeView = ScopeView()
         spectrumView = SpectrumView()
         displayView = DisplayView()
@@ -114,7 +119,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
-                                        bottom: 20, right: 20)
+                                        bottom: 0, right: 20)
 
         container = NSStackView(views: [stack, statusView])
 
