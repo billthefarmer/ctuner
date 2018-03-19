@@ -64,6 +64,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
+        var options = NSApp.presentationOptions
+        options.remove(.fullScreen)
+        NSApp.presentationOptions = options
+
+        window.delegate = WindowDelegate()
+
         window.setContentSize(NSMakeSize(400, 480))
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
@@ -202,5 +208,18 @@ class AppDelegate: NSObject, NSApplicationDelegate
         default:
             NSLog("Key %s", key!)
         }
+    }
+}
+
+class WindowDelegate: NSObject, NSWindowDelegate
+{
+    func window(_ window: NSWindow, 
+                willUseFullScreenPresentationOptions proposedOptions:
+                  NSApplication.PresentationOptions = [])
+      -> NSApplication.PresentationOptions
+    {
+        var options = proposedOptions
+        options.remove(.fullScreen)
+        return options
     }
 }
