@@ -31,9 +31,67 @@ class MeterView: TunerView
     {
         super.draw(dirtyRect)
 
-        // Drawing code here.
+        let textSizeMedium: CGFloat = CGFloat(height / 5)
+        let font = NSFont.systemFont(ofSize: textSizeMedium)
+        let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
+        // Drawing code here.
         NSEraseRect(rect)
+
+        // Move the origin
+        let transform = AffineTransform(translationByX: NSMidX(rect), byY: 0)
+        (transform as NSAffineTransform).concat()
+
+        // Draw the meter scale
+        for i in 0 ..< 6
+        {
+	    if (i == 0)
+            {
+                let offset = "0".size(withAttributes: attribs).width / 2
+	        "0".draw(at: NSPoint(x: -offset,
+                                     y: NSMaxY(rect) - textSizeMedium))
+            }
+
+	    else
+	    {
+	        let x = width / 11 * i;
+	        let s = String(format:"%d", i * 10)
+                let offset = s.size(withAttributes: attribs).width / 2
+
+	        s.draw(at: NSPoint(x: x - offset,
+                                   y: NSMaxY(rect) - textSizeMedium))
+	        s.draw(at: NSPoint(x: -x - offset,
+                                   y: NSMaxY(rect) - textSizeMedium))
+	    }
+        }
+
+        CGContextSetShouldAntialias(context, false);
+        CGContextBeginPath(context);
+
+        for (int i = 0; i < 6; i++)
+        {
+	    int x = width / 11 * i;
+
+	    CGContextMoveToPoint(context, x, 18);
+	    CGContextAddLineToPoint(context, x, 24);
+
+	    CGContextMoveToPoint(context, -x, 18);
+	    CGContextAddLineToPoint(context, -x, 24);
+
+	    for (int j = 1; j < 5; j++)
+	    {
+	        if (i < 5)
+	        {
+		    CGContextMoveToPoint(context, x + j * width / 55, 20);
+		    CGContextAddLineToPoint(context, x + j * width / 55, 24);
+	        }
+
+	        CGContextMoveToPoint(context, -x + j * width / 55, 20);
+	        CGContextAddLineToPoint(context, -x + j * width / 55, 24);
+	    }
+        }
+
+        CGContextStrokePath(context);
     }
     
 }
