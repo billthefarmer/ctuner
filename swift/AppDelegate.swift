@@ -64,23 +64,17 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
-        var options = NSApp.presentationOptions
-        options.remove(.fullScreen)
-        NSApp.presentationOptions = options
-
-        window.delegate = WindowDelegate()
-
         window.setContentSize(NSMakeSize(400, 480))
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
-        window.showsResizeIndicator = true
+        window.showsResizeIndicator = false
 
         scopeView = ScopeView()
         spectrumView = SpectrumView()
         displayView = DisplayView()
         strobeView = StrobeView()
         meterView = MeterView()
-        statusView = StatusView()
+        // statusView = StatusView()
 
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
                                     strobeView, meterView])
@@ -125,28 +119,27 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
-                                        bottom: 0, right: 20)
+                                        bottom: 20, right: 20)
 
-        container = NSStackView(views: [stack, statusView])
+        // container = NSStackView(views: [stack, statusView])
 
-        let statusHeight = NSLayoutConstraint(item: statusView,
-                                              attribute: .height,
-                                              relatedBy: .equal,
-                                              toItem: stack,
-                                              attribute: .height,
-                                              multiplier: 0.05,
-                                              constant: 0)
-        container.addConstraint(statusHeight)
-        container.orientation = .vertical
+        // let statusHeight = NSLayoutConstraint(item: statusView,
+        //                                       attribute: .height,
+        //                                       relatedBy: .equal,
+        //                                       toItem: stack,
+        //                                       attribute: .height,
+        //                                       multiplier: 0.05,
+        //                                       constant: 0)
+        // container.addConstraint(statusHeight)
+        // container.orientation = .vertical
 
-        window.contentView = container
+        window.contentView = stack
 
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        statusView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        // meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Start audio
         let result = SetupAudio()

@@ -181,5 +181,5 @@ OSStatus ShutdownAudio(void);
 OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
-char *AudioUnitErrString(OSStatus status);
+char *AudioUnitErrString(OSStatus);
 void (^ProcessAudio)();

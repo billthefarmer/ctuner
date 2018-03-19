@@ -32,6 +32,9 @@ class MeterView: TunerView
         super.draw(dirtyRect)
 
         let textSizeMedium: CGFloat = CGFloat(height / 5)
+        let tickSize: CGFloat = CGFloat(height / 10)
+        let tickSize2: CGFloat = tickSize / 2
+
         let font = NSFont.systemFont(ofSize: textSizeMedium)
         let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
@@ -39,7 +42,8 @@ class MeterView: TunerView
         NSEraseRect(rect)
 
         // Move the origin
-        let transform = AffineTransform(translationByX: NSMidX(rect), byY: 0)
+        var transform = AffineTransform(translationByX: NSMidX(rect),
+                                        byY: NSMaxY(rect) - textSizeMedium - 4)
         (transform as NSAffineTransform).concat()
 
         // Draw the meter scale
@@ -48,50 +52,55 @@ class MeterView: TunerView
 	    if (i == 0)
             {
                 let offset = "0".size(withAttributes: attribs).width / 2
-	        "0".draw(at: NSPoint(x: -offset,
-                                     y: NSMaxY(rect) - textSizeMedium))
+	        "0".draw(at: NSPoint(x: -offset, y: 0),
+                       withAttributes: attribs)
             }
 
 	    else
 	    {
-	        let x = width / 11 * i;
+	        let x = width / 11 * Float(i)
 	        let s = String(format:"%d", i * 10)
                 let offset = s.size(withAttributes: attribs).width / 2
 
-	        s.draw(at: NSPoint(x: x - offset,
-                                   y: NSMaxY(rect) - textSizeMedium))
-	        s.draw(at: NSPoint(x: -x - offset,
-                                   y: NSMaxY(rect) - textSizeMedium))
+	        s.draw(at: NSPoint(x: CGFloat(x) - offset, y: 0),
+                       withAttributes: attribs)
+	        s.draw(at: NSPoint(x: -CGFloat(x) - offset, y: 0),
+                       withAttributes: attribs)
 	    }
         }
 
-        CGContextSetShouldAntialias(context, false);
-        CGContextBeginPath(context);
+        // Move the origin
+        transform = AffineTransform(translationByX: 0, byY: -tickSize)
+        (transform as NSAffineTransform).concat()
 
-        for (int i = 0; i < 6; i++)
+        NSGraphicsContext.current!.shouldAntialias = false;
+        let path = NSBezierPath()
+
+        for i in 0 ..< 6
         {
-	    int x = width / 11 * i;
+	    let x = width / 11 * Float(i)
 
-	    CGContextMoveToPoint(context, x, 18);
-	    CGContextAddLineToPoint(context, x, 24);
+	    path.move(to: NSPoint(x: CGFloat(x), y: 0))
+	    path.line(to: NSPoint(x: CGFloat(x), y: tickSize))
 
-	    CGContextMoveToPoint(context, -x, 18);
-	    CGContextAddLineToPoint(context, -x, 24);
+	    path.move(to: NSPoint(x: -CGFloat(x), y: 0))
+	    path.line(to: NSPoint(x: -CGFloat(x), y: tickSize))
 
-	    for (int j = 1; j < 5; j++)
+	    for j in 1 ..< 5
 	    {
+                let jx = Float(j) * width / 55
+
 	        if (i < 5)
 	        {
-		    CGContextMoveToPoint(context, x + j * width / 55, 20);
-		    CGContextAddLineToPoint(context, x + j * width / 55, 24);
+		    path.move(to: NSPoint(x: CGFloat(x + jx), y: 0))
+		    path.line(to: NSPoint(x: CGFloat(x + jx), y: tickSize2))
 	        }
 
-	        CGContextMoveToPoint(context, -x + j * width / 55, 20);
-	        CGContextAddLineToPoint(context, -x + j * width / 55, 24);
+	        path.move(to: NSPoint(x: CGFloat(-x + jx), y: 0))
+	        path.line(to: NSPoint(x: CGFloat(-x + jx), y: tickSize2))
 	    }
         }
 
-        CGContextStrokePath(context);
+        path.stroke()
     }
-    
 }

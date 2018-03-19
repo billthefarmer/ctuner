@@ -53,6 +53,7 @@ class SpectrumView: TunerView
 
         let darkGreen = NSColor(red: 0, green: 0.5, blue: 0, alpha: 1.0)
         darkGreen.set()
+        NSGraphicsContext.current!.shouldAntialias = false;
 
         let path = NSBezierPath()
 
@@ -92,15 +93,23 @@ class SpectrumView: TunerView
         // Green trace
         NSColor.green.set()
 
-        // Draw the spectrum
-        path.removeAllPoints()
-        path.move(to: NSZeroPoint)
-
         if (spectrumData.zoom)
         {
 	    // Calculate scale
 	    let xscale = (Double(width) / (spectrumData.r -
                                              spectrumData.l)) / 2.0
+
+            // Draw vertical centre line
+            NSBezierPath.strokeLine(from: NSPoint(x: NSMidX(rect),
+                                                  y: NSMinY(rect)),
+                                    to: NSPoint(x: NSMidX(rect),
+                                                y: NSMaxY(rect)))
+            // Draw the spectrum
+            path.removeAllPoints()
+            path.move(to: NSZeroPoint)
+
+            // Antialias
+            NSGraphicsContext.current!.shouldAntialias = true;
 
 	    // Draw trace
 	    for i in Int(floor(spectrumData.l)) ..< Int(ceil(spectrumData.h))
@@ -188,6 +197,13 @@ class SpectrumView: TunerView
         {
 	    let xscale = Double(spectrumData.length /
 			          spectrumData.expand) / Double(width)
+
+            // Draw the spectrum
+            path.removeAllPoints()
+            path.move(to: NSZeroPoint)
+
+            // Antialias
+            NSGraphicsContext.current!.shouldAntialias = true;
 
 	    for x in 0 ..< Int(width)
 	    {

@@ -48,6 +48,7 @@ class ScopeView: TunerView
         // Move the origin
         let transform = AffineTransform(translationByX: 0, byY: NSMidY(rect))
         (transform as NSAffineTransform).concat()
+        NSGraphicsContext.current!.shouldAntialias = false;
 
         // Draw graticule
         let path = NSBezierPath()
@@ -108,6 +109,7 @@ class ScopeView: TunerView
 
         // Green trace
         NSColor.green.set()
+        NSGraphicsContext.current!.shouldAntialias = true;
 
         // Draw the trace
         path.removeAllPoints()
