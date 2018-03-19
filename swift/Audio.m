@@ -640,9 +640,9 @@ void (^ProcessAudio)() = ^
     for (int i = 1; i < limit; i++)
     {
         // Cents relative to reference
-        double cf = -12.0 * log2f(audioData.reference / xf[i]);
+        double cf = -12.0 * log2(audioData.reference / xf[i]);
         int n = round(cf) + kC5Offset;
-        /*
+
         // Ignore negative
         if (n < 0)
             continue;
@@ -668,7 +668,7 @@ void (^ProcessAudio)() = ^
                 !filterData.octave[octave])
                 continue;
         }
-        */
+
         // If display not locked, find maxima and add to list
 	if (!displayData.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 2) &&
@@ -681,7 +681,7 @@ void (^ProcessAudio)() = ^
 	    maxima[count].n = n;
 
 	    // Reference note
-	    maxima[count].fr = audioData.reference * powf(2.0, round(cf) /
+	    maxima[count].fr = audioData.reference * pow(2.0, round(cf) /
                                                           12.0);
 
 	    // Set limit to octave above
@@ -714,14 +714,14 @@ void (^ProcessAudio)() = ^
 	    f = maxima[0].f;
 
 	// Cents relative to reference
-	double cf = -12.0 * log2f(audioData.reference / f);
+	double cf = -12.0 * log2(audioData.reference / f);
 
 	// Reference note
-	fr = audioData.reference * powf(2.0, round(cf) / 12.0);
+	fr = audioData.reference * pow(2.0, round(cf) / 12.0);
 
 	// Lower and upper freq
-	fl = audioData.reference * powf(2.0, (round(cf) - 0.55) / 12.0);
-	fh = audioData.reference * powf(2.0, (round(cf) + 0.55) / 12.0);
+	fl = audioData.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
+	fh = audioData.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
 
 	// Note number
 	n = round(cf) + kC5Offset;
