@@ -21,29 +21,43 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import Cocoa
 
+// TunerView
 class MeterView: TunerView
 {
-
+    // draw
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)
 
-        let textSizeMedium: CGFloat = CGFloat(height / 5)
-        let tickSize: CGFloat = CGFloat(height / 10)
+        // Text and tick sizes
+        let textSize: CGFloat = CGFloat(height / 3)
+        let tickSize: CGFloat = CGFloat(height / 6)
         let tickSize2: CGFloat = tickSize / 2
 
-        let font = NSFont.systemFont(ofSize: textSizeMedium)
-        let attribs: [NSAttributedStringKey: Any] = [.font: font]
+        // Font
+        let font = NSFont.systemFont(ofSize: textSize)
+        var attribs: [NSAttributedStringKey: Any] = [.font: font]
 
+        // Scale text if necessary
+        let dx = "50".size(withAttributes: attribs).width
+        if (dx >= width / 11)
+        {
+            expansion = log((width / 12) / dx)
+            attribs = [.font: font, .expansion: expansion]
+        }
+
+        // Gradient
+        let gradient = NSGradient(colors: [NSColor.textColor,
+                                           NSColor.windowBackgroundColor,
+                                           NSColor.textColor])
         // Drawing code here.
         NSEraseRect(rect)
 
         // Move the origin
         var transform = AffineTransform(translationByX: NSMidX(rect),
-                                        byY: NSMaxY(rect) - textSizeMedium - 4)
+                                        byY: NSMaxY(rect) - textSize - 4)
         (transform as NSAffineTransform).concat()
 
         // Draw the meter scale
@@ -75,6 +89,7 @@ class MeterView: TunerView
 
         NSGraphicsContext.current!.shouldAntialias = false;
         let path = NSBezierPath()
+        path.lineWidth = 2
 
         for i in 0 ..< 6
         {
@@ -102,5 +117,15 @@ class MeterView: TunerView
         }
 
         path.stroke()
+
+        // Move the origin
+        transform = AffineTransform(translationByX: 0, byY: -tickSize)
+        (transform as NSAffineTransform).concat()
+
+        NScolor.gray.set()
+
+        // Draw bar
+        NSFrameRect(NSMakeRect(width / 36 - width / 2, height / 128,
+                               width - width / 18, -height / 128))
     }
 }

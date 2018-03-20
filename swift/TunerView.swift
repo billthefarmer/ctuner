@@ -23,8 +23,8 @@ import Cocoa
 class TunerView: NSView
 {
     var rect: NSRect = NSRect()
-    var width: Float = 0
-    var height: Float = 0
+    var width: CGFloat = 0
+    var height: CGFloat = 0
 
     override func draw(_ dirtyRect: NSRect)
     {
@@ -32,8 +32,8 @@ class TunerView: NSView
 
         // Drawing code here.
         rect = DrawEdge(dirtyRect)
-        width = Float(rect.width)
-        height = Float(rect.height)
+        width = NSWidth(rect)
+        height = NSHeight(rect)
    }
 
     func DrawEdge(_ rect: NSRect) -> NSRect
