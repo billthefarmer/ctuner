@@ -137,13 +137,13 @@ MeterData meterData;
 MeterView *meterView;
 
 // Status data
-typedef struct
-{
-    double sample;
-    double actual;
-} StatusData;
-StatusData statusData;
-StatusView *statusView;
+// typedef struct
+// {
+//     double sample;
+//     double actual;
+// } StatusData;
+// StatusData statusData;
+// StatusView *statusView;
 
 // Audio data
 typedef struct

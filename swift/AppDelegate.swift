@@ -59,6 +59,20 @@ class AppDelegate: NSObject, NSApplicationDelegate
             menu = NSApp.mainMenu
         }
 
+        for item in menu.items
+        {
+            NSLog("Item %@", item.title)
+            if (item.hasSubmenu)
+            {
+                let subMenu = item.submenu!
+                for subMenuItem in subMenu.items
+                {
+                    NSLog("Item ... %@ action %@", subMenuItem.title,
+                          String(describing: subMenuItem.action))
+                }
+            }
+        }
+
         if (window == nil)
         {
             return
@@ -67,14 +81,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.setContentSize(NSMakeSize(400, 480))
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
-        window.showsResizeIndicator = false
+        window.showsResizeIndicator = true
 
         scopeView = ScopeView()
         spectrumView = SpectrumView()
         displayView = DisplayView()
         strobeView = StrobeView()
         meterView = MeterView()
-        // statusView = StatusView()
 
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
                                     strobeView, meterView])
@@ -121,25 +134,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
 
-        // container = NSStackView(views: [stack, statusView])
-
-        // let statusHeight = NSLayoutConstraint(item: statusView,
-        //                                       attribute: .height,
-        //                                       relatedBy: .equal,
-        //                                       toItem: stack,
-        //                                       attribute: .height,
-        //                                       multiplier: 0.05,
-        //                                       constant: 0)
-        // container.addConstraint(statusHeight)
-        // container.orientation = .vertical
-
         window.contentView = stack
 
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        // meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Start audio
         let result = SetupAudio()
@@ -172,47 +172,5 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         // Insert code here to tear down your application
         ShutdownAudio()
-    }
-
-    // keyDown
-    func keyDown(event: NSEvent)
-    {
-        let key = event.characters
-        switch key!.lowercased()
-        {
-        case "d":
-            audioData.downsample = !audioData.downsample
-
-        case "f":
-            audioData.filter = !audioData.filter
-
-        case "l":
-            displayData.lock = !displayData.lock
-
-        case "m":
-            displayData.multiple = !displayData.multiple
-
-        case "s":
-            strobeData.enable = !strobeData.enable
-
-        case "z":
-            spectrumData.zoom = !spectrumData.zoom
-
-        default:
-            NSLog("Key %s", key!)
-        }
-    }
-}
-
-class WindowDelegate: NSObject, NSWindowDelegate
-{
-    func window(_ window: NSWindow, 
-                willUseFullScreenPresentationOptions proposedOptions:
-                  NSApplication.PresentationOptions = [])
-      -> NSApplication.PresentationOptions
-    {
-        var options = proposedOptions
-        options.remove(.fullScreen)
-        return options
     }
 }

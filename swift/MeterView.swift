@@ -26,10 +26,18 @@ import Cocoa
 // TunerView
 class MeterView: TunerView
 {
+    var cents: Double = 0
+
     // draw
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)
+
+        // Do the inertia calculation
+        cents = ((cents * 19) + meterData.c) / 20
+
+        // Context
+        let context = NSGraphicsContext.current!
 
         // Text and tick sizes
         let textSize: CGFloat = CGFloat(height / 3)
@@ -44,14 +52,9 @@ class MeterView: TunerView
         let dx = "50".size(withAttributes: attribs).width
         if (dx >= width / 11)
         {
-            expansion = log((width / 12) / dx)
+            let expansion = log((width / 12) / dx)
             attribs = [.font: font, .expansion: expansion]
         }
-
-        // Gradient
-        let gradient = NSGradient(colors: [NSColor.textColor,
-                                           NSColor.windowBackgroundColor,
-                                           NSColor.textColor])
         // Drawing code here.
         NSEraseRect(rect)
 
@@ -66,19 +69,19 @@ class MeterView: TunerView
 	    if (i == 0)
             {
                 let offset = "0".size(withAttributes: attribs).width / 2
-	        "0".draw(at: NSPoint(x: -offset, y: 0),
+	        "0".draw(at: NSMakePoint(-offset, 0),
                        withAttributes: attribs)
             }
 
 	    else
 	    {
-	        let x = width / 11 * Float(i)
+	        let x = width / 11 * CGFloat(i)
 	        let s = String(format:"%d", i * 10)
                 let offset = s.size(withAttributes: attribs).width / 2
 
-	        s.draw(at: NSPoint(x: CGFloat(x) - offset, y: 0),
+	        s.draw(at: NSMakePoint(CGFloat(x) - offset, 0),
                        withAttributes: attribs)
-	        s.draw(at: NSPoint(x: -CGFloat(x) - offset, y: 0),
+	        s.draw(at: NSMakePoint(-CGFloat(x) - offset, 0),
                        withAttributes: attribs)
 	    }
         }
@@ -87,45 +90,67 @@ class MeterView: TunerView
         transform = AffineTransform(translationByX: 0, byY: -tickSize)
         (transform as NSAffineTransform).concat()
 
-        NSGraphicsContext.current!.shouldAntialias = false;
-        let path = NSBezierPath()
-        path.lineWidth = 2
+        context.shouldAntialias = false;
 
         for i in 0 ..< 6
         {
-	    let x = width / 11 * Float(i)
+	    let x = width / 11 * CGFloat(i)
 
-	    path.move(to: NSPoint(x: CGFloat(x), y: 0))
-	    path.line(to: NSPoint(x: CGFloat(x), y: tickSize))
+	    NSBezierPath.strokeLine(from: NSMakePoint(CGFloat(x), 0),
+	                            to: NSMakePoint(CGFloat(x), tickSize))
 
-	    path.move(to: NSPoint(x: -CGFloat(x), y: 0))
-	    path.line(to: NSPoint(x: -CGFloat(x), y: tickSize))
+	    NSBezierPath.strokeLine(from: NSMakePoint(-CGFloat(x), 0),
+	                            to: NSMakePoint(-CGFloat(x), tickSize))
 
 	    for j in 1 ..< 5
 	    {
-                let jx = Float(j) * width / 55
+                let jx = CGFloat(j) * width / 55
 
 	        if (i < 5)
 	        {
-		    path.move(to: NSPoint(x: CGFloat(x + jx), y: 0))
-		    path.line(to: NSPoint(x: CGFloat(x + jx), y: tickSize2))
+		    NSBezierPath
+                      .strokeLine(from: NSMakePoint(CGFloat(x + jx), 0),
+		                  to: NSMakePoint(CGFloat(x + jx), tickSize2))
 	        }
 
-	        path.move(to: NSPoint(x: CGFloat(-x + jx), y: 0))
-	        path.line(to: NSPoint(x: CGFloat(-x + jx), y: tickSize2))
+	        NSBezierPath
+                  .strokeLine(from: NSMakePoint(CGFloat(-x + jx), 0),
+	                      to: NSMakePoint(CGFloat(-x + jx), tickSize2))
 	    }
         }
-
-        path.stroke()
 
         // Move the origin
         transform = AffineTransform(translationByX: 0, byY: -tickSize)
         (transform as NSAffineTransform).concat()
 
-        NScolor.gray.set()
+        NSColor.gray.set()
 
         // Draw bar
-        NSFrameRect(NSMakeRect(width / 36 - width / 2, height / 128,
-                               width - width / 18, -height / 128))
+        NSBezierPath.fill(NSMakeRect(width / 36 - width / 2, -height / 32,
+                                       width - width / 18, height / 32))
+
+        // Gradient
+        let gradient = NSGradient(colors: [NSColor.gray,
+                                           NSColor.white,
+                                           NSColor.gray])!
+        // Thumb
+        let thumb = NSBezierPath()
+        thumb.move(to: NSMakePoint(0, 2))
+        thumb.line(to: NSMakePoint(1, 1))
+        thumb.line(to: NSMakePoint(1, -2))
+        thumb.line(to: NSMakePoint(-1, -2))
+        thumb.line(to: NSMakePoint(-1, 1))
+        thumb.close()
+
+        // Transform
+        let scale = AffineTransform(scale: height / 16)
+        transform =
+          AffineTransform(translationByX: CGFloat(cents) * (width * 10 / 11),
+                          byY: 0)
+        thumb.transform(using: scale)
+        thumb.transform(using: transform)
+        context.shouldAntialias = true;
+        gradient.draw(in: thumb, angle: 90)
+        thumb.stroke()
     }
 }

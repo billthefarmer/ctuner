@@ -234,16 +234,7 @@ SWIFT_CLASS("_TtC5Tuner9ScopeView")
 
 SWIFT_CLASS("_TtC5Tuner12SpectrumView")
 @interface SpectrumView : TunerView
-- (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
 - (void)mouseDown:(NSEvent * _Nonnull)event;
-- (void)drawRect:(NSRect)dirtyRect;
-- (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
-- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
-@end
-
-
-SWIFT_CLASS("_TtC5Tuner10StatusView")
-@interface StatusView : NSView
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
@@ -258,14 +249,6 @@ SWIFT_CLASS("_TtC5Tuner10StrobeView")
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
 @end
 
-
-@class NSWindow;
-
-SWIFT_CLASS("_TtC5Tuner14WindowDelegate")
-@interface WindowDelegate : NSObject <NSWindowDelegate>
-- (NSApplicationPresentationOptions)window:(NSWindow * _Nonnull)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions SWIFT_WARN_UNUSED_RESULT;
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-@end
 
 SWIFT_MODULE_NAMESPACE_POP
 #pragma clang diagnostic pop

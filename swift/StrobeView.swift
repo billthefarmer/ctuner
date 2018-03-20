@@ -32,6 +32,7 @@ class StrobeView: TunerView
         super.draw(dirtyRect)
 
         // Drawing code here.
+        NSEraseRect(rect)
 
     }
 

@@ -31,6 +31,7 @@ class ScopeView: TunerView
         if (event.type == .leftMouseDown)
         {
             audioData.filter = !audioData.filter
+            needsDisplay = true;
         }
     }
 
@@ -39,7 +40,7 @@ class ScopeView: TunerView
         super.draw(dirtyRect)
 
         // Drawing code here.
-        __NSRectFill(rect)
+        NSBezierPath.fill(rect)
 
         // Dark green graticule
         let darkGreen = NSColor(red: 0, green: 0.5, blue: 0, alpha: 1.0)
@@ -51,22 +52,19 @@ class ScopeView: TunerView
         NSGraphicsContext.current!.shouldAntialias = false;
 
         // Draw graticule
-        let path = NSBezierPath()
         for x in stride(from: NSMinX(rect), to: NSMaxX(rect), by: 6)
         {
-            path.move(to: NSPoint(x: x, y: NSMaxY(rect) / 2))
-            path.line(to: NSPoint(x: x, y: -NSMaxY(rect) / 2))
+            NSBezierPath.strokeLine(from: NSMakePoint(x, NSMaxY(rect) / 2),
+                                    to: NSMakePoint(x, -NSMaxY(rect) / 2))
         }
 
         for y in stride(from: 0, to: NSHeight(rect) / 2, by: 6)
         {
-            path.move(to: NSPoint(x: NSMinX(rect), y: y))
-            path.line(to: NSPoint(x: NSMaxX(rect), y: y))
-            path.move(to: NSPoint(x: NSMinX(rect), y: -y))
-            path.line(to: NSPoint(x: NSMaxX(rect), y: -y))
+            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), y),
+                                    to: NSMakePoint(NSMaxX(rect), y))
+            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), -y),
+                                    to: NSMakePoint(NSMaxX(rect), -y))
         }
-
-        path.stroke()
 
         if (scopeData.data == nil)
         {
@@ -112,7 +110,7 @@ class ScopeView: TunerView
         NSGraphicsContext.current!.shouldAntialias = true;
 
         // Draw the trace
-        path.removeAllPoints()
+        let path = NSBezierPath()
         path.move(to: NSZeroPoint)
 
         for i in 0 ..< Int(width)
@@ -123,7 +121,7 @@ class ScopeView: TunerView
             }
 
 	    let y = scopeData.data[n + i] / yscale
-	    path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(i), y: CGFloat(y)))
+	    path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(i), CGFloat(y)))
         }
 
         path.stroke()
@@ -136,7 +134,7 @@ class ScopeView: TunerView
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]
-            "F".draw(at: NSPoint(x: NSMinX(rect) + 2, y: -NSMidY(rect)),
+            "F".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect)),
                      withAttributes: attribs)
         }
     }

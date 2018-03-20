@@ -61,31 +61,31 @@ class DisplayView: TunerView
                            notes[Int(displayData.n) % notes.endIndex],
 		           sharps[Int(displayData.n) % sharps.endIndex],
                                   displayData.n / kOctave)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display cents
                 s = String(format: "%+4.2lf\u{00A2}", displayData.c * 100.0)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display reference
 	        s = String(format: "%4.2lfHz", displayData.fr);
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display frequency
 	        s = String(format: "%4.2lfHz", displayData.f);
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display difference
 	        s = String(format: "%+4.2lfHz", displayData.f - displayData.fr);
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
             }
 
             for i in 0 ..< Int(displayData.count)
@@ -121,31 +121,31 @@ class DisplayView: TunerView
 	        // Display note
 	        s = String(format: "%s%s%d", notes[Int(n) % notes.endIndex],
 		       sharps[Int(n) % sharps.endIndex], n / kOctave)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 	        // Display cents
 
 	        s = String(format: "%+4.2lf\u{00A2}", c * 100.0)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 	        // Display reference
 
 	        s = String(format: "%4.2lfHz", fr)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 	        // Display frequency
 
 	        s = String(format: "%4.2lfHz", f)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 	        // Display difference
 
 	        s = String(format: "%+4.2lfHz", f - fr)
-                s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+                s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 y += textSizeSmall
             }
         }
@@ -162,7 +162,7 @@ class DisplayView: TunerView
             var attribs: [NSAttributedStringKey: Any] = [.font: font]
 
 	    s = String(format: "%@", notes[Int(displayData.n) % notes.endIndex])
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
             x += s.size(withAttributes: attribs).width
 
 	    // Select font
@@ -170,7 +170,7 @@ class DisplayView: TunerView
             attribs = [.font: font]
 
 	    s = String(format: "%d", displayData.n / kOctave) 
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    // Select font
             font = NSFont.boldSystemFont(ofSize: textSizeLarger / 2)
@@ -178,7 +178,7 @@ class DisplayView: TunerView
 
 	    s = String(format: "%@",
                        sharps[Int(displayData.n) % sharps.endIndex])
-            s.draw(at: NSPoint(x: x, y: y + textSizeLarger / 2),
+            s.draw(at: NSMakePoint(x, y + textSizeLarger / 2),
                    withAttributes: attribs)
 
 	    // Select font
@@ -188,7 +188,7 @@ class DisplayView: TunerView
             // Right justify
 	    s = String(format: "%+4.2f\u{00A2}", displayData.c * 100.0)
             x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    // Select font
             font = NSFont.boldSystemFont(ofSize: textSizeMedium)
@@ -198,34 +198,63 @@ class DisplayView: TunerView
             x = NSMinX(rect) + 2
 
 	    s = String(format: "%4.2lfHz", displayData.fr)
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
             // Right justify
 	    s = String(format: "%4.2lfHz", displayData.f)
             x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    y -= textSizeMedium
             x = NSMinX(rect) + 2
 
 	    s = String(format: "%4.2lfHz", (audioData.reference == 0) ?
 		    kA5Reference : audioData.reference)
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
             // Right justify
 	    s = String(format: "%+4.2lfHz", displayData.f - displayData.fr)
             x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
-            s.draw(at: NSPoint(x: x, y: y), withAttributes: attribs)
+            s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
         }
 
         // Display L if locked
         if (displayData.lock == true)
         {
-            let font = NSFont.boldSystemFont(ofSize: textSizeSmall)
+            let font = NSFont.boldSystemFont(ofSize: 10)
             let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
-            "L".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect)),
+            "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
                      withAttributes: attribs)
+        }
+    }
+
+    // keyDown
+    func keyDown(event: NSEvent)
+    {
+        let key = event.characters
+        switch key!.lowercased()
+        {
+        case "d":
+            audioData.downsample = !audioData.downsample
+
+        case "f":
+            audioData.filter = !audioData.filter
+
+        case "l":
+            displayData.lock = !displayData.lock
+
+        case "m":
+            displayData.multiple = !displayData.multiple
+
+        case "s":
+            strobeData.enable = !strobeData.enable
+
+        case "z":
+            spectrumData.zoom = !spectrumData.zoom
+
+        default:
+            NSLog("Key %s", key!)
         }
     }
 }

@@ -25,22 +25,12 @@ class SpectrumView: TunerView
     let kTextSize: CGFloat = 10
     var max: Double = 0
 
-    override func resize(withOldSuperviewSize oldSize: NSSize)
-    {
-        super.resize(withOldSuperviewSize: oldSize)
-
-        if (spectrumData.expand == 0)
-        {
-            spectrumData.expand = 1
-            spectrumData.zoom = true
-        }
-    }
-
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
             spectrumData.zoom = !spectrumData.zoom
+            needsDisplay = true
         }
     }
 
@@ -48,32 +38,36 @@ class SpectrumView: TunerView
     {
         super.draw(dirtyRect)
 
+        let context = NSGraphicsContext.current!
+
         // Drawing code here.
-        __NSRectFill(rect)
+        NSBezierPath.fill(rect)
 
         let darkGreen = NSColor(red: 0, green: 0.5, blue: 0, alpha: 1.0)
         darkGreen.set()
-        NSGraphicsContext.current!.shouldAntialias = false;
-
-        let path = NSBezierPath()
+        context.shouldAntialias = false;
 
         for x in stride(from: NSMinX(rect), to: NSMaxX(rect), by: 6)
         {
-            path.move(to: NSPoint(x: x, y: NSMinY(rect)))
-            path.line(to: NSPoint(x: x, y: NSMaxY(rect)))
+            NSBezierPath.strokeLine(from: NSMakePoint(x, NSMinY(rect)),
+                                    to: NSMakePoint(x, NSMaxY(rect)))
         }
 
         for y in stride(from: NSMinY(rect), to: NSMaxY(rect), by: 6)
         {
-            path.move(to: NSPoint(x: NSMinX(rect), y: y))
-            path.line(to: NSPoint(x: NSMaxX(rect), y: y))
+            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), y),
+                                    to: NSMakePoint(NSMaxX(rect), y))
         }
-
-        path.stroke()
 
         if (spectrumData.data == nil)
         {
             return
+        }
+
+        if (spectrumData.expand == 0)
+        {
+            spectrumData.expand = 1
+            spectrumData.zoom = true
         }
 
         if (width < 1)
@@ -100,16 +94,16 @@ class SpectrumView: TunerView
                                              spectrumData.l)) / 2.0
 
             // Draw vertical centre line
-            NSBezierPath.strokeLine(from: NSPoint(x: NSMidX(rect),
-                                                  y: NSMinY(rect)),
-                                    to: NSPoint(x: NSMidX(rect),
-                                                y: NSMaxY(rect)))
+            NSBezierPath.strokeLine(from: NSMakePoint(NSMidX(rect),
+                                                      NSMinY(rect)),
+                                    to: NSMakePoint(NSMidX(rect),
+                                                    NSMaxY(rect)))
             // Draw the spectrum
-            path.removeAllPoints()
+            let path = NSBezierPath()
             path.move(to: NSZeroPoint)
 
             // Antialias
-            NSGraphicsContext.current!.shouldAntialias = true;
+            context.shouldAntialias = true;
 
 	    // Draw trace
 	    for i in Int(floor(spectrumData.l)) ..< Int(ceil(spectrumData.h))
@@ -127,18 +121,15 @@ class SpectrumView: TunerView
 		    let x = NSMinX(rect) + CGFloat((Double(i) - spectrumData.l) *
                                                      xscale)
 
-		    path.line(to: NSPoint(x: x, y: y))
+		    path.line(to: NSMakePoint(x, y))
 	        }
 	    }
 
-            // Draw vertical centre line
-	    path.move(to: NSPoint(x: NSMidX(rect), y: NSMinY(rect)))
-	    path.line(to: NSPoint(x: NSMidX(rect), y: NSMaxY(rect)))
 	    path.stroke()
 
 	    // Yellow pen for frequency trace
             NSColor.yellow.set()
-            path.removeAllPoints()
+            context.shouldAntialias = false;
 
 	    // Draw line for nearest frequency
 	    for i in 0 ..< Int(spectrumData.count)
@@ -150,12 +141,10 @@ class SpectrumView: TunerView
 		    let x = NSMinX(rect) +
                       CGFloat((spectrumData.values[i] -
                                  spectrumData.l) * xscale)
-		    path.move(to: NSPoint(x: x, y: NSMinY(rect)))
-		    path.line(to: NSPoint(x: x, y: NSMaxY(rect)))
+		    NSBezierPath.strokeLine(from: NSMakePoint(x, NSMinY(rect)),
+		                            to: NSMakePoint(x, NSMaxY(rect)))
 	        }
 	    }
-
-	    path.stroke()
 
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
@@ -187,7 +176,7 @@ class SpectrumView: TunerView
                                  spectrumData.l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
-		    s.draw(at: NSPoint(x: x, y: NSMinY(rect)),
+		    s.draw(at: NSMakePoint(x, NSMinY(rect)),
                            withAttributes: attribs)
 	        }
 	    }
@@ -199,7 +188,7 @@ class SpectrumView: TunerView
 			          spectrumData.expand) / Double(width)
 
             // Draw the spectrum
-            path.removeAllPoints()
+            let path = NSBezierPath()
             path.move(to: NSZeroPoint)
 
             // Antialias
@@ -229,8 +218,8 @@ class SpectrumView: TunerView
                 }
 
 	        let y = value * yscale
-                path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
-                                      y: NSMinY(rect) + CGFloat(y)))
+                path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
+                                          NSMinY(rect) + CGFloat(y)))
 	    }
 
 	    path.stroke()
@@ -244,10 +233,10 @@ class SpectrumView: TunerView
 	        // Draw line for values
 
 	        let x = spectrumData.values[i] / xscale
-	        path.move(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
-                                      y: NSMinY(rect)))
-	        path.line(to: NSPoint(x: NSMinX(rect) + CGFloat(x),
-                                      y: NSMaxY(rect)))
+	        path.move(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
+                                          NSMinY(rect)))
+	        path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
+                                          NSMaxY(rect)))
 	    }
 
 	    path.stroke()
@@ -279,15 +268,14 @@ class SpectrumView: TunerView
 
 	        let x = spectrumData.values[i] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
-	        s.draw(at: NSPoint(x: NSMinX(rect) + CGFloat(x),
-                                   y: NSMinY(rect)),
+	        s.draw(at: NSMakePoint(NSMinX(rect) + CGFloat(x), NSMinY(rect)),
                        withAttributes: attribs)
 	    }
 
 	    if (spectrumData.expand > 1)
 	    {
 	        let s = String(format: "x%d", spectrumData.expand)
-	        s.draw(at: NSPoint(x: NSMinX(rect), y: NSMinY(rect)),
+	        s.draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect)),
                        withAttributes: attribs)
 	    }
         }
@@ -298,7 +286,7 @@ class SpectrumView: TunerView
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow, .font: font]
 
-	    "D".draw(at: NSPoint(x: NSMinX(rect) + 2, y: NSMinY(rect)),
+	    "D".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
                      withAttributes: attribs)
         }
     }    

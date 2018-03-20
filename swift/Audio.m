@@ -353,13 +353,6 @@ OSStatus SetupAudio()
         return status;
     }
 
-    // [NSEvent addLocalMonitorForEventsMatchingMask: NSEventMaskApplicationDefined
-    //                                       handler: ^(NSEvent *event)
-    //          {
-    //              ProcessAudio();
-    //              return event;
-    //          }];
-
     audioData.reference = kA5Reference;
 
     return status;
@@ -430,20 +423,8 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	    audioData.filter? yv[1]: data[i * audioData.divisor];
     }
 
-    // Send event
-    // NSEvent *event = [NSEvent otherEventWithType: NSApplicationDefined
-    //                                    location: NSZeroPoint
-    //                               modifierFlags: 0
-    //                                   timestamp: 0
-    //                                windowNumber: 0
-    //                                     context: nil
-    //                                     subtype: 0
-    //                                       data1: 0
-    //                                       data2: 0];
-    // [NSApp sendEvent: event];
-
     // Run in main queue
-    dispatch_sync(dispatch_get_main_queue(), ProcessAudio);
+    dispatch_async(dispatch_get_main_queue(), ProcessAudio);
 
     return noErr;
 }
@@ -489,7 +470,7 @@ void (^ProcessAudio)() = ^
     if (scopeData.data == nil)
     {
 	scopeData.data = audioData.buffer + kSamples -
-            (2 * (audioData.frames / audioData.divisor));
+            (4 * (audioData.frames / audioData.divisor));
 	scopeData.length = audioData.frames / audioData.divisor;
 
 	spectrumData.data = xa;
@@ -854,10 +835,13 @@ void (^ProcessAudio)() = ^
 		spectrumData.r = 0.0;
 		spectrumData.l = 0.0;
 		spectrumData.h = 0.0;
+                spectrumView.needsDisplay = true;
 	    }
 	}
     }
 
+    meterView.needsDisplay = true;
+    strobeView.needsDisplay = true;
     timer++;
 };
 

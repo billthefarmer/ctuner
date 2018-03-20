@@ -33,7 +33,7 @@ SWIFTH = Tuner-Swift.h
 
 SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
-		StatusView.swift TunerView.swift Audio.o
+		TunerView.swift Audio.o
 
 SFLAGS = -g -target x86_64-apple-macosx10.9 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH)
