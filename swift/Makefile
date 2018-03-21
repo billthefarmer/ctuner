@@ -36,7 +36,8 @@ SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		TunerView.swift Audio.o
 
 SFLAGS = -g -target x86_64-apple-macosx10.9 \
-	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH)
+	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
+	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
 CFLAGS = -g -target x86_64-apple-macosx10.9
 
@@ -49,6 +50,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns
 	$(MD) $(APPBUNDLERESOURCES)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
+	$(CP) -r Frameworks $(APPBUNDLECONTENTS)/
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) MainMenu.nib $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/

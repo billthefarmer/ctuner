@@ -221,7 +221,7 @@ class DisplayView: TunerView
         // Display L if locked
         if (displayData.lock == true)
         {
-            let font = NSFont.boldSystemFont(ofSize: 10)
+            let font = NSFont.systemFont(ofSize: 10)
             let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
             "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),

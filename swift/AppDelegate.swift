@@ -28,9 +28,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
     var window: NSWindow!
     var menu: NSMenu!
 
-    var container: NSStackView!
     var stack: NSStackView!
+    var timer: Timer!
 
+    
     // applicationDidFinishLaunching
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
@@ -147,6 +148,24 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             DisplayAlert("Tuner", "Audio initialisation failed", result)
         }
+
+        // Timer
+        timer = Timer.scheduledTimer(timeInterval: 0.02,
+                                     target: self,
+                                     selector: #selector(Update),
+                                     userInfo: nil,
+                                     repeats: true)
+    }
+
+    // Update
+    @objc func Update()
+    {
+        meterView.needsDisplay = true
+        strobeView.needsDisplay = true
+    }
+
+    @objc func Preferences()
+    {
     }
 
     // DisplayAlert
@@ -167,10 +186,18 @@ class AppDelegate: NSObject, NSApplicationDelegate
         alert.runModal()
     }
 
+    // applicationShouldTerminateAfterLastWindowClosed
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender:
+                                                           NSApplication) -> Bool
+    {
+        return true
+    }
+
     // applicationWillTerminate
     func applicationWillTerminate(_ aNotification: Notification)
     {
         // Insert code here to tear down your application
         ShutdownAudio()
+        timer.invalidate()
     }
 }

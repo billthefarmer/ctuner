@@ -60,7 +60,8 @@ class MeterView: TunerView
 
         // Move the origin
         var transform = AffineTransform(translationByX: NSMidX(rect),
-                                        byY: NSMaxY(rect) - textSize - 4)
+                                        byY: NSMaxY(rect) - textSize -
+                                          tickSize2)
         (transform as NSAffineTransform).concat()
 
         // Draw the meter scale

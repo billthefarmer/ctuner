@@ -840,8 +840,6 @@ void (^ProcessAudio)() = ^
 	}
     }
 
-    meterView.needsDisplay = true;
-    strobeView.needsDisplay = true;
     timer++;
 };
 

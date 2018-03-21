@@ -187,10 +187,14 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #pragma clang diagnostic ignored "-Wnullability"
 
 SWIFT_MODULE_NAMESPACE_PUSH("Tuner")
+@class NSApplication;
 
 SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 - (void)applicationDidFinishLaunching:(NSNotification * _Nonnull)aNotification;
+- (void)Update;
+- (void)Preferences;
+- (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication * _Nonnull)sender SWIFT_WARN_UNUSED_RESULT;
 - (void)applicationWillTerminate:(NSNotification * _Nonnull)aNotification;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
