@@ -131,7 +131,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
-
+        print("Content", window.contentView as Any)
         window.contentView = stack
 
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
@@ -235,6 +235,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                          bottom: 20, right: 20)
 
+        print("Content", preferences.contentView as Any)
+
         preferences.contentView = hStack
         preferences.setFrameTopLeftPoint(NSMakePoint(NSMinX(window.frame),
                                                      NSMaxY(window.frame)))
@@ -243,10 +245,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func zoomClicked(sender: NSButton)
     {
+        print("Sender", sender, sender.state)
     }
 
     @objc func strobeClicked(sender: NSButton)
     {
+        print("Sender", sender, sender.state)
     }
 
     // DisplayAlert
