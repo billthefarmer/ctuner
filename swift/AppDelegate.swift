@@ -26,6 +26,8 @@ var received = false;
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     var window: NSWindow!
+    var preferences: NSWindow!
+
     var menu: NSMenu!
 
     var stack: NSStackView!
@@ -54,26 +56,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
             window = NSApp.windows[0]
         }
 
-        // Find the menu
-        if (NSApp.mainMenu != nil)
-        {
-            menu = NSApp.mainMenu
-        }
-
-        for item in menu.items
-        {
-            NSLog("Item %@", item.title)
-            if (item.hasSubmenu)
-            {
-                let subMenu = item.submenu!
-                for subMenuItem in subMenu.items
-                {
-                    NSLog("Item ... %@ action %@", subMenuItem.title,
-                          String(describing: subMenuItem.action))
-                }
-            }
-        }
-
         if (window == nil)
         {
             return
@@ -83,6 +65,21 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
         window.showsResizeIndicator = true
+
+        // Find the menu
+        if (NSApp.mainMenu != nil)
+        {
+            menu = NSApp.mainMenu
+
+            let item = menu.item(withTitle: "Tuner")!
+            if (item.hasSubmenu)
+            {
+                let subMenu = item.submenu!
+                let subItem = subMenu.item(withTitle: "Preferences…")!
+                subItem.target = self
+                subItem.action = #selector(Preferences)
+            }
+        }
 
         scopeView = ScopeView()
         spectrumView = SpectrumView()
@@ -166,6 +163,90 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func Preferences()
     {
+        preferences = NSWindow(contentRect: NSZeroRect,
+                               styleMask: [.titled, .closable],
+                               backing: .buffered,
+                               defer: true)
+        preferences.title = "Preferences"
+
+        let zoom = NSButton()
+        zoom.title = "Zoom spectrum"
+        zoom.setButtonType(.switch)
+        zoom.target = self
+        zoom.action = #selector(zoomClicked)
+        let filter = NSButton()
+        filter.title = "Filter audio"
+        filter.setButtonType(.switch)
+        filter.target = self
+        filter.action = #selector(zoomClicked)
+        let mult = NSButton()
+        mult.title = "Multiple notes"
+        mult.setButtonType(.switch)
+        mult.target = self
+        mult.action = #selector(zoomClicked)
+        let fund = NSButton()
+        fund.title = "Fundamental filter"
+        fund.setButtonType(.switch)
+        fund.target = self
+        fund.action = #selector(zoomClicked)
+        let lStack = NSStackView(views: [zoom, filter, mult, fund])
+        lStack.orientation = .vertical
+        lStack.spacing = 8
+        lStack.alignment = .left
+        lStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+                                         bottom: 20, right: 20)
+
+        let strobe = NSButton()
+        strobe.title = "Display strobe"
+        strobe.setButtonType(.switch)
+        strobe.target = self
+        strobe.action = #selector(strobeClicked)
+        let down = NSButton()
+        down.title = "Downsample"
+        down.setButtonType(.switch)
+        down.target = self
+        down.action = #selector(strobeClicked)
+        let lock = NSButton()
+        lock.title = "Lock display"
+        lock.setButtonType(.switch)
+        lock.target = self
+        lock.action = #selector(strobeClicked)
+        let note = NSButton()
+        note.title = "Note filter"
+        note.setButtonType(.switch)
+        note.target = self
+        note.action = #selector(strobeClicked)
+        let rStack = NSStackView(views: [strobe, down, lock, note])
+        rStack.orientation = .vertical
+        rStack.spacing = 8
+        rStack.alignment = .left
+        rStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+                                         bottom: 20, right: 20)
+
+        let hStack = NSStackView(views: [lStack, rStack])
+        let stackWidth = NSLayoutConstraint(item: lStack,
+                                            attribute: .width,
+                                            relatedBy: .equal,
+                                            toItem: rStack,
+                                            attribute: .width,
+                                            multiplier: 1,
+                                            constant: 0)
+        hStack.addConstraint(stackWidth)        
+        hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+                                         bottom: 20, right: 20)
+
+        preferences.contentView = hStack
+        preferences.setFrameTopLeftPoint(NSMakePoint(NSMinX(window.frame),
+                                                     NSMaxY(window.frame)))
+        preferences.orderFront(self)
+    }
+
+    @objc func zoomClicked(sender: NSButton)
+    {
+    }
+
+    @objc func strobeClicked(sender: NSButton)
+    {
     }
 
     // DisplayAlert
@@ -187,8 +268,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
     }
 
     // applicationShouldTerminateAfterLastWindowClosed
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender:
-                                                           NSApplication) -> Bool
+    func
+      applicationShouldTerminateAfterLastWindowClosed(_ sender:
+                                                        NSApplication) -> Bool
     {
         return true
     }
