@@ -67,10 +67,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.showsResizeIndicator = true
 
         // Find the menu
-        if (NSApp.mainMenu != nil)
+        menu = NSApp.mainMenu
+        if (menu != nil)
         {
-            menu = NSApp.mainMenu
-
             let item = menu.item(withTitle: "Tuner")!
             if (item.hasSubmenu)
             {
@@ -232,8 +231,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                             multiplier: 1,
                                             constant: 0)
         hStack.addConstraint(stackWidth)        
-        hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
-                                         bottom: 20, right: 20)
+        // hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+        //                                  bottom: 20, right: 20)
 
         print("Content", preferences.contentView as Any)
 
