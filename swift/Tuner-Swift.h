@@ -188,15 +188,19 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 
 SWIFT_MODULE_NAMESPACE_PUSH("Tuner")
 @class NSButton;
+@class NSControl;
 @class NSApplication;
 
 SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 - (void)applicationDidFinishLaunching:(NSNotification * _Nonnull)aNotification;
-- (void)Update;
-- (void)Preferences;
-- (void)zoomClickedWithSender:(NSButton * _Nonnull)sender;
-- (void)strobeClickedWithSender:(NSButton * _Nonnull)sender;
+- (void)update;
+- (void)showPreferencesWithSender:(id _Nonnull)sender;
+- (void)showNotesWithSender:(NSButton * _Nonnull)sender;
+- (void)buttonClickedWithSender:(NSButton * _Nonnull)sender;
+- (void)refChangedWithSender:(NSControl * _Nonnull)sender;
+- (void)noteClickedWithSender:(NSButton * _Nonnull)sender;
+- (void)octaveClickedWithSender:(NSButton * _Nonnull)sender;
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication * _Nonnull)sender SWIFT_WARN_UNUSED_RESULT;
 - (void)applicationWillTerminate:(NSNotification * _Nonnull)aNotification;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
