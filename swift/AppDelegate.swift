@@ -278,6 +278,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         prefWindow?.contentView = stack
         prefWindow?.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
+        prefWindow?.isReleasedWhenClosed = false
         prefWindow?.makeKeyAndOrderFront(self)
     }
 
@@ -363,6 +364,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         noteWindow?.contentView = hStack
         noteWindow?.cascadeTopLeft(from:
                                      prefWindow!.cascadeTopLeft(from: .zero))
+        noteWindow?.isReleasedWhenClosed = false
         noteWindow?.makeKeyAndOrderFront(self)
     }
         
