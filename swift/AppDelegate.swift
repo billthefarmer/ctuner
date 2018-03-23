@@ -25,9 +25,12 @@ var received = false;
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
+    let kRefText = 17
+    let kRefStep = 18
+
     var window: NSWindow!
-    var prefWindow: NSWindow!
-    var noteWindow: NSWindow!
+    var prefWindow: NSWindow? = nil
+    var noteWindow: NSWindow? = nil
 
     var menu: NSMenu!
 
@@ -169,15 +172,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // showPreferences
     @objc func showPreferences(sender: Any)
     {
-        enum tag: Int
+        if (prefWindow != nil)
         {
-            case zoom, filter, multiple, fund,
-                 strobe, down, lock, note,
-                 text, step
+            prefWindow?.makeKeyAndOrderFront(self)
+            return
         }
-
-        let tags = [.zoom, .filter, .multiple, .fund,
-                    .strobe, .down, .lock, .note]
 
         let labels = ["Zoom spectrum", "Filter audio",
                       "Multiple notes", "Fundamental filter",
@@ -195,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             button.title = labels[i]
             button.setButtonType(.switch)
-            button.tag = tags[i]
+            button.tag = i
             button.state = values[i] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
@@ -213,7 +212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             button.title = labels[i]
             button.setButtonType(.switch)
-            button.tag = tags[i]
+            button.tag = i
             button.state = values[i] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
@@ -244,13 +243,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
         label.isBordered = false
         label.drawsBackground = false
         refText = NSTextField()
-        refText.tag = .text
+        refText.tag = kRefText
         refText.stringValue = "440.0"
         refText.preferredMaxLayoutWidth = 24
         refText.target = self
         refText.action = #selector(refChanged)
         refStep = NSStepper()
-        refStep.tag = .step
+        refStep.tag = kRefStep
         refStep.maxValue = 480.0
         refStep.minValue = 420.0
         refStep.increment = 1.0
@@ -271,16 +270,15 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
 
-        prefWindow = NSWindow(contentRect: NSZeroRect,
+        prefWindow = NSWindow(contentRect: .zero,
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        prefWindow.title = "Preferences"
+        prefWindow?.title = "Preferences"
 
-        prefWindow.contentView = stack
-        prefWindow.cascadeTopLeft(from:
-                                    window.cascadeTopLeft(from: NSZeroPoint))
-        prefWindow.makeKeyAndOrderFront(self)
+        prefWindow?.contentView = stack
+        prefWindow?.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
+        prefWindow?.makeKeyAndOrderFront(self)
     }
 
     @objc func showNotes(sender: NSButton)
@@ -289,21 +287,31 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "F#", "G", "Ab", "A", "Bb", "B"]
 
         var notes: [NSButton] = []
-        for label in labels
+        for (index, label) in labels.enumerated()
         {
             let button = NSButton()
             notes.append(button)
             button.title = label
+            button.tag = index
             button.setButtonType(.switch)
             button.target = self
             button.action = #selector(noteClicked)
         }
 
-        let lStack = NSStackView(views: notes)
+        let lStack = NSStackView(views: [notes[0], notes[1], notes[2],
+                                         notes[3], notes[4], notes[5]])
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
         lStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
+                                         bottom: 20, right: 0)
+
+        let mStack = NSStackView(views: [notes[6], notes[7], notes[8],
+                                         notes[9], notes[10], notes[11]])
+        mStack.orientation = .vertical
+        mStack.spacing = 8
+        mStack.alignment = .left
+        mStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
                                          bottom: 20, right: 0)
 
         var octaves: [NSButton] = []
@@ -312,6 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             octaves.append(button)
             button.title = String(i)
+            button.tag = i
             button.setButtonType(.switch)
             button.target = self
             button.action = #selector(octaveClicked)
@@ -324,33 +333,43 @@ class AppDelegate: NSObject, NSApplicationDelegate
         rStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
                                          bottom: 20, right: 0)
 
-        let hStack = NSStackView(views: [lStack, rStack])
+        let hStack = NSStackView(views: [lStack, mStack, rStack])
         hStack.spacing = 8
+        hStack.alignment = .top
         hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                          bottom: 20, right: 20)
-        let stackWidth = NSLayoutConstraint(item: lStack,
-                                            attribute: .width,
-                                            relatedBy: .equal,
-                                            toItem: rStack,
-                                            attribute: .width,
-                                            multiplier: 1,
-                                            constant: 0)
-        hStack.addConstraint(stackWidth)        
+        let stackWidthL = NSLayoutConstraint(item: lStack,
+                                             attribute: .width,
+                                             relatedBy: .equal,
+                                             toItem: mStack,
+                                             attribute: .width,
+                                             multiplier: 1,
+                                             constant: 0)
+        hStack.addConstraint(stackWidthL)
+        let stackWidthR = NSLayoutConstraint(item: mStack,
+                                             attribute: .width,
+                                             relatedBy: .equal,
+                                             toItem: rStack,
+                                             attribute: .width,
+                                             multiplier: 1,
+                                             constant: 0)
+        hStack.addConstraint(stackWidthR)
 
-        noteWindow = NSWindow(contentRect: NSZeroRect,
+        noteWindow = NSWindow(contentRect: .zero,
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        noteWindow.title = "Note Filters"
-        noteWindow.contentView = hStack
-        noteWindow.cascadeTopLeft(from: NSMakePoint(NSMinX(prefWindow.frame),
-                                                    NSMaxY(prefWindow.frame)))
-        noteWindow.makeKeyAndOrderFront(self)
+        noteWindow?.title = "Note Filters"
+        noteWindow?.contentView = hStack
+        noteWindow?.cascadeTopLeft(from:
+                                     prefWindow!.cascadeTopLeft(from: .zero))
+        noteWindow?.makeKeyAndOrderFront(self)
     }
         
     @objc func buttonClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
+
     }
 
     @objc func refChanged(sender: NSControl)
