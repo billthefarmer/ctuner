@@ -303,16 +303,16 @@ class AppDelegate: NSObject, NSApplicationDelegate
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
-        lStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-                                         bottom: 20, right: 0)
+        // lStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
+        //                                  bottom: 20, right: 0)
 
         let mStack = NSStackView(views: [notes[6], notes[7], notes[8],
                                          notes[9], notes[10], notes[11]])
         mStack.orientation = .vertical
         mStack.spacing = 8
         mStack.alignment = .left
-        mStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-                                         bottom: 20, right: 0)
+        // mStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
+        //                                  bottom: 20, right: 0)
 
         var octaves: [NSButton] = []
         for i in 0 ... 8
@@ -330,8 +330,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         rStack.orientation = .vertical
         rStack.spacing = 8
         rStack.alignment = .left
-        rStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-                                         bottom: 20, right: 0)
+        // rStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
+        //                                  bottom: 20, right: 0)
 
         let hStack = NSStackView(views: [lStack, mStack, rStack])
         hStack.spacing = 8
