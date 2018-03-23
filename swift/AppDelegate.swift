@@ -26,7 +26,8 @@ var received = false;
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     var window: NSWindow!
-    var preferences: NSWindow!
+    var prefWindow: NSWindow!
+    var noteWindow: NSWindow!
 
     var menu: NSMenu!
 
@@ -76,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                 let subMenu = item.submenu!
                 let subItem = subMenu.item(withTitle: "Preferences…")!
                 subItem.target = self
-                subItem.action = #selector(Preferences)
+                subItem.action = #selector(showPreferences)
             }
         }
 
@@ -131,7 +132,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
         print("Content", window.contentView as Any)
-        window.contentView = stack
+        window.contentView.addSubview(stack)
+        window.makeKeyAndOrderFront(self)
+        window.makeMain()
 
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
@@ -142,80 +145,69 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let result = SetupAudio()
         if (result != noErr)
         {
-            DisplayAlert("Tuner", "Audio initialisation failed", result)
+            displayAlert("Tuner", "Audio initialisation failed", result)
         }
 
         // Timer
         timer = Timer.scheduledTimer(timeInterval: 0.02,
                                      target: self,
-                                     selector: #selector(Update),
+                                     selector: #selector(update),
                                      userInfo: nil,
                                      repeats: true)
     }
 
     // Update
-    @objc func Update()
+    @objc func update()
     {
         meterView.needsDisplay = true
         strobeView.needsDisplay = true
     }
 
-    @objc func Preferences()
+    // showPreferences
+    @objc func showPreferences(sender: Any)
     {
-        preferences = NSWindow(contentRect: NSZeroRect,
-                               styleMask: [.titled, .closable],
-                               backing: .buffered,
-                               defer: true)
-        preferences.title = "Preferences"
+        let labels = ["Zoom spectrum", "Filter audio",
+                      "Multiple notes", "Fundamental filter",
+                      "Display strobe", "Downsample",
+                      "Lock display", "Note filter"]
 
-        let zoom = NSButton()
-        zoom.title = "Zoom spectrum"
-        zoom.setButtonType(.switch)
-        zoom.target = self
-        zoom.action = #selector(zoomClicked)
-        let filter = NSButton()
-        filter.title = "Filter audio"
-        filter.setButtonType(.switch)
-        filter.target = self
-        filter.action = #selector(zoomClicked)
-        let mult = NSButton()
-        mult.title = "Multiple notes"
-        mult.setButtonType(.switch)
-        mult.target = self
-        mult.action = #selector(zoomClicked)
-        let fund = NSButton()
-        fund.title = "Fundamental filter"
-        fund.setButtonType(.switch)
-        fund.target = self
-        fund.action = #selector(zoomClicked)
-        let lStack = NSStackView(views: [zoom, filter, mult, fund])
+        let values = [spectrumData.zoom, audioData.filter,
+                      displayData.multiple, audioData.fund,
+                      strobeData.enable, audioData.downsample,
+                      displayData.lock, audioData.filters]
+
+        let leftButtons [NSButton] = []
+        for (i in 0 ..> labels.count / 2)
+        {
+            let button = NSButton()
+            button.title = labels[i]
+            button.setButtonType(.switch)
+            button.state = values[i] ? .on : .off
+            button.target = self
+            button.action = #selector(buttonClicked)
+            leftButtons.append(button)
+        }
+
+        let lStack = NSStackView(views: leftButtons)
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
         lStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                          bottom: 20, right: 20)
 
-        let strobe = NSButton()
-        strobe.title = "Display strobe"
-        strobe.setButtonType(.switch)
-        strobe.target = self
-        strobe.action = #selector(strobeClicked)
-        let down = NSButton()
-        down.title = "Downsample"
-        down.setButtonType(.switch)
-        down.target = self
-        down.action = #selector(strobeClicked)
-        let lock = NSButton()
-        lock.title = "Lock display"
-        lock.setButtonType(.switch)
-        lock.target = self
-        lock.action = #selector(strobeClicked)
-        let note = NSButton()
-        note.title = "Note filter"
-        note.setButtonType(.switch)
-        note.target = self
-        note.action = #selector(strobeClicked)
-        let rStack = NSStackView(views: [strobe, down, lock, note])
+        let rightButtons [NSButton] = []
+        for (i in labels.count / 2 ..> labels.count)
+        {
+            let button = NSButton()
+            button.title = labels[i]
+            button.setButtonType(.switch)
+            button.state = values[i] ? .on : .off
+            button.target = self
+            button.action = #selector(buttonClicked)
+            leftButtons.append(button)
+        }
+
+        let rStack = NSStackView(views: rightButtons)
         rStack.orientation = .vertical
         rStack.spacing = 8
         rStack.alignment = .left
@@ -234,26 +226,97 @@ class AppDelegate: NSObject, NSApplicationDelegate
         // hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
         //                                  bottom: 20, right: 20)
 
-        print("Content", preferences.contentView as Any)
+        prefWindow = NSWindow(contentRect: NSZeroRect,
+                              styleMask: [.titled, .closable],
+                              backing: .buffered,
+                              defer: true)
+        prefWindow.title = "Preferences"
 
-        preferences.contentView = hStack
-        preferences.setFrameTopLeftPoint(NSMakePoint(NSMinX(window.frame),
-                                                     NSMaxY(window.frame)))
-        preferences.orderFront(self)
+        prefWindow.contentView.addSubview(hStack)
+        prefWindow.cascadeTopLeft(from: NSMakePoint(NSMinX(window.frame),
+                                                    NSMaxY(window.frame)))
+        prefWindow.makeKeyAndOrderFront(self)
     }
 
-    @objc func zoomClicked(sender: NSButton)
+    @objc func showNotes(sender: NSButton)
+    {
+        let labels = ["C", "C#", "D", "Eb", "E", "F",
+                      "F#", "G", "Ab", "A", "Bb", "B"]
+
+        let notes: [NSButton] = []
+        for (label in labels)
+        {
+            let button = NSButton()
+            notes.append(button)
+            button.title = label
+            button.setButtonType(.switch)
+            note.target = self
+            note.action = #selector(noteClicked)
+        }
+
+        let lStack = NSStackView(views: notes)
+        lStack.orientation = .vertical
+        lStack.spacing = 8
+        lStack.alignment = .left
+        lStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+                                         bottom: 20, right: 20)
+
+        let octaves [NSButton] = []
+        for (i in 0 ... 8)
+        {
+            let button = NSButton()
+            octaves.append(button)
+            button.title = String(i)
+            button.setButtonType(.switch)
+            note.target = self
+            note.action = #selector(octaveClicked)
+        }
+
+        let rStack = NSStackView(views: octaves)
+        rStack.orientation = .vertical
+        rStack.spacing = 8
+        rStack.alignment = .left
+        rStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
+                                         bottom: 20, right: 20)
+
+        let hStack = NSStackView(views: [lStack, rStack])
+        let stackWidth = NSLayoutConstraint(item: lStack,
+                                            attribute: .width,
+                                            relatedBy: .equal,
+                                            toItem: rStack,
+                                            attribute: .width,
+                                            multiplier: 1,
+                                            constant: 0)
+        hStack.addConstraint(stackWidth)        
+
+        noteWindow = NSWindow(contentRect: NSZeroRect,
+                              styleMask: [.titled, .closable],
+                              backing: .buffered,
+                              defer: true)
+        noteWindow.title = "Note Filters"
+        noteWindow.contentView.addSubview(hStack)
+        noteWindow.cascadeTopLeft(from: NSMakePoint(NSMinX(prefWindow.frame),
+                                                    NSMaxY(prefWindow.frame)))
+        noteWindow.makeKeyAndOrderFront(self)
+    }
+        
+    @objc func buttonClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
     }
 
-    @objc func strobeClicked(sender: NSButton)
+    @objc func noteClicked(sender: NSButton)
+    {
+        print("Sender", sender, sender.state)
+    }
+
+    @objc func octaveClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
     }
 
     // DisplayAlert
-    func DisplayAlert(_ message: String, _ informativeText: String,
+    func displayAlert(_ message: String, _ informativeText: String,
                       _ status: OSStatus)
     {
         let alert = NSAlert()
