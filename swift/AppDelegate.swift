@@ -169,6 +169,16 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // showPreferences
     @objc func showPreferences(sender: Any)
     {
+        enum tag: Int
+        {
+            case zoom, filter, multiple, fund,
+                 strobe, down, lock, note,
+                 text, step
+        }
+
+        let tags = [.zoom, .filter, .multiple, .fund,
+                    .strobe, .down, .lock, .note]
+
         let labels = ["Zoom spectrum", "Filter audio",
                       "Multiple notes", "Fundamental filter",
                       "Display strobe", "Downsample",
@@ -185,6 +195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             button.title = labels[i]
             button.setButtonType(.switch)
+            button.tag = tags[i]
             button.state = values[i] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
@@ -195,8 +206,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
-        // lStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-        //                                  bottom: 20, right: 0)
 
         var rightButtons: [NSButton] = []
         for i in labels.count / 2 ..< labels.count
@@ -204,6 +213,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             button.title = labels[i]
             button.setButtonType(.switch)
+            button.tag = tags[i]
             button.state = values[i] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
@@ -234,11 +244,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
         label.isBordered = false
         label.drawsBackground = false
         refText = NSTextField()
+        refText.tag = .text
         refText.stringValue = "440.0"
         refText.preferredMaxLayoutWidth = 24
         refText.target = self
         refText.action = #selector(refChanged)
         refStep = NSStepper()
+        refStep.tag = .step
         refStep.maxValue = 480.0
         refStep.minValue = 420.0
         refStep.increment = 1.0
