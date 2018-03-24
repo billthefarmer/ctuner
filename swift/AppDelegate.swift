@@ -189,35 +189,32 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       displayData.lock, audioData.filters]
 
         var leftButtons: [NSButton] = []
-        for i in 0 ..< labels.count / 2
+        var rightButtons: [NSButton] = []
+        for (index, label) in labels.enumerated()
         {
             let button = NSButton()
-            button.title = labels[i]
+            button.title = label
             button.setButtonType(.switch)
-            button.tag = i
-            button.state = values[i] ? .on : .off
+            button.tag = index
+            button.state = values[index] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
-            leftButtons.append(button)
+
+            if (index < labels.count / 2)
+            {
+                leftButtons.append(button)
+            }
+
+            else
+            {
+            rightButtons.append(button)
+            }
         }
 
         let lStack = NSStackView(views: leftButtons)
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
-
-        var rightButtons: [NSButton] = []
-        for i in labels.count / 2 ..< labels.count
-        {
-            let button = NSButton()
-            button.title = labels[i]
-            button.setButtonType(.switch)
-            button.tag = i
-            button.state = values[i] ? .on : .off
-            button.target = self
-            button.action = #selector(buttonClicked)
-            rightButtons.append(button)
-        }
 
         let rStack = NSStackView(views: rightButtons)
         rStack.orientation = .vertical
@@ -234,8 +231,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                             multiplier: 1,
                                             constant: 0)
         hStack.addConstraint(stackWidth)
-        hStack.edgeInsets = NSEdgeInsets(top: 0, left: 20,
-                                         bottom: 0, right: 20)
+        hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
+                                         bottom: 0, right: 40)
 
         let label = NSTextField()
         label.stringValue = "Ref:"
@@ -244,7 +241,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         label.drawsBackground = false
         refText = NSTextField()
         refText.tag = kRefText
-        refText.stringValue = "440.0"
+        refText.doubleValue = audioData.reference
         refText.preferredMaxLayoutWidth = 24
         refText.target = self
         refText.action = #selector(refChanged)
@@ -253,11 +250,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refStep.maxValue = 480.0
         refStep.minValue = 420.0
         refStep.increment = 1.0
-        refStep.doubleValue = 440.0
+        refStep.doubleValue = audioData.reference
         refStep.target = self
         refStep.action = #selector(refChanged)
         let button = NSButton()
         button.title = "Filters…"
+        button.setButtonType(.momentaryPushIn)
+        button.bezelStyle = .rounded
         button.target = self
         button.action = #selector(showNotes)
         let row = NSStackView()
@@ -266,10 +265,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         stack = NSStackView(views: [hStack, row])
         stack.orientation = .vertical
-        stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
-                                        bottom: 20, right: 20)
-
+        stack.spacing = 20
+        stack.edgeInsets = NSEdgeInsets(top: 40, left: 40,
+                                        bottom: 40, right: 40)
+        
         prefWindow = NSWindow(contentRect: .zero,
                               styleMask: [.titled, .closable],
                               backing: .buffered,
@@ -277,84 +276,113 @@ class AppDelegate: NSObject, NSApplicationDelegate
         prefWindow?.title = "Preferences"
 
         prefWindow?.contentView = stack
-        prefWindow?.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
         prefWindow?.isReleasedWhenClosed = false
+        prefWindow?.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
         prefWindow?.makeKeyAndOrderFront(self)
     }
 
     @objc func showNotes(sender: NSButton)
     {
+        if (noteWindow != nil)
+        {
+            noteWindow?.makeKeyAndOrderFront(self)
+            return
+        }
+
         let labels = ["C", "C#", "D", "Eb", "E", "F",
                       "F#", "G", "Ab", "A", "Bb", "B"]
 
-        var notes: [NSButton] = []
+        let values: [Bool] = arrayFromTuple(tuple: filterData.note)
+
+        var notesL: [NSButton] = []
+        var notesR: [NSButton] = []
         for (index, label) in labels.enumerated()
         {
             let button = NSButton()
-            notes.append(button)
             button.title = label
             button.tag = index
             button.setButtonType(.switch)
+            button.state = values[index] ? .on : .off
             button.target = self
             button.action = #selector(noteClicked)
+
+            if (index < labels.count / 2)
+            {
+                notesL.append(button)
+            }
+
+            else
+            {
+                notesR.append(button)
+            }
         }
 
-        let lStack = NSStackView(views: [notes[0], notes[1], notes[2],
-                                         notes[3], notes[4], notes[5]])
+        let lStack = NSStackView(views: notesL)
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
-        // lStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-        //                                  bottom: 20, right: 0)
+        lStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
+                                         bottom: 40, right: 0)
 
-        let mStack = NSStackView(views: [notes[6], notes[7], notes[8],
-                                         notes[9], notes[10], notes[11]])
-        mStack.orientation = .vertical
-        mStack.spacing = 8
-        mStack.alignment = .left
-        // mStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-        //                                  bottom: 20, right: 0)
+        let lmStack = NSStackView(views: notesR)
+        lmStack.orientation = .vertical
+        lmStack.spacing = 8
+        lmStack.alignment = .left
+        lmStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
+                                          bottom: 40, right: 0)
 
-        var octaves: [NSButton] = []
-        for i in 0 ... 8
+        let octaves: [Bool] = arrayFromTuple(tuple: filterData.octave)
+
+        var octavesL: [NSButton] = []
+        var octavesR: [NSButton] = []        
+        for (index, value) in octaves.enumerated()
         {
             let button = NSButton()
-            octaves.append(button)
-            button.title = String(i)
-            button.tag = i
+            button.title = String(format: "Octave %d", index)
+            button.tag = index
             button.setButtonType(.switch)
+            button.state = value ? .on : .off
             button.target = self
             button.action = #selector(octaveClicked)
+
+            if (index < 5)
+            {
+                octavesL.append(button)
+            }
+
+            else
+            {
+                octavesR.append(button)
+            }
         }
 
-        let rStack = NSStackView(views: octaves)
+        let rmStack = NSStackView(views: octavesL)
+        rmStack.orientation = .vertical
+        rmStack.spacing = 8
+        rmStack.alignment = .left
+        rmStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
+                                          bottom:40, right: 0)
+
+        let rStack = NSStackView(views: octavesR)
         rStack.orientation = .vertical
         rStack.spacing = 8
         rStack.alignment = .left
-        // rStack.edgeInsets = NSEdgeInsets(top: 20, left: 0,
-        //                                  bottom: 20, right: 0)
+        rStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
+                                         bottom:40, right: 0)
 
-        let hStack = NSStackView(views: [lStack, mStack, rStack])
+        let hStack = NSStackView(views: [lStack, lmStack, rmStack, rStack])
         hStack.spacing = 8
         hStack.alignment = .top
-        hStack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
-                                         bottom: 20, right: 20)
-        let stackWidthL = NSLayoutConstraint(item: lStack,
+        hStack.edgeInsets = NSEdgeInsets(top: 0, left: 60,
+                                         bottom: 0, right: 60)
+        let stackWidth = NSLayoutConstraint(item: lStack,
                                              attribute: .width,
                                              relatedBy: .equal,
-                                             toItem: mStack,
+                                             toItem: lmStack,
                                              attribute: .width,
                                              multiplier: 1,
                                              constant: 0)
-        hStack.addConstraint(stackWidthL)
-        let stackWidthR = NSLayoutConstraint(item: mStack,
-                                             attribute: .width,
-                                             relatedBy: .equal,
-                                             toItem: rStack,
-                                             attribute: .width,
-                                             multiplier: 1,
-                                             constant: 0)
-        hStack.addConstraint(stackWidthR)
+        hStack.addConstraint(stackWidth)
 
         noteWindow = NSWindow(contentRect: .zero,
                               styleMask: [.titled, .closable],
@@ -362,12 +390,25 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               defer: true)
         noteWindow?.title = "Note Filters"
         noteWindow?.contentView = hStack
+        noteWindow?.isReleasedWhenClosed = false
         noteWindow?.cascadeTopLeft(from:
                                      prefWindow!.cascadeTopLeft(from: .zero))
-        noteWindow?.isReleasedWhenClosed = false
         noteWindow?.makeKeyAndOrderFront(self)
     }
-        
+
+    // arrayFromTuple
+    func arrayFromTuple<T, R>(tuple: T) -> [R]
+    {
+        let reflection = Mirror(reflecting: tuple)
+        var array: [R] = []
+        for i in reflection.children
+        {
+            array.append(i.value as! R)
+        }
+
+        return array
+    }
+
     @objc func buttonClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
@@ -379,6 +420,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         print("Sender", sender, sender.doubleValue)
         refText.doubleValue = sender.doubleValue
         refStep.doubleValue = sender.doubleValue
+        audioData.reference = sender.doubleValue
+        displayView.needsDisplay = true
     }
 
     @objc func noteClicked(sender: NSButton)

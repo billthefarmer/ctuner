@@ -159,12 +159,7 @@ typedef struct
     bool note[12];
     bool octave[9];
 } FilterData;
-FilterData filterData =
-    {{true, true, true, true,
-      true, true, true, true,
-      true, true, true, true},
-     {true, true, true, true, true,
-      true, true, true, true}};
+FilterData filterData;
 
 // Functions
 OSStatus SetupAudio(void);
