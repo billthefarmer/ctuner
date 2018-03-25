@@ -66,16 +66,16 @@ class TunerView: NSView
         switch key!.lowercased()
         {
         case "d":
-            audioData.downsample = !audioData.downsample
+            audioData.down = !audioData.down
 
         case "f":
-            audioData.filter = !audioData.filter
+            audioData.filt = !audioData.filt
 
         case "l":
             displayData.lock = !displayData.lock
 
         case "m":
-            displayData.multiple = !displayData.multiple
+            displayData.mult = !displayData.mult
 
         case "s":
             strobeData.enable = !strobeData.enable

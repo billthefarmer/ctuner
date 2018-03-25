@@ -110,7 +110,7 @@ typedef struct
     double c;
     bool lock;
     bool zoom;
-    bool multiple;
+    bool mult;
     int count;
     int n;
 } DisplayData;
@@ -147,9 +147,9 @@ typedef struct
     double sample;
     double reference;
     bool fund;
-    bool filter;
-    bool filters;
-    bool downsample;
+    bool filt;
+    bool note;
+    bool down;
 } AudioData;
 AudioData audioData;
 
@@ -169,3 +169,9 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   AudioBufferList *);
 char *AudioUnitErrString(OSStatus);
 void (^ProcessAudio)();
+
+// Boolean array access functions
+bool getNote(int);
+void setNote(bool, int);
+bool getOctave(int);
+void setOctave(bool, int);

@@ -100,7 +100,7 @@ class SpectrumView: TunerView
                                                     NSMaxY(rect)))
             // Draw the spectrum
             let path = NSBezierPath()
-            path.move(to: NSZeroPoint)
+            path.move(to: .zero)
 
             // Antialias
             context.shouldAntialias = true;
@@ -189,7 +189,7 @@ class SpectrumView: TunerView
 
             // Draw the spectrum
             let path = NSBezierPath()
-            path.move(to: NSZeroPoint)
+            path.move(to: .zero)
 
             // Antialias
             NSGraphicsContext.current!.shouldAntialias = true;

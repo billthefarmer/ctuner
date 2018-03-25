@@ -144,6 +144,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
+        // Get preferences
+        getPreferences()
+
         // Start audio
         let result = SetupAudio()
         if (result != noErr)
@@ -183,10 +186,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "Display strobe", "Downsample",
                       "Lock display", "Note filter"]
 
-        let values = [spectrumData.zoom, audioData.filter,
-                      displayData.multiple, audioData.fund,
-                      strobeData.enable, audioData.downsample,
-                      displayData.lock, audioData.filters]
+        let values = [spectrumData.zoom, audioData.filt,
+                      displayData.mult, audioData.fund,
+                      strobeData.enable, audioData.down,
+                      displayData.lock, audioData.note]
 
         var leftButtons: [NSButton] = []
         var rightButtons: [NSButton] = []
@@ -292,8 +295,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let labels = ["C", "C#", "D", "Eb", "E", "F",
                       "F#", "G", "Ab", "A", "Bb", "B"]
 
-        let values: [Bool] = arrayFromTuple(tuple: filterData.note)
-
         var notesL: [NSButton] = []
         var notesR: [NSButton] = []
         for (index, label) in labels.enumerated()
@@ -302,7 +303,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = label
             button.tag = index
             button.setButtonType(.switch)
-            button.state = values[index] ? .on : .off
+            button.state = getNote(index) ? .on : .off
             button.target = self
             button.action = #selector(noteClicked)
 
@@ -330,9 +331,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         lmStack.alignment = .left
         lmStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
                                           bottom: 40, right: 0)
-
-        let octaves: [Bool] = arrayFromTuple(tuple: filterData.octave)
-
         var octavesL: [NSButton] = []
         var octavesR: [NSButton] = []        
         for (index, value) in octaves.enumerated()
@@ -341,7 +339,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = String(format: "Octave %d", index)
             button.tag = index
             button.setButtonType(.switch)
-            button.state = value ? .on : .off
+            button.state = getOctave(index) ? .on : .off
             button.target = self
             button.action = #selector(octaveClicked)
 
@@ -396,6 +394,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         noteWindow?.makeKeyAndOrderFront(self)
     }
 
+    // This function compiles and appears to work but produces the
+    // wrong result for a boolean array. Replaced by ObjC access
+    // functions.
     // arrayFromTuple
     func arrayFromTuple<T, R>(tuple: T) -> [R]
     {
@@ -411,8 +412,48 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func buttonClicked(sender: NSButton)
     {
-        print("Sender", sender, sender.state)
+        enum flags: Int
+        {
+            case kZoom
+            case kFilt
+            case kMult
+            case kFund
+            case kStrobe
+            case kDown
+            case kLock
+            case kNote
+        }
 
+        print("Sender", sender, sender.state)
+        switch sender.tag
+        {
+        case .kZoom :
+            spectrumData.zoom = sender.state
+
+        case .kFilter :
+            audioData.filt = sender.state
+
+        case .kMult :
+            displayData.mult = sender.state
+
+        case .kFund :
+            audioData.fund = sender.state
+
+        case .kStrobe :
+            strobeData.enable = sender.state
+
+        case .kDown :
+            audioData.down = sender.state
+
+        case .kLock :
+            displayData.lock = sender.state
+
+        case .kNote :
+            audioData.note = sender.state
+
+        default:
+            break
+        }
     }
 
     @objc func refChanged(sender: NSControl)
@@ -427,11 +468,90 @@ class AppDelegate: NSObject, NSApplicationDelegate
     @objc func noteClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
+        setNote(sender.state, sender.tag);
     }
 
     @objc func octaveClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
+        setNote(sender.state, sender.tag)
+    }
+
+    func getPreferences()
+    {
+        enum flags: Int
+        {
+            case kZoom
+            case kFilter
+            case kMult
+            case kFund
+            case kStrobe
+            case kDown
+            case kLock
+            case kNote
+        }
+
+        let keys = ["Zoom", "Filter", "Mult", "Fund",
+                    "Strobe", "Down", "Lock", "Note"]
+
+        // Check defaults
+        let defaults = UserDefaults.standard
+        let ref = defaults.double(forKey: "Ref")
+        if (ref == 0)
+        {
+            return
+        }
+
+        audioData.reference = ref
+        for (index, key) in keys.enumerated()
+        {
+            switch index
+            {
+            case .kZoom :
+                spectrumData.zoom = defaults.bool(forKey: key)
+
+            case .kFilter :
+                audioData.filter = defaults.bool(forKey: key)
+
+            case .kMult :
+                displayData.mult = defaults.bool(forKey: key)
+
+            case .kFund :
+                audioData.fund = defaults.bool(forKey: key)
+
+            case .kStrobe :
+                spectrumData.zoom = defaults.bool(forKey: key)
+
+            case .kDown :
+                spectrumData.zoom = defaults.bool(forKey: key)
+
+            case .kLock :
+                spectrumData.zoom = defaults.bool(forKey: key)
+
+            case .kNote :
+                spectrumData.zoom = defaults.bool(forKey: key)
+
+            default :
+                break
+            }
+        }
+    }
+
+    func savePreferences()
+    {
+        let keys = ["Zoom", "Filter", "Mult", "Fund",
+                    "Strobe", "Down", "Lock", "Note"]
+        let values = [spectrumData.zoom, audioData.filt,
+                      displayData.mult, audioData.fund,
+                      strobeData.enable, audioData.down,
+                      displayData.lock, audioData.note]
+
+        let defaults = UserDefaults.standard
+        defaults.set(audioData.reference, "Ref")
+        for (index, key) in keys.enumerated()
+        {
+            defaults.set(values[index], key)
+        }
     }
 
     // DisplayAlert
@@ -464,7 +584,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func applicationWillTerminate(_ aNotification: Notification)
     {
         // Insert code here to tear down your application
-        ShutdownAudio()
+        savePreferences()
         timer.invalidate()
+        ShutdownAudio()
     }
 }

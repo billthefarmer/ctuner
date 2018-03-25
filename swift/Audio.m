@@ -420,7 +420,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 
 	// Choose filtered/unfiltered data
 	buffer[(kSamples - (audioData.frames / audioData.divisor)) + i] =
-	    audioData.filter? yv[1]: data[i * audioData.divisor];
+	    audioData.filt? yv[1]: data[i * audioData.divisor];
     }
 
     // Run in main queue
@@ -566,7 +566,7 @@ void (^ProcessAudio)() = ^
     memmove(xp, xq, kRange * sizeof(double));
 
     // Downsample
-    if (audioData.downsample)
+    if (audioData.down)
     {
 	// x2 = xa << 2
 	for (int i = 0; i < Length(x2); i++)
@@ -653,7 +653,7 @@ void (^ProcessAudio)() = ^
             continue;
 
         // Note filter
-        if (audioData.filters)
+        if (audioData.note)
         {
             // Get note and octave
             int note = n % kOctave;
@@ -685,7 +685,7 @@ void (^ProcessAudio)() = ^
                                                           12.0);
 
 	    // Set limit to octave above
-	    if (!audioData.downsample && (limit > i * 2))
+	    if (!audioData.down && (limit > i * 2))
 		limit = i * 2 - 1;
 
 	    count++;
@@ -710,7 +710,7 @@ void (^ProcessAudio)() = ^
 	found = true;
 
 	// Frequency
-	if (!audioData.downsample)
+	if (!audioData.down)
 	    f = maxima[0].f;
 
 	// Cents relative to reference
@@ -843,6 +843,31 @@ void (^ProcessAudio)() = ^
     timer++;
 };
 
+// Boolean array access functions to work around Swift limitations
+// getNote
+bool getNote(int index)
+{
+    return filterData.note[index];
+}
+
+// setNote
+void setNote(bool value, int index)
+{
+    filterData.note[index] = value;
+}
+
+// getOctave
+bool getOctave(int index)
+{
+    return filterData.octave[index];
+}
+
+// setOctave
+void setOctave(bool value, int index)
+{
+    filterData.octave[index] = value;
+}
+
 // AudioUnitErrString
 char *AudioUnitErrString(OSStatus status)
 {
@@ -894,5 +919,5 @@ char *AudioUnitErrString(OSStatus status)
         if (audioUnitErrCodes[i] == status)
             return audioUnitErrStrings[i];
 
-    return "";
+    return "UnknownErr";
 }
