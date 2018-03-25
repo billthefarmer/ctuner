@@ -42,7 +42,7 @@ class DisplayView: TunerView
         // Drawing code here.
         NSEraseRect(rect)
 
-        if (displayData.multiple)
+        if (displayData.mult)
         {
 	    // Select font
             let font = NSFont.systemFont(ofSize: textSizeSmall)
@@ -235,16 +235,16 @@ class DisplayView: TunerView
         switch key!.lowercased()
         {
         case "d":
-            audioData.downsample = !audioData.downsample
+            audioData.down = !audioData.down
 
         case "f":
-            audioData.filter = !audioData.filter
+            audioData.filt = !audioData.filt
 
         case "l":
             displayData.lock = !displayData.lock
 
         case "m":
-            displayData.multiple = !displayData.multiple
+            displayData.mult = !displayData.mult
 
         case "s":
             strobeData.enable = !strobeData.enable
