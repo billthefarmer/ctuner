@@ -280,7 +280,7 @@ class SpectrumView: TunerView
 	    }
         }
 
-        if (audioData.downsample == true)
+        if (audioData.down)
         {
             let font = NSFont.systemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =

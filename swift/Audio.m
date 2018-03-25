@@ -353,8 +353,6 @@ OSStatus SetupAudio()
         return status;
     }
 
-    audioData.reference = kA5Reference;
-
     return status;
 }
 

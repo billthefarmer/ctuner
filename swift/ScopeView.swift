@@ -30,7 +30,7 @@ class ScopeView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            audioData.filter = !audioData.filter
+            audioData.filt = !audioData.filt
             needsDisplay = true;
         }
     }
@@ -127,7 +127,7 @@ class ScopeView: TunerView
         path.stroke()
 
         // Show F if filtered
-        if (audioData.filter == true)
+        if (audioData.filt)
         {
 	    // Select font
             let font = NSFont.systemFont(ofSize: kTextSize)

@@ -20,8 +20,6 @@
 
 import AppKit
 
-var received = false;
-
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
@@ -303,7 +301,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = label
             button.tag = index
             button.setButtonType(.switch)
-            button.state = getNote(index) ? .on : .off
+            button.state = getNote(Int32(index)) ? .on : .off
             button.target = self
             button.action = #selector(noteClicked)
 
@@ -333,13 +331,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                           bottom: 40, right: 0)
         var octavesL: [NSButton] = []
         var octavesR: [NSButton] = []        
-        for (index, value) in octaves.enumerated()
+        for index in 0 ... 8
         {
             let button = NSButton()
             button.title = String(format: "Octave %d", index)
             button.tag = index
             button.setButtonType(.switch)
-            button.state = getOctave(index) ? .on : .off
+            button.state = getOctave(Int32(index)) ? .on : .off
             button.target = self
             button.action = #selector(octaveClicked)
 
@@ -414,42 +412,36 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         enum flags: Int
         {
-            case kZoom
-            case kFilt
-            case kMult
-            case kFund
-            case kStrobe
-            case kDown
-            case kLock
-            case kNote
+            case kZoom = 0, kFilt, kMult, kFund,
+                 kStrobe, kDown, kLock, kNote
         }
 
         print("Sender", sender, sender.state)
         switch sender.tag
         {
-        case .kZoom :
-            spectrumData.zoom = sender.state
+        case flags.kZoom.rawValue :
+            spectrumData.zoom = sender.state == .on ? true : false
 
-        case .kFilter :
-            audioData.filt = sender.state
+        case flags.kFilt.rawValue :
+            audioData.filt = sender.state == .on ? true : false
 
-        case .kMult :
-            displayData.mult = sender.state
+        case flags.kMult.rawValue :
+            displayData.mult = sender.state == .on ? true : false
 
-        case .kFund :
-            audioData.fund = sender.state
+        case flags.kFund.rawValue :
+            audioData.fund = sender.state == .on ? true : false
 
-        case .kStrobe :
-            strobeData.enable = sender.state
+        case flags.kStrobe.rawValue :
+            strobeData.enable = sender.state == .on ? true : false
 
-        case .kDown :
-            audioData.down = sender.state
+        case flags.kDown.rawValue :
+            audioData.down = sender.state == .on ? true : false
 
-        case .kLock :
-            displayData.lock = sender.state
+        case flags.kLock.rawValue :
+            displayData.lock = sender.state == .on ? true : false
 
-        case .kNote :
-            audioData.note = sender.state
+        case flags.kNote.rawValue :
+            audioData.note = sender.state == .on ? true : false
 
         default:
             break
@@ -468,27 +460,21 @@ class AppDelegate: NSObject, NSApplicationDelegate
     @objc func noteClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
-        setNote(sender.state, sender.tag);
+        setNote(sender.state == .on ? true : false, Int32(sender.tag));
     }
 
     @objc func octaveClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
-        setNote(sender.state, sender.tag)
+        setNote(sender.state == .on ? true : false, Int32(sender.tag))
     }
 
     func getPreferences()
     {
         enum flags: Int
         {
-            case kZoom
-            case kFilter
-            case kMult
-            case kFund
-            case kStrobe
-            case kDown
-            case kLock
-            case kNote
+            case kZoom = 0, kFilter, kMult, kFund,
+                 kStrobe, kDown, kLock, kNote
         }
 
         let keys = ["Zoom", "Filter", "Mult", "Fund",
@@ -499,6 +485,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let ref = defaults.double(forKey: "Ref")
         if (ref == 0)
         {
+            audioData.reference = Double(kA5Reference)
+            spectrumData.zoom = true
+            spectrumData.expand = 1
             return
         }
 
@@ -507,29 +496,29 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             switch index
             {
-            case .kZoom :
+            case flags.kZoom.rawValue :
                 spectrumData.zoom = defaults.bool(forKey: key)
 
-            case .kFilter :
-                audioData.filter = defaults.bool(forKey: key)
+            case flags.kFilter.rawValue :
+                audioData.filt = defaults.bool(forKey: key)
 
-            case .kMult :
+            case flags.kMult.rawValue :
                 displayData.mult = defaults.bool(forKey: key)
 
-            case .kFund :
+            case flags.kFund.rawValue :
                 audioData.fund = defaults.bool(forKey: key)
 
-            case .kStrobe :
-                spectrumData.zoom = defaults.bool(forKey: key)
+            case flags.kStrobe.rawValue :
+                strobeData.enable = defaults.bool(forKey: key)
 
-            case .kDown :
-                spectrumData.zoom = defaults.bool(forKey: key)
+            case flags.kDown.rawValue :
+                audioData.down = defaults.bool(forKey: key)
 
-            case .kLock :
-                spectrumData.zoom = defaults.bool(forKey: key)
+            case flags.kLock.rawValue :
+                displayData.lock = defaults.bool(forKey: key)
 
-            case .kNote :
-                spectrumData.zoom = defaults.bool(forKey: key)
+            case flags.kNote.rawValue :
+                audioData.note = defaults.bool(forKey: key)
 
             default :
                 break
@@ -547,10 +536,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       displayData.lock, audioData.note]
 
         let defaults = UserDefaults.standard
-        defaults.set(audioData.reference, "Ref")
+        defaults.set(audioData.reference, forKey: "Ref")
         for (index, key) in keys.enumerated()
         {
-            defaults.set(values[index], key)
+            defaults.set(values[index], forKey: key)
         }
     }
 
