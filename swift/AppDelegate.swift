@@ -269,7 +269,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.spacing = 20
         stack.edgeInsets = NSEdgeInsets(top: 40, left: 40,
                                         bottom: 40, right: 40)
-        
+
         prefWindow = NSWindow(contentRect: .zero,
                               styleMask: [.titled, .closable],
                               backing: .buffered,
@@ -410,37 +410,33 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func buttonClicked(sender: NSButton)
     {
-        enum flags: Int
-        {
-            case kZoom = 0, kFilt, kMult, kFund,
-                 kStrobe, kDown, kLock, kNote
-        }
-
         print("Sender", sender, sender.state)
         switch sender.tag
         {
-        case flags.kZoom.rawValue :
+        case kZoom :
             spectrumData.zoom = sender.state == .on ? true : false
 
-        case flags.kFilt.rawValue :
+        case kFilt :
             audioData.filt = sender.state == .on ? true : false
 
-        case flags.kMult.rawValue :
+        case kMult :
             displayData.mult = sender.state == .on ? true : false
+            displayView.needsDisplay = true
 
-        case flags.kFund.rawValue :
+        case kFund :
             audioData.fund = sender.state == .on ? true : false
 
-        case flags.kStrobe.rawValue :
+        case kStrobe :
             strobeData.enable = sender.state == .on ? true : false
 
-        case flags.kDown.rawValue :
+        case kDown :
             audioData.down = sender.state == .on ? true : false
 
-        case flags.kLock.rawValue :
+        case kLock :
             displayData.lock = sender.state == .on ? true : false
+            displayView.needsDisplay = true
 
-        case flags.kNote.rawValue :
+        case kNote :
             audioData.note = sender.state == .on ? true : false
 
         default:
@@ -471,14 +467,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     func getPreferences()
     {
-        enum flags: Int
-        {
-            case kZoom = 0, kFilter, kMult, kFund,
-                 kStrobe, kDown, kLock, kNote
-        }
-
-        let keys = ["Zoom", "Filter", "Mult", "Fund",
-                    "Strobe", "Down", "Lock", "Note"]
+        let keys = ["Zoom", "Filter", "Strobe", "Down"]
 
         // Check defaults
         let defaults = UserDefaults.standard
@@ -496,29 +485,17 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             switch index
             {
-            case flags.kZoom.rawValue :
+            case kZoom :
                 spectrumData.zoom = defaults.bool(forKey: key)
 
-            case flags.kFilter.rawValue :
+            case kFilt :
                 audioData.filt = defaults.bool(forKey: key)
 
-            case flags.kMult.rawValue :
-                displayData.mult = defaults.bool(forKey: key)
-
-            case flags.kFund.rawValue :
-                audioData.fund = defaults.bool(forKey: key)
-
-            case flags.kStrobe.rawValue :
+            case kStrobe :
                 strobeData.enable = defaults.bool(forKey: key)
 
-            case flags.kDown.rawValue :
+            case kDown :
                 audioData.down = defaults.bool(forKey: key)
-
-            case flags.kLock.rawValue :
-                displayData.lock = defaults.bool(forKey: key)
-
-            case flags.kNote.rawValue :
-                audioData.note = defaults.bool(forKey: key)
 
             default :
                 break
@@ -528,12 +505,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     func savePreferences()
     {
-        let keys = ["Zoom", "Filter", "Mult", "Fund",
-                    "Strobe", "Down", "Lock", "Note"]
+        let keys = ["Zoom", "Filter", "Strobe", "Down"]
         let values = [spectrumData.zoom, audioData.filt,
-                      displayData.mult, audioData.fund,
-                      strobeData.enable, audioData.down,
-                      displayData.lock, audioData.note]
+                      strobeData.enable, audioData.down]
 
         let defaults = UserDefaults.standard
         defaults.set(audioData.reference, forKey: "Ref")

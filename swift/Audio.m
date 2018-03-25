@@ -359,6 +359,9 @@ OSStatus SetupAudio()
 // ShutdownAudio
 OSStatus ShutdownAudio()
 {
+    AudioOutputUnitStop(audioData.output);
+    AudioUnitUninitialize(audioData.output);
+
     return noErr;
 }
 

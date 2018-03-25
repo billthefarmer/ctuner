@@ -59,10 +59,10 @@ enum
      kC5Offset    = 57,
      kOctave      = 12};
 
-// Event value
+// Checkbox tags
 enum
-    {kEventAudioUpdate = 1,
-     kEventAudioRate   = 2};
+    {kZoom, kFilt, kMult, kFund,
+     kStrobe, kDown, kLock, kNote};
 
 // Maximum
 typedef struct

@@ -17,8 +17,8 @@ class DisplayView: TunerView
        "F", "G", "A", "A", "B", "B"]
 
     let sharps =
-      [" ", "\u{0266F}", " ", "\u{0266D}", " ", " ",
-       "\u{0266F}", " ", "\u{0266D}", " ", "\u{0266D}", " "]
+      ["", "\u{0266F}", "", "\u{0266D}", "", "",
+       "\u{0266F}", "", "\u{0266D}", "", "\u{0266D}", ""]
 
     override func mouseDown(with event: NSEvent)
     {
@@ -56,7 +56,7 @@ class DisplayView: TunerView
                 let y = NSMaxY(rect) - textSizeSmall - 2
 
 	        // Display note
-                s = String(format: "%s%s%d",
+                s = String(format: "%@%@%d",
                            notes[Int(displayData.n) % notes.endIndex],
 		           sharps[Int(displayData.n) % sharps.endIndex],
                                   displayData.n / kOctave)
@@ -118,7 +118,7 @@ class DisplayView: TunerView
                 }
 
 	        // Display note
-	        s = String(format: "%s%s%d", notes[Int(n) % notes.endIndex],
+	        s = String(format: "%@%@%d", notes[Int(n) % notes.endIndex],
 		       sharps[Int(n) % sharps.endIndex], n / kOctave)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
