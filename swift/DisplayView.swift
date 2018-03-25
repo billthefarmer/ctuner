@@ -36,7 +36,6 @@ class DisplayView: TunerView
         // Text sizes
         let textSizeLarger: CGFloat = CGFloat(height / 2)
         let textSizeLarge : CGFloat = CGFloat(height / 3)
-        // let textSizeMusic : CGFloat = 26
         let textSizeMedium: CGFloat = CGFloat(height / 5)
         let textSizeSmall : CGFloat = CGFloat(height / 9)
 

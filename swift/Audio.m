@@ -843,6 +843,31 @@ void (^ProcessAudio)() = ^
     timer++;
 };
 
+// Boolean array access functions to work around Swift limitations
+// getNote
+bool getNote(int index)
+{
+    return filterData.note[index];
+}
+
+// setNote
+void setNote(bool value, int index)
+{
+    filterData.note[index] = value;
+}
+
+// getOctave
+bool getOctave(int index)
+{
+    return filterData.octave[index];
+}
+
+// setOctave
+void setOctave(bool value, int index)
+{
+    filterData.octave[index] = value;
+}
+
 // AudioUnitErrString
 char *AudioUnitErrString(OSStatus status)
 {
@@ -894,5 +919,5 @@ char *AudioUnitErrString(OSStatus status)
         if (audioUnitErrCodes[i] == status)
             return audioUnitErrStrings[i];
 
-    return "";
+    return "UnknownErr";
 }

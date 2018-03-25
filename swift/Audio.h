@@ -169,3 +169,9 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   AudioBufferList *);
 char *AudioUnitErrString(OSStatus);
 void (^ProcessAudio)();
+
+// Boolean array access functions
+bool getNote(int);
+void setNote(bool, int);
+bool getOctave(int);
+void setOctave(bool, int);

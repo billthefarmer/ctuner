@@ -111,7 +111,7 @@ class ScopeView: TunerView
 
         // Draw the trace
         let path = NSBezierPath()
-        path.move(to: NSZeroPoint)
+        path.move(to: .zero)
 
         for i in 0 ..< Int(width)
         {
