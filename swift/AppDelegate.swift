@@ -23,9 +23,6 @@ import AppKit
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
-    let kRefText = 17
-    let kRefStep = 18
-
     var window: NSWindow!
     var prefWindow: NSWindow? = nil
     var noteWindow: NSWindow? = nil
@@ -35,7 +32,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
     var stack: NSStackView!
     var timer: Timer!
 
-    
+    var refText: NSTextField!
+    var refStep: NSStepper!
+
     // applicationDidFinishLaunching
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
@@ -166,9 +165,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         meterView.needsDisplay = true
         strobeView.needsDisplay = true
     }
-
-    var refText: NSTextField!
-    var refStep: NSStepper!
 
     // showPreferences
     @objc func showPreferences(sender: Any)
