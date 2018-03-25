@@ -58,4 +58,33 @@ class TunerView: NSView
 
         return inset
     }
+
+    // keyDown
+    func keyDown(event: NSEvent)
+    {
+        let key = event.characters
+        switch key!.lowercased()
+        {
+        case "d":
+            audioData.downsample = !audioData.downsample
+
+        case "f":
+            audioData.filter = !audioData.filter
+
+        case "l":
+            displayData.lock = !displayData.lock
+
+        case "m":
+            displayData.multiple = !displayData.multiple
+
+        case "s":
+            strobeData.enable = !strobeData.enable
+
+        case "z":
+            spectrumData.zoom = !spectrumData.zoom
+
+        default:
+            NSLog("Key %s", key!)
+        }
+    }
 }
