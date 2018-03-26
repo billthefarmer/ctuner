@@ -27,7 +27,7 @@ import Cocoa
 class StrobeView: TunerView
 {
     // Colours
-    let colours: CGFloat[][][] =
+    let colours: [[[CGFloat]]] =
       [[[0.25, 0.25, 1, 1], [0.25, 1, 1, 1]],
        [[0.5, 0.5, 0, 1], [0.5, 1, 0.85, 1]],
        [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]];
@@ -38,116 +38,146 @@ class StrobeView: TunerView
     var gradient: NSGradient!
 
     var mc = 0.0
-    var mx = 0.0
+    var mx: CGFloat = 0
 
+    // mouseDown
+    override func mouseDown(with event: NSEvent)
+    {
+        if (event.type == .leftMouseDown)
+        {
+            strobeData.enable = !strobeData.enable
+            needsDisplay = true
+        }
+    }
+
+    // draw
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)
 
         // Drawing code here.
-        NSEraseRect(rect)
-
         if (!strobeData.enable)
         {
+            NSEraseRect(rect)
             return
         }
 
         // Create patterns
-        if (gradient == nil || strobe.changed)
+        if (gradient == nil || strobeData.changed)
         {
 	    // Create colours
-	    foreground = NSColor(red: colours[strobeData.colours][0][0],
-                                 green: colours[strobeData.colours][0][1],
-                                 blue: colours[strobeData.colours][0][2],
-                                 alpha: colours[strobeData.colours][0][3])
-	    background = NSColor(red: colours[strobeData.colours][1][0],
-                                 green: colours[strobeData.colours][1][1],
-                                 blue: colours[strobeData.colours][1][2],
-                                 alpha: colours[strobeData.colours][1][3])
+	    foreground = NSColor(red: colours[Int(strobeData.colours)][0][0],
+                                 green: colours[Int(strobeData.colours)][0][1],
+                                 blue: colours[Int(strobeData.colours)][0][2],
+                                 alpha: colours[Int(strobeData.colours)][0][3])
+	    background = NSColor(red: colours[Int(strobeData.colours)][1][0],
+                                 green: colours[Int(strobeData.colours)][1][1],
+                                 blue: colours[Int(strobeData.colours)][1][2],
+                                 alpha: colours[Int(strobeData.colours)][1][3])
 	    // Create gradient
 	    gradient = NSGradient(colors: [foreground, background, foreground])
-	    strobe.changed = false;
+	    strobeData.changed = false;
         }
 
-	mc = ((7.0 * mc) + strobeData.c) / 8.0;
-	mx += mc * 50.0;
+	mc = ((7 * mc) + strobeData.c) / 8
 
-	if (mx > 160.0)
+        if (!displayData.lock)
+        {
+	    mx += CGFloat(mc * 50)
+        }
+
+        let size = height / 4
+
+	if (mx > size * 16)
         {
 	    mx = 0.0;
         }
 
 	if (mx < 0.0)
         {
-	    mx = 160.0;
+	    mx = size * 16;
         }
 
-	let rx = mx - 160
-
-        let context = NSGraphicsContext.current!
+	let rx = mx - size * 16
 
 	if (abs(mc) > 0.4)
 	{
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(0, 0, width, 10))
+	    NSBezierPath.fill(NSMakeRect(NSMinX(rect), NSMinY(rect),
+                                         width, size))
 	}
 
 	else if (abs(mc) > 0.2)
 	{
-	    for x in stride(from: mod(rx, 20), to: width, by: 20)
+	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 2),
+                            to: width, by: size * 2)
             {
-	        gradient.draw(in: NSMakeRect(x, 0, 10, 10), angle: 0)
+	        gradient.draw(in: NSMakeRect(x, NSMinY(rect), size * 2, size),
+                              angle: 0)
 	    }
 	}
 
 	else
 	{
-	    for x in stride(from: mod(rx, 20), to: width, by: 20)
+	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 2),
+                            to: width, by: size * 2)
 	    {
 		foreground.set()
-		NSBezierPath.fill(NSMakeRect(x, 0, 10, 10))
+		NSBezierPath.fill(NSMakeRect(x, NSMinY(rect), size, size))
 
 		background.set()
-		NSBezierPath.fill(NSMakeRect(x + 10, 0, 10, 10))
+		NSBezierPath.fill(NSMakeRect(x + size, NSMinY(rect),
+                                             size, size))
 	    }
 	}
 
-	if (fabsf(mc) > 0.4)
+	if (abs(mc) > 0.4)
 	{
-	    for x in stride(from: mod(rx, 20), to: width, by: 40)
+	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 2),
+                            to: width, by: size * 4)
             {
-	        gradient.draw(in: NSMakeRect(x, 10, 40, 10), angle: 0)
+	        gradient.draw(in: NSMakeRect(x, NSMinY(rect) + size, size * 4,
+                                             size), angle: 0)
 	    }
         }
 
 	else
 	{
-	    for x in stride(from: mod(rx, 40), to: width, by: 40)
+	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 4),
+                            to: width, by: size * 4)
 	    {
 		foreground.set()
-		NSBezierPath.fill(NSMakeRect(x, 10, 20, 10))
+		NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size,
+                                             size * 2, size))
 
 		background.set()
-		NSBezierPath.fill(NSMakeRect(x + 20, 10, 20, 10))
+		NSBezierPath.fill(NSMakeRect(x + size * 2, NSMinY(rect) + size,
+                                             size * 2, size))
 	    }
 	}
 
-	for (float x = fmodf(rx, 80); x <= width; x += 80)
+	for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 8),
+                        to: width, by: size * 8)
 	{
 	    foreground.set()
-	    NSBezierPath.fill(NSMakeRect(x, 20, 40, 10))
+	    NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size * 2, size * 4,
+                                         size))
 
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(x + 40, 20, 40, 10))
+	    NSBezierPath.fill(NSMakeRect(x + size * 4, NSMinY(rect) + size * 2,
+                                         size * 4, size))
 	}
 
-	for (float x = fmodf(rx, 160); x <= width; x += 160)
+	for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 16),
+                        to: width, by: size * 16)
 	{
 	    foreground.set()
-	    NSBezierPath.fill(NSMakeRect(x, 30, 80, 10))
+	    NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size * 3, size * 8,
+                                         size))
 
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(x + 80, 30, 80, 10))
+	    NSBezierPath.fill(NSMakeRect(x + size * 8, NSMinY(rect) + size * 3,
+                                         size * 8, size))
 	}
     }
 }

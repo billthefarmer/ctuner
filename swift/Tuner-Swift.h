@@ -254,8 +254,8 @@ SWIFT_CLASS("_TtC5Tuner12SpectrumView")
 
 SWIFT_CLASS("_TtC5Tuner10StrobeView")
 @interface StrobeView : TunerView
+- (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
-- (void)resizeWithOldSuperviewSize:(NSSize)oldSize;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
 @end

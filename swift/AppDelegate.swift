@@ -185,6 +185,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       strobeData.enable, audioData.down,
                       displayData.lock, audioData.note]
 
+        let tags = [kZoom, kFilt, kMult, kFund,
+                    kStrobe, kDown, kLock, kNote]
+
         var leftButtons: [NSButton] = []
         var rightButtons: [NSButton] = []
         for (index, label) in labels.enumerated()
@@ -192,7 +195,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             let button = NSButton()
             button.title = label
             button.setButtonType(.switch)
-            button.tag = index
+            button.tag = tags[index]
             button.state = values[index] ? .on : .off
             button.target = self
             button.action = #selector(buttonClicked)
@@ -483,7 +486,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
 
         audioData.reference = ref
-        strobeData.colours = defaults.int(forKey: "Colours")
+        strobeData.colours = Int32(defaults.integer(forKey: "Colours"))
         for (index, key) in keys.enumerated()
         {
             switch index
