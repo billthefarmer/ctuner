@@ -204,7 +204,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
             else
             {
-            rightButtons.append(button)
+                rightButtons.append(button)
             }
         }
 
@@ -368,12 +368,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         hStack.edgeInsets = NSEdgeInsets(top: 0, left: 60,
                                          bottom: 0, right: 60)
         let stackWidth = NSLayoutConstraint(item: lStack,
-                                             attribute: .width,
-                                             relatedBy: .equal,
-                                             toItem: lmStack,
-                                             attribute: .width,
-                                             multiplier: 1,
-                                             constant: 0)
+                                            attribute: .width,
+                                            relatedBy: .equal,
+                                            toItem: lmStack,
+                                            attribute: .width,
+                                            multiplier: 1,
+                                            constant: 0)
         hStack.addConstraint(stackWidth)
 
         noteWindow = NSWindow(contentRect: .zero,
@@ -404,42 +404,44 @@ class AppDelegate: NSObject, NSApplicationDelegate
         return array
     }
 
+    // buttonClicked
     @objc func buttonClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
         switch sender.tag
         {
         case kZoom :
-            spectrumData.zoom = sender.state == .on ? true : false
+            spectrumData.zoom = (sender.state == .on) ? true : false
 
         case kFilt :
-            audioData.filt = sender.state == .on ? true : false
+            audioData.filt = (sender.state == .on) ? true : false
 
         case kMult :
-            displayData.mult = sender.state == .on ? true : false
+            displayData.mult = (sender.state == .on) ? true : false
             displayView.needsDisplay = true
 
         case kFund :
-            audioData.fund = sender.state == .on ? true : false
+            audioData.fund = (sender.state == .on) ? true : false
 
         case kStrobe :
-            strobeData.enable = sender.state == .on ? true : false
+            strobeData.enable = (sender.state == .on) ? true : false
 
         case kDown :
-            audioData.down = sender.state == .on ? true : false
+            audioData.down = (sender.state == .on) ? true : false
 
         case kLock :
-            displayData.lock = sender.state == .on ? true : false
+            displayData.lock = (sender.state == .on) ? true : false
             displayView.needsDisplay = true
 
         case kNote :
-            audioData.note = sender.state == .on ? true : false
+            audioData.note = (sender.state == .on) ? true : false
 
         default:
             break
         }
     }
 
+    // refChanged
     @objc func refChanged(sender: NSControl)
     {
         print("Sender", sender, sender.doubleValue)
@@ -449,18 +451,21 @@ class AppDelegate: NSObject, NSApplicationDelegate
         displayView.needsDisplay = true
     }
 
+    // noteClicked
     @objc func noteClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
-        setNote(sender.state == .on ? true : false, Int32(sender.tag));
+        setNote((sender.state == .on) ? true : false, Int32(sender.tag));
     }
 
+    // octaveClicked
     @objc func octaveClicked(sender: NSButton)
     {
         print("Sender", sender, sender.state)
-        setNote(sender.state == .on ? true : false, Int32(sender.tag))
+        setNote((sender.state == .on) ? true : false, Int32(sender.tag))
     }
 
+    // getPreferences
     func getPreferences()
     {
         let keys = ["Zoom", "Filter", "Strobe", "Down"]
@@ -473,10 +478,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
             audioData.reference = Double(kA5Reference)
             spectrumData.zoom = true
             spectrumData.expand = 1
+            strobeData.colours = 1
             return
         }
 
         audioData.reference = ref
+        strobeData.colours = defaults.int(forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
             switch index
@@ -499,6 +506,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
     }
 
+    // savePreferences
     func savePreferences()
     {
         let keys = ["Zoom", "Filter", "Strobe", "Down"]
@@ -507,6 +515,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         let defaults = UserDefaults.standard
         defaults.set(audioData.reference, forKey: "Ref")
+        defaults.set(strobeData.colours, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
             defaults.set(values[index], forKey: key)
