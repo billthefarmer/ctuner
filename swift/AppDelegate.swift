@@ -292,8 +292,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let labels = ["C", "C#", "D", "Eb", "E", "F",
                       "F#", "G", "Ab", "A", "Bb", "B"]
 
-        var notesL: [NSButton] = []
-        var notesR: [NSButton] = []
+        var leftNotes: [NSButton] = []
+        var rightNotes: [NSButton] = []
         for (index, label) in labels.enumerated()
         {
             let button = NSButton()
@@ -306,30 +306,30 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
             if (index < labels.count / 2)
             {
-                notesL.append(button)
+                leftNotes.append(button)
             }
 
             else
             {
-                notesR.append(button)
+                rightNotes.append(button)
             }
         }
 
-        let lStack = NSStackView(views: notesL)
+        let lStack = NSStackView(views: leftNotes)
         lStack.orientation = .vertical
         lStack.spacing = 8
         lStack.alignment = .left
         lStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
                                          bottom: 40, right: 0)
 
-        let lmStack = NSStackView(views: notesR)
+        let lmStack = NSStackView(views: rightNotes)
         lmStack.orientation = .vertical
         lmStack.spacing = 8
         lmStack.alignment = .left
         lmStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
                                           bottom: 40, right: 0)
-        var octavesL: [NSButton] = []
-        var octavesR: [NSButton] = []        
+        var leftOctaves: [NSButton] = []
+        var rightOctaves: [NSButton] = []
         for index in 0 ... 8
         {
             let button = NSButton()
@@ -342,23 +342,23 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
             if (index < 5)
             {
-                octavesL.append(button)
+                leftOctaves.append(button)
             }
 
             else
             {
-                octavesR.append(button)
+                rightOctaves.append(button)
             }
         }
 
-        let rmStack = NSStackView(views: octavesL)
+        let rmStack = NSStackView(views: leftOctaves)
         rmStack.orientation = .vertical
         rmStack.spacing = 8
         rmStack.alignment = .left
         rmStack.edgeInsets = NSEdgeInsets(top: 40, left: 0,
                                           bottom:40, right: 0)
 
-        let rStack = NSStackView(views: octavesR)
+        let rStack = NSStackView(views: rightOctaves)
         rStack.orientation = .vertical
         rStack.spacing = 8
         rStack.alignment = .left

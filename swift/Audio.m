@@ -849,24 +849,28 @@ void (^ProcessAudio)() = ^
 bool getNote(int index)
 {
     return filterData.note[index];
+    NSLog(@"Index %d %d", index, filterData.note[index]);
 }
 
 // setNote
 void setNote(bool value, int index)
 {
     filterData.note[index] = value;
+    NSLog(@"Index %d %d", index, filterData.note[index]);
 }
 
 // getOctave
 bool getOctave(int index)
 {
     return filterData.octave[index];
+    NSLog(@"Index %d %d", index, filterData.octave[index]);
 }
 
 // setOctave
 void setOctave(bool value, int index)
 {
     filterData.octave[index] = value;
+    NSLog(@"Index %d %d", index, filterData.octave[index]);
 }
 
 // AudioUnitErrString
