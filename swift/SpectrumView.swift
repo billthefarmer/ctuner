@@ -43,7 +43,7 @@ class SpectrumView: TunerView
         // Drawing code here.
         NSBezierPath.fill(rect)
 
-        let darkGreen = NSColor(red: 0, green: 0.5, blue: 0, alpha: 1.0)
+        let darkGreen = NSColor(red: 0, green: 0.25, blue: 0, alpha: 1.0)
         darkGreen.set()
         context.shouldAntialias = false;
 
