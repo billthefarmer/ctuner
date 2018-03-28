@@ -48,13 +48,13 @@ class DisplayView: TunerView
             let font = NSFont.systemFont(ofSize: textSizeSmall)
             let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
+            var s = ""
+            var x = NSMinX(rect) + 2
+            var y = NSMaxY(rect) - textSizeSmall - 2
+
             // No data, probably
 	    if (displayData.count == 0)
 	    {
-                var s = ""
-                var x = NSMinX(rect) + 2
-                let y = NSMaxY(rect) - textSizeSmall - 2
-
 	        // Display note
                 s = String(format: "%@%@%d",
                            notes[Int(displayData.n) % notes.endIndex],
@@ -89,10 +89,6 @@ class DisplayView: TunerView
 
             for i in 0 ..< Int(displayData.count)
             {
-                var s = ""
-                var x = NSMinX(rect) + 2
-                var y = NSMaxY(rect) - textSizeSmall - 2
-
                 // Actual freq
 	        let f = displayData.maxima[i].f
 

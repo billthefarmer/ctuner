@@ -410,7 +410,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // buttonClicked
     @objc func buttonClicked(sender: NSButton)
     {
-        print("Sender", sender, sender.state)
         switch sender.tag
         {
         case kZoom :
@@ -447,7 +446,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // refChanged
     @objc func refChanged(sender: NSControl)
     {
-        print("Sender", sender, sender.doubleValue)
         refText.doubleValue = sender.doubleValue
         refStep.doubleValue = sender.doubleValue
         audioData.reference = sender.doubleValue
@@ -457,15 +455,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // noteClicked
     @objc func noteClicked(sender: NSButton)
     {
-        print("Sender", sender, sender.state)
         setNote((sender.state == .on) ? true : false, Int32(sender.tag));
     }
 
     // octaveClicked
     @objc func octaveClicked(sender: NSButton)
     {
-        print("Sender", sender, sender.state)
-        setNote((sender.state == .on) ? true : false, Int32(sender.tag))
+        setOctave((sender.state == .on) ? true : false, Int32(sender.tag))
     }
 
     // getPreferences
