@@ -24,7 +24,6 @@
 OSStatus SetupAudio()
 {
     // Specify an output unit
-
     AudioComponentDescription dc =
 	{kAudioUnitType_Output,
 	 kAudioUnitSubType_HALOutput,

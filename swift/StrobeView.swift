@@ -80,11 +80,7 @@ class StrobeView: TunerView
         }
 
 	mc = ((7 * mc) + strobeData.c) / 8
-
-        if (!displayData.lock)
-        {
-	    mx += CGFloat(mc * 50)
-        }
+	mx += CGFloat(mc * 50)
 
         let size = height / 4
 

@@ -4,7 +4,7 @@
 //  Tuner
 //
 //  Created by Bill Farmer on 08/10/2017.
-//  Copyright © 2017 Bill Farmer. All rights reserved.
+//  Copyright Â© 2017 Bill Farmer. All rights reserved.
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -126,15 +126,24 @@ class ScopeView: TunerView
 
         path.stroke()
 
+	// Select font
+        let font = NSFont.systemFont(ofSize: kTextSize)
+        let attribs: [NSAttributedStringKey: Any] =
+          [.foregroundColor: NSColor.yellow,
+           .font: font]
+
         // Show F if filtered
         if (audioData.filt)
         {
-	    // Select font
-            let font = NSFont.systemFont(ofSize: kTextSize)
-            let attribs: [NSAttributedStringKey: Any] =
-              [.foregroundColor: NSColor.yellow,
-               .font: font]
-            "F".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect)),
+            "F".draw(at: NSMakePoint(NSMinX(rect) + 2,
+                                     NSMidY(rect) - kTextSize),
+                     withAttributes: attribs)
+        }
+
+        // Show FF if fundamental filter
+        if (AudioData.fund)
+        {
+            "FF".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect)),
                      withAttributes: attribs)
         }
     }

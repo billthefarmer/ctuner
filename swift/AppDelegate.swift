@@ -87,6 +87,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         strobeView = StrobeView()
         meterView = MeterView()
 
+        scopeView.toolTip = "Scope - click to filter audio"
+        spectrumView.toolTip = "Spectrum - click to zoom"
+        displayView.toolTip = "Display - click to lock"
+        strobeView.toolTip = "Strobe - click to display"
+        meterView.toolTip = "Meter"
+
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
                                     strobeView, meterView])
 
@@ -446,9 +452,20 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // refChanged
     @objc func refChanged(sender: NSControl)
     {
-        refText.doubleValue = sender.doubleValue
-        refStep.doubleValue = sender.doubleValue
-        audioData.reference = sender.doubleValue
+        let value = sender.doubleValue
+        switch sender.tag
+        {
+        case kRefStep :
+            refText.doubleValue = value
+
+        case kRefText :
+            refStep.doubleValue = value
+
+        default :
+            break
+        }
+
+        audioData.reference = value
         displayView.needsDisplay = true
     }
 
