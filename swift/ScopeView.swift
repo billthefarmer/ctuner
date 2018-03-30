@@ -1,4 +1,3 @@
-
 //
 //  Scope.swift
 //  Tuner
@@ -40,7 +39,6 @@ class ScopeView: TunerView
         super.draw(dirtyRect)
 
         // Drawing code here.
-        NSBezierPath.fill(rect)
 
         // Dark green graticule
         let darkGreen = NSColor(red: 0, green: 0.25, blue: 0, alpha: 1.0)
@@ -135,15 +133,15 @@ class ScopeView: TunerView
         // Show F if filtered
         if (audioData.filt)
         {
-            "F".draw(at: NSMakePoint(NSMinX(rect) + 2,
-                                     NSMidY(rect) - kTextSize),
+            "F".draw(at: NSMakePoint(NSMinX(rect),
+                                     NSMidY(rect) - kTextSize - 3),
                      withAttributes: attribs)
         }
 
         // Show FF if fundamental filter
-        if (AudioData.fund)
+        if (audioData.fund)
         {
-            "FF".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect)),
+            "FF".draw(at: NSMakePoint(NSMinX(rect), -NSMidY(rect)),
                      withAttributes: attribs)
         }
     }

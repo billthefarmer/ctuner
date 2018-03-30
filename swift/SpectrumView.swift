@@ -118,8 +118,8 @@ class SpectrumView: TunerView
                     }
 
 		    let y = NSMinY(rect) + CGFloat(value * yscale)
-		    let x = NSMinX(rect) + CGFloat((Double(i) - spectrumData.l) *
-                                                     xscale)
+		    let x = NSMinX(rect) + CGFloat((Double(i) -
+                                                      spectrumData.l) * xscale)
 
 		    path.line(to: NSMakePoint(x, y))
 	        }
@@ -150,6 +150,7 @@ class SpectrumView: TunerView
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow, .font: font]
+            context.shouldAntialias = true;
 
 	    for i in 0 ..< Int(spectrumData.count)
 	    {
@@ -176,7 +177,7 @@ class SpectrumView: TunerView
                                  spectrumData.l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
-		    s.draw(at: NSMakePoint(x, NSMinY(rect)),
+		    s.draw(at: NSMakePoint(x, NSMinY(rect) - 2),
                            withAttributes: attribs)
 	        }
 	    }
@@ -246,6 +247,7 @@ class SpectrumView: TunerView
             let attribs: [NSAttributedStringKey: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]
+            context.shouldAntialias = true;
 
 	    for i in 0 ..< Int(spectrumData.count)
 	    {
@@ -268,25 +270,34 @@ class SpectrumView: TunerView
 
 	        let x = spectrumData.values[i] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
-	        s.draw(at: NSMakePoint(NSMinX(rect) + CGFloat(x), NSMinY(rect)),
+	        s.draw(at: NSMakePoint(NSMinX(rect) + CGFloat(x),
+                                       NSMinY(rect) - 2),
                        withAttributes: attribs)
 	    }
 
 	    if (spectrumData.expand > 1)
 	    {
 	        let s = String(format: "x%d", spectrumData.expand)
-	        s.draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect)),
+	        s.draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
                        withAttributes: attribs)
 	    }
         }
 
+        let font = NSFont.systemFont(ofSize: kTextSize)
+        let attribs: [NSAttributedStringKey: Any] =
+          [.foregroundColor: NSColor.yellow, .font: font]
+        context.shouldAntialias = true;
+
         if (audioData.down)
         {
-            let font = NSFont.systemFont(ofSize: kTextSize)
-            let attribs: [NSAttributedStringKey: Any] =
-              [.foregroundColor: NSColor.yellow, .font: font]
+	    "D".draw(at: NSMakePoint(NSMinX(rect),
+                                     NSMaxY(rect) - kTextSize - 1),
+                     withAttributes: attribs)
+        }
 
-	    "D".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
+        if (audioData.note)
+        {
+	    "NF".draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
                      withAttributes: attribs)
         }
     }    

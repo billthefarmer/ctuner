@@ -18,6 +18,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#ifndef Audio_h
+#define Audio_h
+
 #include <pthread.h>
 #include <Cocoa/Cocoa.h>
 #include <AudioUnit/AudioUnit.h>
@@ -186,3 +189,5 @@ bool getNote(int);
 void setNote(bool, int);
 bool getOctave(int);
 void setOctave(bool, int);
+
+#endif /* Audio_h */

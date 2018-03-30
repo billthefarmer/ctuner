@@ -22,10 +22,11 @@ import Cocoa
 
 class TunerView: NSView
 {
-    var rect: NSRect = NSRect()
+    var rect: NSRect = .zero
     var width: CGFloat = 0
     var height: CGFloat = 0
 
+    // draw
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)
@@ -34,8 +35,9 @@ class TunerView: NSView
         rect = DrawEdge(dirtyRect)
         width = NSWidth(rect)
         height = NSHeight(rect)
-   }
+    }
 
+    // DrawEdge
     func DrawEdge(_ rect: NSRect) -> NSRect
     {
         // Save context

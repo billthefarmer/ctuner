@@ -11,6 +11,7 @@ import Cocoa
 class DisplayView: TunerView
 {
     let kOctave: Int32 = 12
+    let kTextSize: CGFloat = 12
 
     let notes =
       ["C", "C", "D", "E", "E", "F",
@@ -216,10 +217,10 @@ class DisplayView: TunerView
         // Display L if locked
         if (displayData.lock == true)
         {
-            let font = NSFont.systemFont(ofSize: 10)
+            let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
-            "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
+            "L".draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
                      withAttributes: attribs)
         }
     }

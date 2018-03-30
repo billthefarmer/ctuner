@@ -23,7 +23,8 @@ import AppKit
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
-    var window: NSWindow!
+    @IBOutlet weak var window: NSWindow!
+
     var prefWindow: NSWindow? = nil
     var noteWindow: NSWindow? = nil
 
@@ -93,6 +94,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
         strobeView.toolTip = "Strobe - click to display"
         meterView.toolTip = "Meter"
 
+        scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
                                     strobeView, meterView])
 
@@ -141,11 +147,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.contentView = stack
         window.makeKeyAndOrderFront(self)
         window.makeMain()
-
-        scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Get preferences
         getPreferences()
