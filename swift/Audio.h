@@ -61,19 +61,19 @@ enum
 
 // Checkbox tags
 enum
-    {kZoom   = 1,
-     kFilt   = 2,
-     kMult   = 3,
-     kFund   = 4,
-     kStrobe = 5,
-     kDown   = 6,
-     kLock   = 7,
-     kNote   = 8};
+    {kZoom   = 'Zoom',
+     kFilt   = 'Filt',
+     kMult   = 'Mult',
+     kFund   = 'Fund',
+     kStrobe = 'Strb',
+     kDown   = 'Down',
+     kLock   = 'Lock',
+     kNote   = 'Note'};
 
 // Reference tags
 enum
-    {kRefText = 17,
-     kRefStep = 18};
+    {kRefText = 'RefT',
+     kRefStep = 'RefS'};
 
 // Maximum
 typedef struct
