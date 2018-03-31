@@ -35,10 +35,10 @@ class DisplayView: TunerView
         super.draw(dirtyRect)
 
         // Text sizes
-        let textSizeLarger: CGFloat = CGFloat(height / 2)
-        let textSizeLarge : CGFloat = CGFloat(height / 3)
-        let textSizeMedium: CGFloat = CGFloat(height / 5)
-        let textSizeSmall : CGFloat = CGFloat(height / 9)
+        let textSizeLarger = height / 2
+        let textSizeLarge = height / 3
+        let textSizeMedium = height / 5
+        let textSizeSmall = height / 9
 
         // Drawing code here.
         NSEraseRect(rect)
@@ -151,7 +151,6 @@ class DisplayView: TunerView
             var s = ""
             var x = NSMinX(rect) + 2
             var y = NSMaxY(rect) - textSizeLarger - 2
-
 
 	    // Select font
             var font = NSFont.boldSystemFont(ofSize: textSizeLarger)
