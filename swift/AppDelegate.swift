@@ -32,8 +32,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
 {
     @IBOutlet weak var window: NSWindow!
 
-    var prefWindow: NSWindow? = nil
-    var noteWindow: NSWindow? = nil
+    var prefWindow: NSWindow!
+    var noteWindow: NSWindow!
 
     var menu: NSMenu!
 
@@ -194,7 +194,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         if (prefWindow != nil)
         {
-            prefWindow?.makeKeyAndOrderFront(self)
+            prefWindow.makeKeyAndOrderFront(self)
             return
         }
 
@@ -320,19 +320,19 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        prefWindow?.title = "Tuner Preferences"
+        prefWindow.title = "Tuner Preferences"
 
-        prefWindow?.contentView = stack
-        prefWindow?.isReleasedWhenClosed = false
-        prefWindow?.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
-        prefWindow?.makeKeyAndOrderFront(self)
+        prefWindow.contentView = stack
+        prefWindow.isReleasedWhenClosed = false
+        prefWindow.cascadeTopLeft(from: window.cascadeTopLeft(from: .zero))
+        prefWindow.makeKeyAndOrderFront(self)
     }
 
     @objc func showNotes(sender: NSButton)
     {
         if (noteWindow != nil)
         {
-            noteWindow?.makeKeyAndOrderFront(self)
+            noteWindow.makeKeyAndOrderFront(self)
             return
         }
 
@@ -430,12 +430,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        noteWindow?.title = "Tuner Note Filters"
-        noteWindow?.contentView = hStack
-        noteWindow?.isReleasedWhenClosed = false
-        noteWindow?.cascadeTopLeft(from:
+        noteWindow.title = "Tuner Note Filters"
+        noteWindow.contentView = hStack
+        noteWindow.isReleasedWhenClosed = false
+        noteWindow.cascadeTopLeft(from:
                                      prefWindow!.cascadeTopLeft(from: .zero))
-        noteWindow?.makeKeyAndOrderFront(self)
+        noteWindow.makeKeyAndOrderFront(self)
     }
 
     // This function compiles and appears to work but produces the

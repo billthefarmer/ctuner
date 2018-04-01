@@ -128,7 +128,8 @@ class TunerView: NSView
             spectrumView.needsDisplay = true
 
         default:
-            NSLog("Key %@", key)
+            // NSLog("Key %@", key)
+            break
         }
     }
 }
