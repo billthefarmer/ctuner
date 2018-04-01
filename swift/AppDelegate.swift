@@ -297,7 +297,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourLabel.isBordered = false
         colourLabel.drawsBackground = false
         strobePopUp = NSPopUpButton()
-        strobePopUp.pullsDown = true
+        strobePopUp.pullsDown = false
         strobePopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
         strobePopUp.selectItem(at: Int(strobeData.colours))
@@ -518,8 +518,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func popUpChanged(sender: NSPopUpButton)
     {
-        NSLog("Popup %@", sender.selectedItem!)
-        strobeData.colours = sender.indexOfSelectedItem
+        strobeData.colours = Int32(sender.indexOfSelectedItem)
+        strobeData.changed = true
     }
 
     // refChanged

@@ -198,7 +198,7 @@ SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 - (void)showPreferencesWithSender:(id _Nonnull)sender;
 - (void)showNotesWithSender:(NSButton * _Nonnull)sender;
 - (void)buttonClickedWithSender:(NSButton * _Nonnull)sender;
-- (void)popupChangedWithSender:(NSPopUpButton * _Nonnull)sender;
+- (void)popUpChangedWithSender:(NSPopUpButton * _Nonnull)sender;
 - (void)refChangedWithSender:(NSControl * _Nonnull)sender;
 - (void)noteClickedWithSender:(NSButton * _Nonnull)sender;
 - (void)octaveClickedWithSender:(NSButton * _Nonnull)sender;
