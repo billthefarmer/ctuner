@@ -32,6 +32,8 @@ class StrobeView: TunerView
        [[0.5, 0.5, 0, 1], [0.5, 1, 0.85, 1]],
        [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]];
 
+    let kMaxColours: Int32 = 3
+
     var foreground: NSColor!
     var background: NSColor!
 
@@ -46,6 +48,10 @@ class StrobeView: TunerView
         if (event.type == .leftMouseDown)
         {
             strobeData.enable = !strobeData.enable
+            if (strbBox != nil)
+            {
+                strbBox.state = strobeData.enable ? .on: .off
+            }
             needsDisplay = true
         }
     }

@@ -30,6 +30,10 @@ class ScopeView: TunerView
         if (event.type == .leftMouseDown)
         {
             audioData.filt = !audioData.filt
+            if (filtBox != nil)
+            {
+                filtBox.state = audioData.filt ? .on: .off
+            }
             needsDisplay = true;
         }
     }
@@ -39,6 +43,7 @@ class ScopeView: TunerView
         super.draw(dirtyRect)
 
         // Drawing code here.
+        NSBezierPath.fill(rect)
 
         // Dark green graticule
         let darkGreen = NSColor(red: 0, green: 0.25, blue: 0, alpha: 1.0)

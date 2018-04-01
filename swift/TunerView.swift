@@ -61,32 +61,74 @@ class TunerView: NSView
         return inset
     }
 
+    // This IMHO is a kludge because you ought to be able to do this
+    // in AppDelegate rather than one of the views
     // keyDown
-    func keyDown(with event: NSEvent)
+    override func keyDown(with event: NSEvent)
     {
-        let key = event.characters
-        switch key!.lowercased()
+        let key = event.characters!
+
+        switch key.lowercased()
         {
+        case "c", "k":
+            strobeData.colours += 1
+            if (strobeData.colours >= strobeView.kMaxColours)
+            {
+                strobeData.colours = 0
+            }
+            strobeData.changed = true
+            strobeView.needsDisplay = true
+
         case "d":
             audioData.down = !audioData.down
+            if (downBox != nil)
+            {
+                downBox.state = audioData.down ? .on: .off
+            }
+            spectrumView.needsDisplay = true
 
         case "f":
             audioData.filt = !audioData.filt
+            if (filtBox != nil)
+            {
+                filtBox.state = audioData.filt ? .on: .off
+            }
+            scopeView.needsDisplay = true
 
         case "l":
             displayData.lock = !displayData.lock
+            if (lockBox != nil)
+            {
+                lockBox.state = displayData.lock ? .on: .off
+            }
+            displayView.needsDisplay = true
 
         case "m":
             displayData.mult = !displayData.mult
+            if (multBox != nil)
+            {
+                multBox.state = displayData.mult ? .on: .off
+            }
+            displayView.needsDisplay = true
 
         case "s":
             strobeData.enable = !strobeData.enable
+            if (strbBox != nil)
+            {
+                strbBox.state = strobeData.enable ? .on: .off
+            }
+            strobeView.needsDisplay = true
 
         case "z":
             spectrumData.zoom = !spectrumData.zoom
+            if (zoomBox != nil)
+            {
+                zoomBox.state = spectrumData.zoom ? .on: .off
+            }
+            spectrumView.needsDisplay = true
 
         default:
-            NSLog("Key %s", key!)
+            NSLog("Key %@", key)
         }
     }
 }

@@ -26,6 +26,10 @@ class DisplayView: TunerView
         if (event.type == .leftMouseDown)
         {
             displayData.lock = !displayData.lock
+            if (lockBox != nil)
+            {
+                lockBox.state = displayData.lock ? .on: .off
+            }
             needsDisplay = true
         }
     }

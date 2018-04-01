@@ -30,6 +30,10 @@ class SpectrumView: TunerView
         if (event.type == .leftMouseDown)
         {
             spectrumData.zoom = !spectrumData.zoom
+            if (zoomBox != nil)
+            {
+                zoomBox.state = spectrumData.zoom ? .on: .off
+            }
             needsDisplay = true
         }
     }

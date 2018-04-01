@@ -87,7 +87,7 @@ typedef struct
 } maximum;
 
 // App
-AppDelegate *app;
+// AppDelegate *app;
 
 // Scope data
 typedef struct

@@ -20,6 +20,13 @@
 
 import AppKit
 
+var zoomBox: NSButton!
+var filtBox: NSButton!
+var multBox: NSButton!
+var strbBox: NSButton!
+var downBox: NSButton!
+var lockBox: NSButton!
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
@@ -40,7 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
         // Insert code here to initialize your application
-        app = self
 
         // Find a window
         if (NSApp.mainWindow != nil)
@@ -63,6 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
+        // Set up window
         window.setContentSize(NSMakeSize(400, 480))
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
@@ -82,26 +89,31 @@ class AppDelegate: NSObject, NSApplicationDelegate
             }
         }
 
+        // Views
         scopeView = ScopeView()
         spectrumView = SpectrumView()
         displayView = DisplayView()
         strobeView = StrobeView()
         meterView = MeterView()
 
+        // Tooltips
         scopeView.toolTip = "Scope - click to filter audio"
         spectrumView.toolTip = "Spectrum - click to zoom"
         displayView.toolTip = "Display - click to lock"
         strobeView.toolTip = "Strobe - click to display"
         meterView.toolTip = "Meter"
 
+        // Redraw policy
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
+        // Stack
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
                                     strobeView, meterView])
 
+        // View height constraints
         let spectrumHeight = NSLayoutConstraint(item: spectrumView,
                                                 attribute: .height,
                                                 relatedBy: .equal,
@@ -134,18 +146,22 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                              multiplier: 1.625,
                                              constant: 0)
 
+        // Add constraints
         stack.addConstraint(spectrumHeight)
         stack.addConstraint(displayHeight)
         stack.addConstraint(strobeHeight)
         stack.addConstraint(meterHeight)
 
+        // Config stack
         stack.orientation = .vertical
         stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 20, left: 20,
                                         bottom: 20, right: 20)
 
+        // Window content
         window.contentView = stack
         window.makeKeyAndOrderFront(self)
+        window.makeFirstResponder(displayView)
         window.makeMain()
 
         // Get preferences
@@ -203,9 +219,33 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = label
             button.setButtonType(.switch)
             button.tag = tags[index]
-            button.state = values[index] ? .on : .off
+            button.state = values[index] ? .on: .off
             button.target = self
             button.action = #selector(buttonClicked)
+
+            switch tags[index]
+            {
+            case kZoom:
+                zoomBox = button
+
+            case kFilt:
+                filtBox = button
+
+            case kMult:
+                multBox = button
+
+            case kStrobe:
+                strbBox = button
+
+            case kDown:
+                downBox = button
+
+            case kLock:
+                lockBox = button
+
+            default:
+                break
+            }
 
             if (index < labels.count / 2)
             {
@@ -280,7 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        prefWindow?.title = "Preferences"
+        prefWindow?.title = "Tuner Preferences"
 
         prefWindow?.contentView = stack
         prefWindow?.isReleasedWhenClosed = false
@@ -307,7 +347,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = label
             button.tag = index
             button.setButtonType(.switch)
-            button.state = getNote(Int32(index)) ? .on : .off
+            button.state = getNote(Int32(index)) ? .on: .off
             button.target = self
             button.action = #selector(noteClicked)
 
@@ -343,7 +383,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             button.title = String(format: "Octave %d", index)
             button.tag = index
             button.setButtonType(.switch)
-            button.state = getOctave(Int32(index)) ? .on : .off
+            button.state = getOctave(Int32(index)) ? .on: .off
             button.target = self
             button.action = #selector(octaveClicked)
 
@@ -390,7 +430,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               styleMask: [.titled, .closable],
                               backing: .buffered,
                               defer: true)
-        noteWindow?.title = "Note Filters"
+        noteWindow?.title = "Tuner Note Filters"
         noteWindow?.contentView = hStack
         noteWindow?.isReleasedWhenClosed = false
         noteWindow?.cascadeTopLeft(from:
@@ -419,31 +459,31 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         switch sender.tag
         {
-        case kZoom :
-            spectrumData.zoom = (sender.state == .on) ? true : false
+        case kZoom:
+            spectrumData.zoom = (sender.state == .on) ? true: false
 
-        case kFilt :
-            audioData.filt = (sender.state == .on) ? true : false
+        case kFilt:
+            audioData.filt = (sender.state == .on) ? true: false
 
-        case kMult :
-            displayData.mult = (sender.state == .on) ? true : false
+        case kMult:
+            displayData.mult = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
-        case kFund :
-            audioData.fund = (sender.state == .on) ? true : false
+        case kFund:
+            audioData.fund = (sender.state == .on) ? true: false
 
-        case kStrobe :
-            strobeData.enable = (sender.state == .on) ? true : false
+        case kStrobe:
+            strobeData.enable = (sender.state == .on) ? true: false
 
-        case kDown :
-            audioData.down = (sender.state == .on) ? true : false
+        case kDown:
+            audioData.down = (sender.state == .on) ? true: false
 
-        case kLock :
-            displayData.lock = (sender.state == .on) ? true : false
+        case kLock:
+            displayData.lock = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
-        case kNote :
-            audioData.note = (sender.state == .on) ? true : false
+        case kNote:
+            audioData.note = (sender.state == .on) ? true: false
 
         default:
             break
@@ -456,13 +496,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let value = sender.doubleValue
         switch sender.tag
         {
-        case kRefStep :
+        case kRefStep:
             refText.doubleValue = value
 
-        case kRefText :
+        case kRefText:
             refStep.doubleValue = value
 
-        default :
+        default:
             break
         }
 
@@ -473,13 +513,13 @@ class AppDelegate: NSObject, NSApplicationDelegate
     // noteClicked
     @objc func noteClicked(sender: NSButton)
     {
-        setNote((sender.state == .on) ? true : false, Int32(sender.tag));
+        setNote((sender.state == .on) ? true: false, Int32(sender.tag));
     }
 
     // octaveClicked
     @objc func octaveClicked(sender: NSButton)
     {
-        setOctave((sender.state == .on) ? true : false, Int32(sender.tag))
+        setOctave((sender.state == .on) ? true: false, Int32(sender.tag))
     }
 
     // getPreferences
@@ -505,19 +545,19 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             switch index
             {
-            case kZoom :
+            case kZoom:
                 spectrumData.zoom = defaults.bool(forKey: key)
 
-            case kFilt :
+            case kFilt:
                 audioData.filt = defaults.bool(forKey: key)
 
-            case kStrobe :
+            case kStrobe:
                 strobeData.enable = defaults.bool(forKey: key)
 
-            case kDown :
+            case kDown:
                 audioData.down = defaults.bool(forKey: key)
 
-            default :
+            default:
                 break
             }
         }
@@ -548,7 +588,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         alert.messageText = message
 
         let error = (status > 0) ? UTCreateStringForOSType(OSType(status))
-          .takeRetainedValue() as String :
+          .takeRetainedValue() as String:
           String(utf8String: AudioUnitErrString(status))!
 
         alert.informativeText = informativeText + ": " + error +

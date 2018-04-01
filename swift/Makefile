@@ -42,7 +42,7 @@ SFLAGS = -g -target x86_64-apple-macosx10.9 \
 CFLAGS = -g -target x86_64-apple-macosx10.9
 
 
-$(APPBUNDLE): $(APPNAME) $(APPNAME).icns
+$(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(RM) -rf $(APPBUNDLE)
 	$(MD) $(APPBUNDLE)
 	$(MD) $(APPBUNDLECONTENTS)
