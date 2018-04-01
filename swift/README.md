@@ -3,9 +3,9 @@
 A musical instrument tuner with extra facilities for tuning free reed
 instruments
 
-![Tuner]()
-![Preferences]()
-![Note Filters]()
+![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/blob/master/images/ctuner/Tuner-swift.png)
+![Preferences](https://github.com/billthefarmer/billthefarmer.github.io/blob/master/images/ctuner/Tuner-preferences.png)
+![Note Filters](https://github.com/billthefarmer/billthefarmer.github.io/blob/master/images/ctuner/Note-filter.png)
 
  * Oscilloscope
  * Spectrum with zoom, shows individual reeds
@@ -21,16 +21,17 @@ instruments
 This is a port to Swift of the old Carbon based app
 [here](../mac). Responds to keyboard to change some preferences.
 
- * **c/k** - Change strobe colours
+ * **c** - Change strobe colours
  * **d** - Toggle downsampling
  * **f** - Toggle audio filter
+ * **k** - Change strobe colours
  * **l** - Toggle display lock
  * **m** - Toggle multiple reeds
  * **s** - Toggle strobe display
  * **z** - Toggle Spectrum zoom
 
- * Click on Scope to toggle audio filter
- * Click on Spectrum to toggle zoom
+ * Click on scope to toggle audio filter
+ * Click on spectrum to toggle zoom
  * Click on display to lock
  * Click on strobe to enable
  

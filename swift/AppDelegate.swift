@@ -79,13 +79,22 @@ class AppDelegate: NSObject, NSApplicationDelegate
         menu = NSApp.mainMenu
         if (menu != nil)
         {
-            let item = menu.item(withTitle: "Tuner")!
+            var item = menu.item(withTitle: "Tuner")!
             if (item.hasSubmenu)
             {
                 let subMenu = item.submenu!
                 let subItem = subMenu.item(withTitle: "Preferences…")!
                 subItem.target = self
                 subItem.action = #selector(showPreferences)
+            }
+
+            item = menu.item(withTitle: "File")!
+            if (item.hasSubmenu)
+            {
+                let subMenu = item.submenu!
+                let subItem = subMenu.item(withTitle: "Print…")!
+                subItem.target = self
+                subItem.action = #selector(print)
             }
         }
 
@@ -280,6 +289,21 @@ class AppDelegate: NSObject, NSApplicationDelegate
         hStack.addConstraint(stackWidth)
         hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
                                          bottom: 0, right: 40)
+        let colourLabel = NSTextField()
+        colourLabel.stringValue = "Strobe colours:"
+        colourLabel.isEditable = false
+        colourLabel.isBordered = false
+        colourLabel.drawsBackground = false
+        let popup = NSPopUpButton()
+        popup.pullsDown = true
+        popup.addItems(withTitles:
+                         ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
+        popup.selectItem(at: Int(strobeData.colours))
+        popup.target = self
+        popup.action = #selector(popupChanged)
+
+        let strobeRow = NSStackView(views: [colourLabel, popup])
+        strobeRow.spacing = 8
 
         let label = NSTextField()
         label.stringValue = "Ref:"
@@ -306,12 +330,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         button.bezelStyle = .rounded
         button.target = self
         button.action = #selector(showNotes)
-        let row = NSStackView()
-        row.setViews([label, refText, refStep], in: .leading)
-        row.setViews([button], in: .trailing)
 
-        stack = NSStackView(views: [hStack, row])
+        let Refrow = NSStackView(views: [label, refText, refStep, button])
+
+        stack = NSStackView(views: [hStack, strobeRow, Refrow])
         stack.orientation = .vertical
+        stack.alignment = .left
         stack.spacing = 20
         stack.edgeInsets = NSEdgeInsets(top: 40, left: 40,
                                         bottom: 40, right: 40)
@@ -490,6 +514,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
     }
 
+    @objc func popupChanged(sender: NSPopUpButton)
+    {
+        NSLog("Popup %@", sender.selectedItem!)
+    }
+
     // refChanged
     @objc func refChanged(sender: NSControl)
     {
@@ -520,6 +549,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
     @objc func octaveClicked(sender: NSButton)
     {
         setOctave((sender.state == .on) ? true: false, Int32(sender.tag))
+    }
+
+    @objc func print(sender: Any)
+    {
+        window.printWindow(sender)
     }
 
     // getPreferences

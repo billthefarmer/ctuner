@@ -186,6 +186,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 
 @class NSWindow;
 @class NSButton;
+@class NSPopUpButton;
 @class NSControl;
 @class NSApplication;
 
@@ -197,9 +198,11 @@ SWIFT_CLASS("_TtC5Tuner11AppDelegate")
 - (void)showPreferencesWithSender:(id _Nonnull)sender;
 - (void)showNotesWithSender:(NSButton * _Nonnull)sender;
 - (void)buttonClickedWithSender:(NSButton * _Nonnull)sender;
+- (void)popupChangedWithSender:(NSPopUpButton * _Nonnull)sender;
 - (void)refChangedWithSender:(NSControl * _Nonnull)sender;
 - (void)noteClickedWithSender:(NSButton * _Nonnull)sender;
 - (void)octaveClickedWithSender:(NSButton * _Nonnull)sender;
+- (void)printWithSender:(id _Nonnull)sender;
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication * _Nonnull)sender SWIFT_WARN_UNUSED_RESULT;
 - (void)applicationWillTerminate:(NSNotification * _Nonnull)aNotification;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
