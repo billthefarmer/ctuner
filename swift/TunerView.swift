@@ -62,7 +62,7 @@ class TunerView: NSView
     }
 
     // keyDown
-    func keyDown(event: NSEvent)
+    func keyDown(with event: NSEvent)
     {
         let key = event.characters
         switch key!.lowercased()
