@@ -27,6 +27,8 @@ var strbBox: NSButton!
 var downBox: NSButton!
 var lockBox: NSButton!
 
+var strobePopUp: NSPopUpButton!
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
@@ -294,15 +296,15 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourLabel.isEditable = false
         colourLabel.isBordered = false
         colourLabel.drawsBackground = false
-        let popup = NSPopUpButton()
-        popup.pullsDown = true
-        popup.addItems(withTitles:
+        strobePopUp = NSPopUpButton()
+        strobePopUp.pullsDown = true
+        strobePopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
-        popup.selectItem(at: Int(strobeData.colours))
-        popup.target = self
-        popup.action = #selector(popupChanged)
+        strobePopUp.selectItem(at: Int(strobeData.colours))
+        strobePopUp.target = self
+        strobePopUp.action = #selector(popUpChanged)
 
-        let strobeRow = NSStackView(views: [colourLabel, popup])
+        let strobeRow = NSStackView(views: [colourLabel, strobePopUp])
         strobeRow.spacing = 8
 
         let label = NSTextField()
@@ -514,9 +516,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
     }
 
-    @objc func popupChanged(sender: NSPopUpButton)
+    @objc func popUpChanged(sender: NSPopUpButton)
     {
         NSLog("Popup %@", sender.selectedItem!)
+        strobeData.colours = sender.indexOfSelectedItem
     }
 
     // refChanged

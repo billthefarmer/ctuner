@@ -76,6 +76,11 @@ class TunerView: NSView
             {
                 strobeData.colours = 0
             }
+
+            if (strobePopUp != nil)
+            {
+                strobePopUp.selectItem(at: Int(strobeData.colours))
+            }
             strobeData.changed = true
             strobeView.needsDisplay = true
 
