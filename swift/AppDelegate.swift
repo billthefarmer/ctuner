@@ -32,6 +32,9 @@ var noteBox: NSButton!
 var colourPopUp: NSPopUpButton!
 var strobePopUp: NSPopUpButton!
 
+var refText: NSTextField!
+var refStep: NSStepper!
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
@@ -44,9 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     var stack: NSStackView!
     var timer: Timer!
-
-    var refText: NSTextField!
-    var refStep: NSStepper!
 
     // applicationDidFinishLaunching
     func applicationDidFinishLaunching(_ aNotification: Notification)
