@@ -73,6 +73,11 @@ enum
      kLock   = 'Lock',
      kNote   = 'Note'};
 
+// Expand and colour tags
+enum
+    {kExpand = 'Expd',
+     kColour = 'Colr'};
+
 // Reference tags
 enum
     {kRefText = 'RefT',
@@ -86,6 +91,12 @@ typedef struct
     int n;
 } maximum;
 
+ScopeView *scopeView;
+SpectrumView *spectrumView;
+DisplayView *displayView;
+StrobeView *strobeView;
+MeterView *meterView;
+
 // Scope data
 typedef struct
 {
@@ -93,7 +104,6 @@ typedef struct
     int length;
 } ScopeData;
 ScopeData scopeData;
-ScopeView *scopeView;
 
 // Spectrum data
 typedef struct
@@ -110,7 +120,6 @@ typedef struct
     double *values;
 } SpectrumData;
 SpectrumData spectrumData;
-// SpectrumView *spectrumView;
 
 // Display data
 typedef struct
@@ -126,7 +135,6 @@ typedef struct
     int n;
 } DisplayData;
 DisplayData displayData;
-// DisplayView *displayView;
 
 // Strobe data
 typedef struct
@@ -137,7 +145,6 @@ typedef struct
     double c;
 } StrobeData;
 StrobeData strobeData;
-// StrobeView *strobeView;
 
 // Meter data
 typedef struct
@@ -145,7 +152,6 @@ typedef struct
     double c;
 } MeterData;
 MeterData meterData;
-// MeterView *meterView;
 
 // Audio data
 typedef struct

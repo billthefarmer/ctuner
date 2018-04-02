@@ -20,12 +20,6 @@
 
 import AppKit
 
-@objc var scopeView: ScopeView!
-@objc var spectrumView: SpectrumView!
-@objc var displayView: DisplayView!
-@objc var strobeView: StrobeView!
-@objc var meterView: MeterView!
-
 var zoomBox: NSButton!
 var filtBox: NSButton!
 var multBox: NSButton!
@@ -35,6 +29,7 @@ var lockBox: NSButton!
 var fundBox: NSButton!
 var noteBox: NSButton!
 
+var colourPopUp: NSPopUpButton!
 var strobePopUp: NSPopUpButton!
 
 @NSApplicationMain
@@ -304,8 +299,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                             multiplier: 1,
                                             constant: 0)
         hStack.addConstraint(stackWidth)
-        // hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
-        //                                  bottom: 0, right: 40)
+        hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
+                                         bottom: 0, right: 40)
         let expandLabel = NSTextField()
         expandLabel.stringValue = "Spectrum expand:"
         expandLabel.isEditable = false
@@ -316,6 +311,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandPopUp.addItems(withTitles:
                                ["x 1", "x 2", "x 4", "x 8", "x 16"])
         expandPopUp.selectItem(at: Int(spectrumData.expand))
+        expandPopUp.tag = kExpand
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
 
@@ -332,6 +328,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourPopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
         colourPopUp.selectItem(at: Int(strobeData.colours))
+        colourPopUp.tag = kColour
         colourPopUp.target = self
         colourPopUp.action = #selector(popUpChanged)
 
@@ -364,6 +361,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         button.action = #selector(showNotes)
 
         let Refrow = NSStackView(views: [label, refText, refStep, button])
+        Refrow.spacing = 8
 
         stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow])
         stack.orientation = .vertical

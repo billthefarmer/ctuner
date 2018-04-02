@@ -20,6 +20,9 @@
 
 import Cocoa
 
+let kMaxExpand: Int32 = 16
+let kMinExpand: Int32 = 1
+
 class SpectrumView: TunerView
 {
     let kTextSize: CGFloat = 10

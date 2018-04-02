@@ -132,8 +132,22 @@ class TunerView: NSView
             }
             spectrumView.needsDisplay = true
 
+        case "+":
+            spectrumData.expand *= 2
+            if (spectrumData.expand > kMaxExpand)
+            {
+                spectrumData.expand = kMinExpand
+            }
+
+        case "-":
+            spectrumData.expand /= 2
+            if (spectrumData.expand < kMinExpand)
+            {
+                spectrumData.expand = kMaxExpand
+            }
+
         default:
-            // NSLog("Key %@", key)
+            NSLog("Key %@", key)
             break
         }
     }
