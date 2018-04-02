@@ -86,9 +86,6 @@ typedef struct
     int n;
 } maximum;
 
-// App
-// AppDelegate *app;
-
 // Scope data
 typedef struct
 {
@@ -113,7 +110,7 @@ typedef struct
     double *values;
 } SpectrumData;
 SpectrumData spectrumData;
-SpectrumView *spectrumView;
+// SpectrumView *spectrumView;
 
 // Display data
 typedef struct
@@ -129,7 +126,7 @@ typedef struct
     int n;
 } DisplayData;
 DisplayData displayData;
-DisplayView *displayView;
+// DisplayView *displayView;
 
 // Strobe data
 typedef struct
@@ -140,7 +137,7 @@ typedef struct
     double c;
 } StrobeData;
 StrobeData strobeData;
-StrobeView *strobeView;
+// StrobeView *strobeView;
 
 // Meter data
 typedef struct
@@ -148,7 +145,7 @@ typedef struct
     double c;
 } MeterData;
 MeterData meterData;
-MeterView *meterView;
+// MeterView *meterView;
 
 // Audio data
 typedef struct

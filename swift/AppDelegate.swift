@@ -20,12 +20,20 @@
 
 import AppKit
 
+@objc var scopeView: ScopeView!
+@objc var spectrumView: SpectrumView!
+@objc var displayView: DisplayView!
+@objc var strobeView: StrobeView!
+@objc var meterView: MeterView!
+
 var zoomBox: NSButton!
 var filtBox: NSButton!
 var multBox: NSButton!
 var strbBox: NSButton!
 var downBox: NSButton!
 var lockBox: NSButton!
+var fundBox: NSButton!
+var noteBox: NSButton!
 
 var strobePopUp: NSPopUpButton!
 
@@ -119,6 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Stack
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
@@ -245,6 +254,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
             case kMult:
                 multBox = button
 
+            case kFund:
+                fundBox = button
+
             case kStrobe:
                 strbBox = button
 
@@ -253,6 +265,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
             case kLock:
                 lockBox = button
+
+            case kNote:
+                noteBox = button
 
             default:
                 break
@@ -289,23 +304,39 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                             multiplier: 1,
                                             constant: 0)
         hStack.addConstraint(stackWidth)
-        hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
-                                         bottom: 0, right: 40)
+        // hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
+        //                                  bottom: 0, right: 40)
+        let expandLabel = NSTextField()
+        expandLabel.stringValue = "Spectrum expand:"
+        expandLabel.isEditable = false
+        expandLabel.isBordered = false
+        expandLabel.drawsBackground = false
+        let expandPopUp = NSPopUpButton()
+        expandPopUp.pullsDown = false
+        expandPopUp.addItems(withTitles:
+                               ["x 1", "x 2", "x 4", "x 8", "x 16"])
+        expandPopUp.selectItem(at: Int(spectrumData.expand))
+        expandPopUp.target = self
+        expandPopUp.action = #selector(popUpChanged)
+
+        let expandRow = NSStackView(views: [expandLabel, expandPopUp])
+        expandRow.spacing = 8
+
         let colourLabel = NSTextField()
         colourLabel.stringValue = "Strobe colours:"
         colourLabel.isEditable = false
         colourLabel.isBordered = false
         colourLabel.drawsBackground = false
-        strobePopUp = NSPopUpButton()
-        strobePopUp.pullsDown = false
-        strobePopUp.addItems(withTitles:
+        colourPopUp = NSPopUpButton()
+        colourPopUp.pullsDown = false
+        colourPopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
-        strobePopUp.selectItem(at: Int(strobeData.colours))
-        strobePopUp.target = self
-        strobePopUp.action = #selector(popUpChanged)
+        colourPopUp.selectItem(at: Int(strobeData.colours))
+        colourPopUp.target = self
+        colourPopUp.action = #selector(popUpChanged)
 
-        let strobeRow = NSStackView(views: [colourLabel, strobePopUp])
-        strobeRow.spacing = 8
+        let colourRow = NSStackView(views: [colourLabel, colourPopUp])
+        colourRow.spacing = 8
 
         let label = NSTextField()
         label.stringValue = "Ref:"
@@ -315,7 +346,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refText = NSTextField()
         refText.tag = kRefText
         refText.doubleValue = audioData.reference
-        refText.preferredMaxLayoutWidth = 24
         refText.target = self
         refText.action = #selector(refChanged)
         refStep = NSStepper()
@@ -335,10 +365,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         let Refrow = NSStackView(views: [label, refText, refStep, button])
 
-        stack = NSStackView(views: [hStack, strobeRow, Refrow])
+        stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow])
         stack.orientation = .vertical
         stack.alignment = .left
-        stack.spacing = 20
+        stack.spacing = 16
         stack.edgeInsets = NSEdgeInsets(top: 40, left: 40,
                                         bottom: 40, right: 40)
 
