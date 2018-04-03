@@ -77,9 +77,9 @@ class TunerView: NSView
                 strobeData.colours = 0
             }
 
-            if (strobePopUp != nil)
+            if (colourPopUp != nil)
             {
-                strobePopUp.selectItem(at: Int(strobeData.colours))
+                colourPopUp.selectItem(at: Int(strobeData.colours))
             }
             strobeData.changed = true
             strobeView.needsDisplay = true
@@ -138,7 +138,11 @@ class TunerView: NSView
             {
                 spectrumData.expand = kMinExpand
             }
-            expandPopUp.selectItem(at: Log2(spectrumData.expand))
+            if (expandPopUp != nil)
+            {
+                expandPopUp.selectItem(at:
+                                         Int(log2(Float(spectrumData.expand))))
+            }
 
         case "-":
             spectrumData.expand /= 2
@@ -146,7 +150,11 @@ class TunerView: NSView
             {
                 spectrumData.expand = kMaxExpand
             }
-            expandPopUp.selectItem(at: Log2(spectrumData.expand))
+            if (expandPopUp != nil)
+            {
+                expandPopUp.selectItem(at:
+                                         Int(log2(Float(spectrumData.expand))))
+            }
 
         default:
             NSLog("Key %@", key)

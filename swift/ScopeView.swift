@@ -138,15 +138,15 @@ class ScopeView: TunerView
         // Show F if filtered
         if (audioData.filt)
         {
-            "F".draw(at: NSMakePoint(NSMinX(rect),
-                                     NSMidY(rect) - kTextSize - 3),
+            "F".draw(at: NSMakePoint(NSMinX(rect) + 2,
+                                     NSMidY(rect) - kTextSize - 5),
                      withAttributes: attribs)
         }
 
         // Show FF if fundamental filter
         if (audioData.fund)
         {
-            "FF".draw(at: NSMakePoint(NSMinX(rect), -NSMidY(rect)),
+            "FF".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect) + 2),
                      withAttributes: attribs)
         }
     }

@@ -223,7 +223,7 @@ class DisplayView: TunerView
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedStringKey: Any] = [.font: font]
 
-            "L".draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
+            "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
                      withAttributes: attribs)
         }
     }

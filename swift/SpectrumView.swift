@@ -284,8 +284,10 @@ class SpectrumView: TunerView
 
 	    if (spectrumData.expand > 1)
 	    {
-	        let s = String(format: "x%d", spectrumData.expand)
-	        s.draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
+	        let s = String(format: "x %d", spectrumData.expand)
+                let dx = s.size(withAttributes: attribs).width
+	        s.draw(at: NSMakePoint(NSMaxX(rect) - dx - 2,
+                                       NSMinY(rect)),
                        withAttributes: attribs)
 	    }
         }
@@ -297,14 +299,14 @@ class SpectrumView: TunerView
 
         if (audioData.down)
         {
-	    "D".draw(at: NSMakePoint(NSMinX(rect),
-                                     NSMaxY(rect) - kTextSize - 1),
+	    "D".draw(at: NSMakePoint(NSMinX(rect) + 2,
+                                     NSMaxY(rect) - kTextSize - 3),
                      withAttributes: attribs)
         }
 
         if (audioData.note)
         {
-	    "NF".draw(at: NSMakePoint(NSMinX(rect), NSMinY(rect) - 2),
+	    "NF".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
                      withAttributes: attribs)
         }
     }    

@@ -29,8 +29,8 @@ var lockBox: NSButton!
 var fundBox: NSButton!
 var noteBox: NSButton!
 
+var expandPopUp: NSPopUpButton!
 var colourPopUp: NSPopUpButton!
-var strobePopUp: NSPopUpButton!
 
 var refText: NSTextField!
 var refStep: NSStepper!
@@ -306,11 +306,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandLabel.isEditable = false
         expandLabel.isBordered = false
         expandLabel.drawsBackground = false
-        let expandPopUp = NSPopUpButton()
+        expandPopUp = NSPopUpButton()
         expandPopUp.pullsDown = false
         expandPopUp.addItems(withTitles:
                                ["x 1", "x 2", "x 4", "x 8", "x 16"])
-        expandPopUp.selectItem(at: Log2(spectrumData.expand))
+        expandPopUp.selectItem(at: Int(log2(Float(spectrumData.expand))))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
