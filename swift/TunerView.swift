@@ -138,6 +138,7 @@ class TunerView: NSView
             {
                 spectrumData.expand = kMinExpand
             }
+            expandPopUp.selectItem(at: Log2(spectrumData.expand))
 
         case "-":
             spectrumData.expand /= 2
@@ -145,6 +146,7 @@ class TunerView: NSView
             {
                 spectrumData.expand = kMaxExpand
             }
+            expandPopUp.selectItem(at: Log2(spectrumData.expand))
 
         default:
             NSLog("Key %@", key)

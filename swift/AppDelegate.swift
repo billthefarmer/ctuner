@@ -310,7 +310,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandPopUp.pullsDown = false
         expandPopUp.addItems(withTitles:
                                ["x 1", "x 2", "x 4", "x 8", "x 16"])
-        expandPopUp.selectItem(at: Int(spectrumData.expand))
+        expandPopUp.selectItem(at: Log2(spectrumData.expand))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
