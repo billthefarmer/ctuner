@@ -21,6 +21,7 @@ instruments
 This is a port to Swift of the old Carbon based app
 [here](../mac). Responds to keyboard to change some preferences.
 
+### Keys
  * **c** - Change strobe colours
  * **d** - Toggle downsampling
  * **f** - Toggle audio filter
@@ -30,6 +31,7 @@ This is a port to Swift of the old Carbon based app
  * **s** - Toggle strobe display
  * **z** - Toggle Spectrum zoom
 
+### Actions
  * Click on scope to toggle audio filter
  * Click on spectrum to toggle zoom
  * Click on display to lock
