@@ -782,8 +782,10 @@ void (^ProcessAudio)() = ^
     // Found
     if (found)
     {
+        static long delay;
+
 	// If display not locked
-	if (!displayData.lock)
+	if (!displayData.lock && (delay % audioData.divisor) == 0)
 	{
 	    // Update the display struct
 	    displayData.f = f;
@@ -802,7 +804,10 @@ void (^ProcessAudio)() = ^
 	    strobeData.c = c;
 	}
 
-	// Reset count;
+        // Increment delay
+        delay++;
+
+        // Reset count;
 	timer = 0;
     }
 

@@ -183,6 +183,12 @@ class DisplayView: TunerView
 	    // Select font
             font = NSFont.boldSystemFont(ofSize: textSizeLarge)
             attribs = [.font: font]
+            let dx = "-50.00\u{00A2}".size(withAttributes: attribs).width
+            if (dx >= width / 2)
+            {
+                let expansion = log((width / 2) / dx)
+                attribs = [.font: font, .expansion: expansion]
+            }
 
             // Right justify
 	    s = String(format: "%+4.2f\u{00A2}", displayData.c * 100.0)

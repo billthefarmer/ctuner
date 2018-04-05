@@ -52,7 +52,8 @@ class ScopeView: TunerView
         // Move the origin
         let transform = AffineTransform(translationByX: 0, byY: NSMidY(rect))
         (transform as NSAffineTransform).concat()
-        NSGraphicsContext.current!.shouldAntialias = false;
+        let context = NSGraphicsContext.current!
+        context.shouldAntialias = false;
 
         // Draw graticule
         for x in stride(from: NSMinX(rect), to: NSMaxX(rect), by: 6)
@@ -110,7 +111,7 @@ class ScopeView: TunerView
 
         // Green trace
         NSColor.green.set()
-        NSGraphicsContext.current!.shouldAntialias = true;
+        context.shouldAntialias = true;
 
         // Draw the trace
         let path = NSBezierPath()
