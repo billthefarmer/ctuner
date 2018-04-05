@@ -469,8 +469,7 @@ void (^ProcessAudio)() = ^
     // Initialise structures
     if (scopeData.data == nil)
     {
-	scopeData.data = audioData.buffer + kSamples -
-            (4 * (audioData.frames / audioData.divisor));
+	scopeData.data = audioData.buffer + kSamples2
 	scopeData.length = audioData.frames / audioData.divisor;
 
 	spectrumData.data = xa;
