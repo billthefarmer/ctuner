@@ -450,7 +450,7 @@ void (^ProcessAudio)() = ^
     static double dxp[kRange];
 
     static maximum maxima[kMaxima];
-    static double   values[kMaxima];
+    static double  values[kMaxima];
 
     static double window[kSamples];
     static double input[kSamples];
@@ -648,7 +648,7 @@ void (^ProcessAudio)() = ^
 
         // Fundamental filter
         if ((audioData.fund) && (count > 0) &&
-            ((n % kOctave) != (maxima[count].n % kOctave)))
+            ((n % kOctave) != (maxima[0].n % kOctave)))
             continue;
 
         // Note filter
@@ -670,7 +670,7 @@ void (^ProcessAudio)() = ^
 
         // If display not locked, find maxima and add to list
 	if (!displayData.lock && count < Length(maxima) &&
-	    xa[i] > kMin && xa[i] > (max / 2) &&
+	    xa[i] > kMin && xa[i] > (max / 4) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	{
             // Frequency
@@ -680,8 +680,8 @@ void (^ProcessAudio)() = ^
 	    maxima[count].n = n;
 
 	    // Reference note
-	    maxima[count].fr = audioData.reference * pow(2.0, round(cf) /
-                                                          12.0);
+	    maxima[count].fr = audioData.reference *
+                pow(2.0, round(cf) / 12.0);
 
 	    // Set limit to octave above
 	    if (!audioData.down && (limit > i * 2))
@@ -715,6 +715,13 @@ void (^ProcessAudio)() = ^
 	// Cents relative to reference
 	double cf = -12.0 * log2(audioData.reference / f);
 
+        // Don't count silly values
+        if (isnan(cf))
+        {
+            cf = 0.0;
+            found = false;
+        }
+
 	// Reference note
 	fr = audioData.reference * pow(2.0, round(cf) / 12.0);
 
@@ -726,7 +733,10 @@ void (^ProcessAudio)() = ^
 	n = round(cf) + kC5Offset;
 
 	if (n < 0)
+        {
+            n = 0;
 	    found = false;
+        }
 
 	// Find nearest maximum to reference note
 	double df = 1000.0;
@@ -744,8 +754,11 @@ void (^ProcessAudio)() = ^
 	c = -12.0 * log2(fr / f);
 
 	// Ignore silly values
-	if (!isfinite(c))
+	if (isnan(c))
+        {
 	    c = 0.0;
+            found = false;
+        }
 
 	// Ignore if not within 50 cents of reference note
 	if (fabs(c) > 0.5)
@@ -755,17 +768,17 @@ void (^ProcessAudio)() = ^
     // If display not locked
     if (!displayData.lock)
     {
-	// Update scope window
-	scopeView.needsDisplay = true;
+        // Update scope window
+        scopeView.needsDisplay = true;
 
-	// Update spectrum window
-	for (int i = 0; i < count; i++)
-	    values[i] = maxima[i].f / fps;
+        if (found)
+        {
+            // Update spectrum window
+            for (int i = 0; i < count; i++)
+                values[i] = maxima[i].f / fps;
 
-	spectrumData.count = count;
+            spectrumData.count = count;
 
-	if (found)
-	{
 	    spectrumData.f = f  / fps;
 	    spectrumData.r = fr / fps;
 	    spectrumData.l = fl / fps;
