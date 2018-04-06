@@ -733,10 +733,7 @@ void (^ProcessAudio)() = ^
 	n = round(cf) + kC5Offset;
 
 	if (n < 0)
-        {
-            n = 0;
 	    found = false;
-        }
 
 	// Find nearest maximum to reference note
 	double df = 1000.0;

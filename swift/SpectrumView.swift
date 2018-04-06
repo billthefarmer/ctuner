@@ -113,7 +113,7 @@ class SpectrumView: TunerView
             context.shouldAntialias = true;
 
 	    // Draw trace
-	    for i in Int(floor(spectrumData.l)) ..< Int(ceil(spectrumData.h))
+	    for i in Int(floor(spectrumData.l)) ... Int(ceil(spectrumData.h))
 	    {
 	        if (i > 0 && i < spectrumData.length)
 	        {

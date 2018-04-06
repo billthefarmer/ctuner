@@ -41,8 +41,6 @@ SFLAGS = -g -target x86_64-apple-macosx10.9 \
 
 CFLAGS = -g -target x86_64-apple-macosx10.9
 
-APP:	$(APPVDMG)
-
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(RM) -rf $(APPBUNDLE)
 	$(MD) $(APPBUNDLE)
@@ -81,15 +79,18 @@ clean:
 	$(RM) -rf $(APPBUNDLE)
 	$(RM) $(APPNAME).icns
 	$(RM) $(APPNAME)
+	$(RM) Audio.o
 
 $(APPVDMG): $(APPBUNDLE)
-	$(HDIU) create -size 32m -fs HFS+ -volname $(APPNAME) -ov $(APPNAME) -quiet
+	$(HDIU) create -size 16m -fs HFS+ -volname $(APPNAME) -ov $(APPNAME) -quiet
 	$(HDIU) attach $(APPDMG) -quiet
 	$(CP) -r $(APPBUNDLE) /Volumes/$(APPNAME)
 	$(LN) -s /Applications /Volumes/$(APPNAME)/Applications
 	$(CP) README.md /Volumes/$(APPNAME)
 	$(HDIU) detach /Volumes/$(APPNAME) -quiet
 	$(HDIU) convert -format UDZO -o $(APPVDMG) -ov $(APPDMG) -quiet
+
+dmg:	$(APPVDMG)
 
 %.o: %.m
 	$(CC) -c $(CFLAGS) $< -o $@
