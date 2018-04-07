@@ -132,6 +132,17 @@ class SpectrumView: TunerView
 	        }
 	    }
 
+            // Complete path
+            path.line(to: NSMakePoint(NSMaxX(rect), 0))
+            path.close()
+
+            // Fill colour
+            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.5)
+            lightGreen.set
+            path.fill()
+
+            // Stroke colour
+            NSColor.green.set()
 	    path.stroke()
 
 	    // Yellow pen for frequency trace
@@ -230,6 +241,17 @@ class SpectrumView: TunerView
                                           NSMinY(rect) + CGFloat(y)))
 	    }
 
+            // Complete path
+            path.line(to: NSMakePoint(NSMaxX(rect), 0))
+            path.close()
+
+            // Fill colour
+            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.5)
+            lightGreen.set
+            path.fill()
+
+            // Stroke colour
+            NSColor.green.set()
 	    path.stroke()
 
 	    // Yellow pen for frequency trace
