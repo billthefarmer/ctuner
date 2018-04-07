@@ -638,6 +638,13 @@ void (^ProcessAudio)() = ^
     // Find maximum value, and list of maxima
     for (int i = 1; i < limit; i++)
     {
+        // Clear maxima
+        maxima[count].f  = 0.0;
+        maxima[count].fr = 0.0;
+        maxima[count].n  = 0;
+
+        values[count] = 0.0;
+
         // Cents relative to reference
         double cf = -12.0 * log2(audioData.reference / xf[i]);
         int n = round(cf) + kC5Offset;
