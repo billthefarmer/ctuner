@@ -137,8 +137,8 @@ class SpectrumView: TunerView
             path.close()
 
             // Fill colour
-            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.5)
-            lightGreen.set
+            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.25)
+            lightGreen.set()
             path.fill()
 
             // Stroke colour
@@ -250,8 +250,8 @@ class SpectrumView: TunerView
             path.close()
 
             // Fill colour
-            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.5)
-            lightGreen.set
+            let lightGreen = NSColor(red: 0, green: 1, blue: 0, alpha: 0.25)
+            lightGreen.set()
             path.fill()
 
             // Stroke colour
