@@ -215,7 +215,7 @@ class SpectrumView: TunerView
             path.move(to: .zero)
 
             var last = 1
-	    for x in 0 ..< Int(width)
+	    for x in 0 ... Int(width)
 	    {
 	        var value: Float = 0.0
 
@@ -233,7 +233,7 @@ class SpectrumView: TunerView
 	        }
 
 	        // Update last index
-	        last = index + 1;
+	        last = index;
 
 	        if (max < value)
                 {
