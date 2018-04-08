@@ -207,7 +207,7 @@ class SpectrumView: TunerView
             context.shouldAntialias = true;
 
             // Scale
-	    let xscale = log10(Double(spectrumData.length) /
+	    let xscale = log(Double(spectrumData.length) /
 			       Double(spectrumData.expand)) / Double(width)
 
             // Draw the spectrum
@@ -219,7 +219,7 @@ class SpectrumView: TunerView
 	    {
 	        var value = 0.0
 
-                let index = Int(round(pow(10, Double(x) * xscale)))
+                let index = Int(round(pow(M_E, Double(x) * xscale)))
                 if (index > last)
                 {
                     for i in last ..< index
