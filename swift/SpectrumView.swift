@@ -203,33 +203,37 @@ class SpectrumView: TunerView
 
         else
         {
-	    let xscale = Double(spectrumData.length /
-			          spectrumData.expand) / Double(width)
+            // Antialias
+            context.shouldAntialias = true;
+
+            // Scale
+	    let xscale = log(Float(spectrumData.length) /
+			       Float(spectrumData.expand)) / Float(width)
 
             // Draw the spectrum
             let path = NSBezierPath()
             path.move(to: .zero)
 
-            // Antialias
-            NSGraphicsContext.current!.shouldAntialias = true;
-
+            var last = 1
 	    for x in 0 ..< Int(width)
 	    {
-	        var value: Double = 0
+	        var value: Float = 0.0
 
-	        // Don't show DC component
-	        if (x > 0)
-	        {
-		    for j in 0 ..< Int(xscale)
-		    {
-		        let n = Int(Double(x) * xscale) + j
-
-		        if (value < spectrumData.data[n])
+                var index = Int(round(pow(.e, x * xscale)))
+                for i in last ..< index
+                {
+	            // Don't show DC component
+	            if (i > 0 && i < spectrumData.length)
+	            {
+		        if (value < spectrumData.data[i])
                         {
-			    value = spectrumData.data[n]
+			    value = spectrumData.data[i]
                         }
 		    }
 	        }
+
+	        // Update last index
+	        last = index + 1;
 
 	        if (max < value)
                 {
