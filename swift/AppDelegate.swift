@@ -79,7 +79,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.contentMinSize = NSMakeSize(400, 480)
         window.contentAspectRatio = NSMakeSize(1.0, 1.2)
         window.showsResizeIndicator = true
-        window.collectionBehavior.append(.fullScreenNone)
+        window.collectionBehavior.insert(.fullScreenNone)
 
         // Find the menu
         menu = NSApp.mainMenu
