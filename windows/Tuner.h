@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Tuner - A Tuner written in C.
+//  Tuner - A Tuner written in C++.
 //
 //  Copyright (C) 2009  Bill Farmer
 //
@@ -25,20 +25,23 @@
 #ifndef TUNER_H
 #define TUNER_H
 
-#define WINVER    0x0501
-#define _WIN32_IE 0x0501
+#define UNICODE
 
 #include <math.h>
 #include <stdio.h>
+#include <wchar.h>
 #include <windows.h>
+#include <gdiplus.h>
 #include <commctrl.h>
 
+#include <vector>
+
 // Macros
-
 #define Length(a) (sizeof(a) / sizeof(a[0]))
+#define add(a) push_back(a)
 
-#define WCLASS "MainWClass"
-#define PCLASS "PopupClass"
+#define WCLASS L"MainWClass"
+#define PCLASS L"PopupClass"
 
 #define OCTAVE 12
 #define MIN   0.5
@@ -46,7 +49,6 @@
 #undef NOISE
 
 // Tool ids
-
 enum
     {SCOPE_ID = 101,
      SPECTRUM_ID,
@@ -72,7 +74,6 @@ enum
      CORRECTION_ID};
 
 // Wave in values
-
 enum
     {SAMPLE_RATE = 11025L,
      BITS_PER_SAMPLE = 16,
@@ -80,7 +81,6 @@ enum
      CHANNELS = 1};
 
 // Audio processing values
-
 enum
     {MAXIMA = 8,
      OVERSAMPLE = 16,
@@ -89,13 +89,11 @@ enum
      STEP = SAMPLES / OVERSAMPLE};
 
 // Tuner reference values
-
 enum
     {A5_REFNCE = 440,
      C5_OFFSET = 57};
 
 // Slider values
-
 enum
     {MAX_VOL  = 100,
      MIN_VOL  = 0,
@@ -115,26 +113,37 @@ enum
      MIN_CORRECTION =  99000};
 
 // Strobe colours
-
 enum
     {BLUE,
      OLIVE,
      MAGENTA};
 
 // Timer values
-
 enum
-    {METER_DELAY  = 100,
-     STROBE_DELAY = 100};
+    {METER_DELAY  = 10,
+     STROBE_DELAY = 10};
 
 // Window size
-
 enum
-    {WIDTH  = 320,
-     HEIGHT = 396};
+    {WIDTH  = 400,
+     HEIGHT = 480};
+
+// Tool sizes
+enum
+    {SCOPE_HEIGHT    = 50,
+     SPECTRUM_HEIGHT = 50,
+     DISPLAY_HEIGHT  = 158,
+     STROBE_HEIGHT   = 68,
+     METER_HEIGHT    = 82,
+     TOTAL_HEIGHT    = 408};
+
+// Margins
+enum
+    {MARGIN  = 20,
+     SPACING = 8,
+     TOTAL   = 72};
 
 // Structs
-
 typedef struct
 {
     double r;
@@ -156,19 +165,24 @@ typedef struct
     float h;
 } value;
 
-// Global data
+typedef struct
+{
+    float x;
+    float y;
+} POINTF;
 
+// Global data
 typedef struct
 {
     HWND hwnd;
-    BOOL zoom;
-    RECT rwnd;
-    RECT rclt;
+    RECT wind;
+    RECT rect;
 } WINDOW, *WINDOWP;
 
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
 } TOOL, *TOOLP;
 
 typedef struct
@@ -180,6 +194,7 @@ typedef struct
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
     UINT length;
     short *data;
 } SCOPE, *SCOPEP;
@@ -187,6 +202,7 @@ typedef struct
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
     UINT length;
     UINT expand;
     BOOL zoom;
@@ -202,6 +218,7 @@ typedef struct
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
     BOOL multiple;
     BOOL lock;
     double f;
@@ -224,20 +241,20 @@ typedef struct
 {
     TOOL sample;
     TOOL reference;
-    TOOL correction;
 } LEGEND, *LEGENDP;
 
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
     double c;
-    TOOL slider;
     HANDLE timer;
 } METER, *METERP;
 
 typedef struct
 {
     HWND hwnd;
+    RECT rect;
     double c;
     int colours;
     BOOL enable;
@@ -252,29 +269,52 @@ typedef struct
     BOOL downsample;
     HWAVEIN hwi;
     HANDLE thread;
-    double correction;
     double reference;
 } AUDIO, *AUDIOP;
 
-typedef struct
-{
-    HMIXER hmx;
-    MIXERLINE *pmxl;
-    MIXERCONTROL *pmxc;
-    MIXERLINECONTROLS *pmxlc;
-    MIXERCONTROLDETAILS *pmxcd;
-    MIXERCONTROLDETAILS_UNSIGNED *pmxcdu;
-} MIXER, *MIXERP;
+// Global handle
+HINSTANCE hInst;
+
+// Gdiplus token
+ULONG_PTR token;
+
+// Gdiplus input
+Gdiplus::GdiplusStartupInput input;
+
+// Global data
+WINDOW window;
+TOOL status;
+TOOLTIP tooltip;
+TOOL volume;
+SCOPE scope;
+SPECTRUM spectrum;
+DISPLAY display;
+
+TOOL group;
+TOOL zoom;
+TOOL text;
+TOOL lock;
+TOOL down;
+TOOL resize;
+TOOL filter;
+TOOL enable;
+TOOL options;
+TOOL multiple;
+TOOL reference;
+
+BUTTON button;
+LEGEND legend;
+METER meter;
+STROBE strobe;
+AUDIO audio;
 
 // Function prototypes.
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK PopupProc(HWND, UINT, WPARAM, LPARAM);
-BOOL CALLBACK ResizeProc(HWND, LPARAM);
+BOOL CALLBACK EnumChildProc(HWND, LPARAM);
 BOOL RegisterMainClass(HINSTANCE);
 VOID GetSavedStatus(VOID);
-BOOL ResizeWindow(WPARAM, LPARAM);
 BOOL DrawItem(WPARAM, LPARAM);
 BOOL DrawStrobe(HDC, RECT);
 BOOL DrawScope(HDC, RECT);
@@ -290,7 +330,6 @@ BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL MeterClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
-BOOL ResizeClicked(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
 BOOL LockClicked(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
@@ -299,20 +338,14 @@ BOOL ContractClicked(WPARAM, LPARAM);
 BOOL MultipleClicked(WPARAM, LPARAM);
 BOOL EnableClicked(WPARAM, LPARAM);
 BOOL EditReference(WPARAM, LPARAM);
-BOOL EditCorrection(WPARAM, LPARAM);
-BOOL ChangeVolume(WPARAM, LPARAM);
-BOOL VolumeChange(WPARAM, LPARAM);
 BOOL CharPressed(WPARAM, LPARAM);
 BOOL CopyDisplay(WPARAM, LPARAM);
 BOOL DownClicked(WPARAM, LPARAM);
-BOOL ChangeCorrection(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
-BOOL SaveCorrection(WPARAM, LPARAM);
-VOID UpdateStatusBar(VOID);
+BOOL WindowResize(HWND, WPARAM, LPARAM);
+BOOL WindowResizing(HWND, WPARAM, LPARAM);
 VOID CALLBACK MeterCallback(PVOID, BOOL);
 VOID CALLBACK StrobeCallback(PVOID, BOOL);
-VOID TooltipShow(WPARAM, LPARAM);
-VOID TooltipPop(WPARAM, LPARAM);
 DWORD WINAPI AudioThread(LPVOID);
 VOID WaveInData(WPARAM, LPARAM);
 VOID fftr(complex[], int);

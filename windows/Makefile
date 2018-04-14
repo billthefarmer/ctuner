@@ -5,18 +5,19 @@
 ################################################################################
 
 GCC	= gcc
+G++	= g++
 WINDRES = windres
 
 all:	Tuner.exe
 
-Tuner.exe:	Tuner.c Tuner.o Tuner.h
+Tuner.exe:	Tuner.cpp Tuner.o Tuner.h Makefile
 
 clean:
-	rm *.exe
+	rm *.exe *.o
 
-%.exe:	%.c
-	$(GCC) -o $@ $(wordlist 1, 2, $^) -Os -std=gnu99 \
-		 -mwin32 -mwindows -lcomctl32 -lwinmm -lmsimg32
+%.exe:	%.cpp
+	$(G++) -o $@ $(wordlist 1, 2, $^) -Os -std=gnu++11 \
+	-mwindows -lgdiplus -lcomctl32 -lwinmm -lmsimg32
 
 %.o:	%.rc
 	$(WINDRES) -o $@ $<
