@@ -2,7 +2,7 @@
 set -ev
 if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     cd windows
-    make  GCC=i586-mingw32msvc-gcc WINDRES=i586-mingw32msvc-windres
+    make  G++=i586-mingw32msvc-g++ WINDRES=i586-mingw32msvc-windres
 
 #    cd ../linux
 #    ./configure
