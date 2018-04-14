@@ -10,6 +10,9 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
 fi
 
 if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+    osx_image: xcode9
     cd mac
+    make
+    cd ../swift
     make
 fi
