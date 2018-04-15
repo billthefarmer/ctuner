@@ -1414,15 +1414,8 @@ VOID CALLBACK MeterCallback(PVOID lpParam, BOOL TimerFired)
 {
     METERP meter = (METERP)lpParam;
 
-    static float mc;
-
-    // Do calculation
-    mc = ((mc * 19.0) + meter->c) / 20.0;
-
-    int value = round(mc * MAX_METER) + REF_METER;
-
     // Update meter
-    // SendMessage(meter->slider.hwnd, TBM_SETPOS, TRUE, value);
+    InvalidateRgn(meter->hwnd, NULL, TRUE);
 }
 
 // Strobe callback
@@ -2204,9 +2197,16 @@ BOOL DrawLock(HDC hdc, int x, int y)
 // Draw meter
 BOOL DrawMeter(HDC hdc, RECT rect)
 {
+    using Gdiplus::SmoothingModeAntiAlias;
+    using Gdiplus::LinearGradientBrush;
+    using Gdiplus::WrapModeTileFlipX;
     using Gdiplus::GraphicsPath;
-    using Gdiplus::SolidBrush;
+    using Gdiplus::SolidBrush; 
+    using Gdiplus::Graphics; 
     using Gdiplus::Matrix;
+    using Gdiplus::Color;
+    using Gdiplus::Point;
+    using Gdiplus::Pen;
 
     static HBITMAP bitmap;
     static HFONT font;
@@ -2265,6 +2265,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     }
 
     // Erase background
+    SetViewportOrgEx(hbdc, 0, 0, NULL);
     RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
@@ -2299,13 +2300,10 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	}
     }
 
-    MoveToEx(hbdc, -width * 5 / 11, (height * 3 / 4) - 1, NULL);
-    LineTo(hbdc, width * 5 / 11, (height * 3 / 4) + 1);
-
-    RECT bar = {-width * 5 / 11, (height * 3 / 4) - 1,
-                width * 5 / 11, (height * 3 / 4) + 1};
-    FillRect(hbdc, &bar, (HBRUSH)GetStockObject(BLACK_BRUSH));
-    FrameRect(hbdc, &bar, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    RECT bar = {-width * 5 / 11, (height * 3 / 4) - 2,
+                (width * 5 / 11) + 1, (height * 3 / 4) + 2};
+    FillRect(hbdc, &bar, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
+    FrameRect(hbdc, &bar, (HBRUSH)GetStockObject(GRAY_BRUSH));
 
     // Do calculation
     mc = ((mc * 19.0) + meter.c) / 20.0;
@@ -2317,9 +2315,23 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     path.AddLine(-1, -2, -1, 1);
     path.CloseFigure();
 
+    LinearGradientBrush brush(Point(0, 2), Point(0, -2),
+                              Color(255, 255, 255), Color(63, 63, 63));
+    brush.SetWrapMode(WrapModeTileFlipX);
+
     Matrix matrix;
-    matrix.Scale(height / 16.0, height / 16.0);
-    matrix.Translate(mc * width * 10.0 / 11.0, 0);
+    matrix.Translate(mc * width * 10.0 / 11.0, (height * 3 / 4) - 2);
+    matrix.Scale(height / 12.0, -height / 12.0);
+
+    path.Transform(&matrix);
+    brush.ScaleTransform(height / 24.0, height / 24.0);
+
+    Pen pen(Color(127, 127, 127));
+
+    Graphics graphics(hbdc);
+    graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+    graphics.FillPath(&brush, &path);
+    graphics.DrawPath(&pen, &path);
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);
