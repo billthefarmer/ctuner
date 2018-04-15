@@ -892,44 +892,13 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			 10, 160, width - 20, 124,
 			 hWnd, NULL, hInst, NULL);
 
-	// Create save button
-	button.save.hwnd =
-	    CreateWindow(WC_BUTTON, L"Save",
-			 WS_VISIBLE | WS_CHILD |
-			 BS_PUSHBUTTON,
-			 209, 177, 85, 26,
-			 hWnd, (HMENU)SAVE_ID, hInst, NULL);
-
-	// Create text
-	text.hwnd =
-	    CreateWindow(WC_STATIC,
-			 L"Use correction if your sound card clock "
-			 L"is significantly inaccurate.",
-			 WS_VISIBLE | WS_CHILD |
-			 SS_LEFT,
-			 20, 210, width - 40, 40,
-			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
-
-	// Create text
-	wsprintf(s, L"Sample rate:  %6.1lf",
-		(double)SAMPLE_RATE);
-
-	legend.sample.hwnd =
-	    CreateWindow(WC_STATIC, s,
-			 WS_VISIBLE | WS_CHILD |
-			 SS_LEFT,
-			 20, 252, 152, 20,
-			 hWnd, (HMENU)TEXT_ID, hInst, NULL);
-
 	// Create close button
-
 	button.close.hwnd =
 	    CreateWindow(WC_BUTTON, L"Close",
 			 WS_VISIBLE | WS_CHILD |
 			 BS_PUSHBUTTON,
 			 209, 247, 85, 26,
 			 hWnd, (HMENU)CLOSE_ID, hInst, NULL);
-
 	break;
 
 	// Colour static text
@@ -1538,8 +1507,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 
     // Erase background
     // SetViewportOrgEx(hbdc, 0, 0, NULL);
-    RECT brct =
-        {0, 0, width, height};
+    RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
     // Dark green graticule
@@ -1709,8 +1677,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
     // Erase background
     SetViewportOrgEx(hbdc, 0, 0, NULL);
-    RECT brct =
-	{0, 0, width, height};
+    RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
     // Dark green graticule
@@ -1738,9 +1705,6 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	return TRUE;
     }
-
-    // Move the origin
-    // SetViewportOrgEx(hbdc, 0, height - 1, NULL);
 
     static float max;
 
@@ -2009,8 +1973,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     }
 
     // Erase background
-    RECT brct =
-	{0, 0, width, height};
+    RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
     if (display.multiple)
@@ -2241,10 +2204,16 @@ BOOL DrawLock(HDC hdc, int x, int y)
 // Draw meter
 BOOL DrawMeter(HDC hdc, RECT rect)
 {
+    using Gdiplus::GraphicsPath;
+    using Gdiplus::SolidBrush;
+    using Gdiplus::Matrix;
+
     static HBITMAP bitmap;
     static HFONT font;
     static SIZE size;
     static HDC hbdc;
+
+    static float mc;
 
     // Plain vanilla font
     static LOGFONT lf =
@@ -2273,7 +2242,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	SetTextAlign(hbdc, TA_CENTER);
     }
 
-    // Create new font if resized
+    // Create new font and bitmap if resized
     if (width != size.cx || height != size.cy)
     {
         if (font != NULL)
@@ -2282,11 +2251,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
         lf.lfHeight = height / 3;
 	font = CreateFontIndirect(&lf);
 	SelectObject(hbdc, font);
-    }
 
-    // Create new bitmaps if resized
-    if (width != size.cx || height != size.cy)
-    {
 	// Delete old bitmap
 	if (bitmap != NULL)
 	    DeleteObject(bitmap);
@@ -2300,8 +2265,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     }
 
     // Erase background
-    RECT brct =
-	{0, 0, width, height};
+    RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
     // Move origin
@@ -2334,6 +2298,28 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	    LineTo(hbdc, -x + j * width / 55, height / 2);
 	}
     }
+
+    MoveToEx(hbdc, -width * 5 / 11, (height * 3 / 4) - 1, NULL);
+    LineTo(hbdc, width * 5 / 11, (height * 3 / 4) + 1);
+
+    RECT bar = {-width * 5 / 11, (height * 3 / 4) - 1,
+                width * 5 / 11, (height * 3 / 4) + 1};
+    FillRect(hbdc, &bar, (HBRUSH)GetStockObject(BLACK_BRUSH));
+    FrameRect(hbdc, &bar, (HBRUSH)GetStockObject(BLACK_BRUSH));
+
+    // Do calculation
+    mc = ((mc * 19.0) + meter.c) / 20.0;
+
+    GraphicsPath path;
+    path.AddLine(0, 2, 1, 1);
+    path.AddLine(1, 1, 1, -2);
+    path.AddLine(1, -2, -1, -2);
+    path.AddLine(-1, -2, -1, 1);
+    path.CloseFigure();
+
+    Matrix matrix;
+    matrix.Scale(height / 16.0, height / 16.0);
+    matrix.Translate(mc * width * 10.0 / 11.0, 0);
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);

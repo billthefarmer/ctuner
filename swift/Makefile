@@ -49,7 +49,6 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(MD) $(APPBUNDLERESOURCES)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
-	$(CP) Help.rtf $(APPBUNDLECONTENTS)/
 	$(CP) -r Frameworks $(APPBUNDLECONTENTS)/
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) MainMenu.nib $(APPBUNDLERESOURCES)/
