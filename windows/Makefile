@@ -10,13 +10,15 @@ WINDRES   = windres
 
 all:	Tuner.exe
 
-Tuner.exe:	Tuner.cpp Tuner.o Tuner.h Makefile
+Tuner.exe:	Tuner.cpp Tuner.o
+
+Tuner.o:	Tuner.rc Tuner.h Tuner.manifest Tuner.ico Toolbar.bmp Makefile
 
 clean:
 	rm *.exe *.o
 
 %.exe:	%.cpp
-	$(GPLUSPLUS) -o $@ $(wordlist 1, 2, $^) -Os -std=gnu++98 \
+	$(GPLUSPLUS) -o $@ $^ -Os -std=gnu++11 \
 	-mwindows -lgdiplus -lcomctl32 -lwinmm -lmsimg32
 
 %.o:	%.rc

@@ -25,23 +25,17 @@
 #ifndef TUNER_H
 #define TUNER_H
 
-#define UNICODE
-
 #include <math.h>
 #include <stdio.h>
-#include <wchar.h>
 #include <windows.h>
 #include <gdiplus.h>
 #include <commctrl.h>
 
-#include <vector>
-
 // Macros
 #define Length(a) (sizeof(a) / sizeof(a[0]))
-#define add(a) push_back(a)
 
-#define WCLASS L"MainWClass"
-#define PCLASS L"PopupClass"
+#define WCLASS "MainWClass"
+#define PCLASS "PopupClass"
 
 #define OCTAVE 12
 #define MIN   0.5
@@ -50,28 +44,34 @@
 
 // Tool ids
 enum
-    {SCOPE_ID = 101,
+    {TOOLBAR_ID = 100,
      SPECTRUM_ID,
      DISPLAY_ID,
      STROBE_ID,
-     VOLUME_ID,
-     STATUS_ID,
-     SLIDER_ID,
+     SCOPE_ID,
      METER_ID,
      QUIT_ID,
      ZOOM_ID,
      TEXT_ID,
-     SAVE_ID,
      DOWN_ID,
      LOCK_ID,
+     MULT_ID,
+     FUND_ID,
+     NOTE_ID,
+     FILT_ID,
      CLOSE_ID,
-     RESIZE_ID,
      FILTER_ID,
      ENABLE_ID,
+     EXPAND_ID,
+     UPDOWN_ID,
+     COLOURS_ID,
      OPTIONS_ID,
-     MULTIPLE_ID,
-     REFERENCE_ID,
-     CORRECTION_ID};
+     REFERENCE_ID};
+
+// Bitmap ids
+enum
+    {OPTIONS_BM,
+     QUIT_BM};
 
 // Wave in values
 enum
@@ -93,24 +93,12 @@ enum
     {A5_REFNCE = 440,
      C5_OFFSET = 57};
 
-// Slider values
+// Reference values
 enum
-    {MAX_VOL  = 100,
-     MIN_VOL  = 0,
-     STEP_VOL = 10,
-
-     MAX_REF  = 4800,
+    {MAX_REF  = 4800,
      REF_REF  = 4400,
      MIN_REF  = 4200,
-     STEP_REF = 10,
-
-     MAX_METER = 200,
-     REF_METER = 100,
-     MIN_METER = 0,
-
-     MAX_CORRECTION = 101000,
-     REF_CORRECTION = 100000,
-     MIN_CORRECTION =  99000};
+     STEP_REF = 10};
 
 // Strobe colours
 enum
@@ -128,7 +116,7 @@ enum
     {WIDTH  = 400,
      HEIGHT = 480};
 
-// Tool sizes
+// View sizes
 enum
     {SCOPE_HEIGHT    = 50,
      SPECTRUM_HEIGHT = 50,
@@ -142,6 +130,20 @@ enum
     {MARGIN  = 20,
      SPACING = 8,
      TOTAL   = 72};
+
+// Button sizes
+enum
+    {CHECK_HEIGHT = 24,
+     CHECK_WIDTH = 124,
+     BUTTON_HEIGHT = 26,
+     BUTTON_WIDTH = 85};
+
+// Popup sizes
+enum
+    {GROUP_WIDTH = (CHECK_WIDTH * 2) + (MARGIN * 4),
+     GROUP_HEIGHT = (CHECK_HEIGHT  * 4) + (MARGIN * 2) + (SPACING * 2),
+     POPUP_WIDTH = GROUP_WIDTH + (MARGIN * 2) + 4,
+     POPUP_HEIGHT = (GROUP_HEIGHT * 2) + (MARGIN * 4)};
 
 // Structs
 typedef struct
@@ -219,7 +221,7 @@ typedef struct
 {
     HWND hwnd;
     RECT rect;
-    BOOL multiple;
+    BOOL mult;
     BOOL lock;
     double f;
     double fr;
@@ -231,17 +233,10 @@ typedef struct
 
 typedef struct
 {
-    TOOL options;
-    TOOL save;
+    TOOL filter;
     TOOL close;
     TOOL quit;
 } BUTTON, *BUTTONP;
-
-typedef struct
-{
-    TOOL sample;
-    TOOL reference;
-} LEGEND, *LEGENDP;
 
 typedef struct
 {
@@ -265,8 +260,10 @@ typedef struct
 typedef struct
 {
     DWORD id;
+    BOOL down;
+    BOOL fund;
+    BOOL note;
     BOOL filter;
-    BOOL downsample;
     HWAVEIN hwi;
     HANDLE thread;
     double reference;
@@ -283,29 +280,32 @@ Gdiplus::GdiplusStartupInput input;
 
 // Global data
 WINDOW window;
-TOOL status;
+TOOL toolbar;
 TOOLTIP tooltip;
-TOOL volume;
 SCOPE scope;
 SPECTRUM spectrum;
 DISPLAY display;
+STROBE strobe;
+METER meter;
+
+BUTTON button;
 
 TOOL group;
 TOOL zoom;
 TOOL text;
 TOOL lock;
 TOOL down;
-TOOL resize;
+TOOL mult;
+TOOL fund;
+TOOL note;
 TOOL filter;
 TOOL enable;
+TOOL expand;
+TOOL updown;
+TOOL colours;
 TOOL options;
-TOOL multiple;
 TOOL reference;
 
-BUTTON button;
-LEGEND legend;
-METER meter;
-STROBE strobe;
 AUDIO audio;
 
 // Function prototypes.
@@ -330,6 +330,8 @@ BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
 BOOL MeterClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
+BOOL FundamentalClicked(WPARAM, LPARAM);
+BOOL NoteFilterClicked(WPARAM, LPARAM);
 BOOL ScopeClicked(WPARAM, LPARAM);
 BOOL LockClicked(WPARAM, LPARAM);
 BOOL ZoomClicked(WPARAM, LPARAM);
@@ -344,6 +346,8 @@ BOOL DownClicked(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 BOOL WindowResize(HWND, WPARAM, LPARAM);
 BOOL WindowResizing(HWND, WPARAM, LPARAM);
+BOOL AddToolbarBitmap(HWND, LPCTSTR);
+BOOL AddToolbarButtons(HWND);
 VOID CALLBACK MeterCallback(PVOID, BOOL);
 VOID CALLBACK StrobeCallback(PVOID, BOOL);
 DWORD WINAPI AudioThread(LPVOID);

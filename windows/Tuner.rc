@@ -1,7 +1,9 @@
-
-#include "windows.h"
+// Resources
+#include <windows.h>
 
 Tuner ICON "Tuner.ico"
+Musica FONT "Musica.ttf"
+Toolbar BITMAP "Toolbar.bmp"
 
 CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "Tuner.manifest"
 
@@ -14,22 +16,22 @@ FILEOS         	VOS__WINDOWS32
 FILETYPE       	VFT_APP
 FILESUBTYPE    	VFT2_UNKNOWN
 BEGIN
-    BLOCK "StringFileInfo"
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "080904B0"
     BEGIN
-        BLOCK "080904B0"
-        BEGIN
-            VALUE "CompanyName",      "Bill Farmer"
-            VALUE "FileDescription",  "Musical Instrument Tuner"
-            VALUE "FileVersion",      "1.0.4"
-            VALUE "InternalName",     "Tuner"
-            VALUE "LegalCopyright",   "Copyright (C) 2013 Bill Farmer"
-            VALUE "OriginalFilename", "Tuner.exe"
-            VALUE "ProductName",      "Tuner"
-            VALUE "ProductVersion",   "1.0.4"
-        END
+      VALUE "CompanyName",      "Bill Farmer"
+      VALUE "FileDescription",  "Musical Instrument Tuner"
+      VALUE "FileVersion",      "1.0.4"
+      VALUE "InternalName",     "Tuner"
+      VALUE "LegalCopyright",   "Copyright (C) 2018 Bill Farmer"
+      VALUE "OriginalFilename", "Tuner.exe"
+      VALUE "ProductName",      "Tuner"
+      VALUE "ProductVersion",   "1.0.4"
     END
-    BLOCK "VarFileInfo"
-    BEGIN
-        VALUE "Translation", 0x809, 0x4B0
-    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 0x4B0
+  END
 END

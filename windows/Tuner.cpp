@@ -50,7 +50,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
     // Create the main window.
     window.hwnd =
-	CreateWindow(WCLASS, L"Tuner",
+	CreateWindow(WCLASS, "Tuner",
 		     WS_OVERLAPPED | WS_MINIMIZEBOX |
 		     WS_SIZEBOX | WS_SYSMENU,
 		     CW_USEDEFAULT, CW_USEDEFAULT,
@@ -91,7 +91,7 @@ BOOL RegisterMainClass(HINSTANCE hInst)
     WNDCLASS wc = 
 	{CS_HREDRAW | CS_VREDRAW,
 	 MainWndProc, 0, 0, hInst,
-	 LoadIcon(hInst, L"Tuner"),
+	 LoadIcon(hInst, "Tuner"),
 	 LoadCursor(NULL, IDC_ARROW),
 	 GetSysColorBrush(COLOR_WINDOW),
 	 NULL, WCLASS};
@@ -108,49 +108,49 @@ VOID GetSavedStatus()
     int size = sizeof(value);
 
     // Initial values
-    strobe.enable = TRUE;
-    audio.filter = TRUE;
+    strobe.enable = true;
+    audio.filter = true;
     spectrum.expand = 1;
 
     // Reference initial value
     audio.reference = A5_REFNCE;
 
     // Open user key
-    error = RegOpenKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			 KEY_READ, &hkey);
 
     if (error == ERROR_SUCCESS)
     {
 	// Spectrum zoom
-	error = RegQueryValueEx(hkey, L"Zoom", NULL, NULL,
+	error = RegQueryValueEx(hkey, "Zoom", NULL, NULL,
 				(LPBYTE)&value, (LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
 	    spectrum.zoom = value;
 
 	// Strobe enable
-	error = RegQueryValueEx(hkey, L"Strobe", NULL, NULL,
+	error = RegQueryValueEx(hkey, "Strobe", NULL, NULL,
 				(LPBYTE)&value,(LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
 	    strobe.enable = value;
 
 	// Strobe colours
-	error = RegQueryValueEx(hkey, L"Colours", NULL, NULL,
+	error = RegQueryValueEx(hkey, "Colours", NULL, NULL,
 				(LPBYTE)&value,(LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
 	    strobe.colours = value;
 
 	// Filter
-	error = RegQueryValueEx(hkey, L"Filter", NULL, NULL,
+	error = RegQueryValueEx(hkey, "Filter", NULL, NULL,
 				(LPBYTE)&value,(LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
 	    audio.filter = value;
 
 	// Reference
-	error = RegQueryValueEx(hkey, L"Reference", NULL, NULL,
+	error = RegQueryValueEx(hkey, "Reference", NULL, NULL,
 				(LPBYTE)&value,(LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
@@ -171,6 +171,30 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
     {
     case WM_CREATE:
         {
+            // Create toolbar
+            toolbar.hwnd =
+                CreateWindow(TOOLBARCLASSNAME, NULL,
+                             WS_VISIBLE | WS_CHILD | TBSTYLE_TOOLTIPS,
+                             0, 0, 0, 0,
+                             hWnd, (HMENU)TOOLBAR_ID, hInst, NULL);
+
+            SendMessage(toolbar.hwnd, TB_BUTTONSTRUCTSIZE, 
+                        (WPARAM)sizeof(TBBUTTON), 0);
+
+            SendMessage(toolbar.hwnd, TB_SETBITMAPSIZE, 0, MAKELONG(24, 24));
+            SendMessage(toolbar.hwnd, TB_SETMAXTEXTROWS, 0, 0);
+
+            // Add bitmap
+            AddToolbarBitmap(toolbar.hwnd, "Toolbar");
+
+            // Add buttons
+            AddToolbarButtons(toolbar.hwnd);
+
+            // Resize toolbar
+            SendMessage(toolbar.hwnd, TB_AUTOSIZE, 0, 0); 
+            GetWindowRect(toolbar.hwnd, &toolbar.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&toolbar.rect, 2);
+
             // Get the window and client dimensions
             GetWindowRect(hWnd, &window.wind);
             GetClientRect(hWnd, &window.rect);
@@ -181,7 +205,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
             int header = (window.wind.bottom - window.wind.top) -
                 window.rect.bottom;
             int width  = WIDTH + border;
-            int height = HEIGHT + header;
+            int height = HEIGHT + toolbar.rect.bottom + header;
 
             // Set new dimensions
             SetWindowPos(hWnd, NULL, 0, 0,
@@ -223,7 +247,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             // Add scope to tooltip
             tooltip.info.uId = (UINT_PTR)scope.hwnd;
-            tooltip.info.lpszText = (LPWSTR)L"Scope, click to filter audio";
+            tooltip.info.lpszText = (LPSTR)"Scope, click to filter audio";
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
@@ -242,7 +266,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             // Add spectrum to tooltip
             tooltip.info.uId = (UINT_PTR)spectrum.hwnd;
-            tooltip.info.lpszText = (LPWSTR)L"Spectrum, click to zoom";
+            tooltip.info.lpszText = (LPSTR)"Spectrum, click to zoom";
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
@@ -260,7 +284,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             // Add display to tooltip
             tooltip.info.uId = (UINT_PTR)display.hwnd;
-            tooltip.info.lpszText = (LPWSTR)L"Display, click to lock";
+            tooltip.info.lpszText = (LPSTR)"Display, click to lock";
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
@@ -278,7 +302,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             // Create tooltip for strobe
             tooltip.info.uId = (UINT_PTR)strobe.hwnd;
-            tooltip.info.lpszText = (LPWSTR)L"Strobe, click to disable/enable";
+            tooltip.info.lpszText = (LPSTR)"Strobe, click to disable/enable";
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
@@ -296,11 +320,26 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             // Add meter to tooltip
             tooltip.info.uId = (UINT_PTR)meter.hwnd;
-            tooltip.info.lpszText = (LPWSTR)L"Cents, click to lock";
+            tooltip.info.lpszText = (LPSTR)"Cents, click to lock";
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
 
+            // Find font
+            HRSRC hRes = FindResource(hInst, "Musica", RT_FONT);
+
+            if (hRes) 
+            {
+                // Load font
+                HGLOBAL mem = LoadResource(hInst, hRes);
+                void *data = LockResource(mem);
+                size_t size = SizeofResource(hInst, hRes);
+
+                DWORD n;
+                // Add font
+                AddFontMemResourceEx(data, size, 0, &n);
+            }
+    
             // Start audio thread
             audio.thread = CreateThread(NULL, 0, AudioThread, hWnd,
                                         0, &audio.id);
@@ -404,7 +443,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    break;
 
 	    // Multiple control
-	case MULTIPLE_ID:
+	case MULT_ID:
 	    MultipleClicked(wParam, lParam);
 	    break;
 
@@ -438,7 +477,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
 	// Size
     case WM_SIZE:
-	EnumChildWindows(hWnd, EnumChildProc, lParam);
+        WindowResize(hWnd, wParam, lParam);
 	break;
 
 	// Sizing
@@ -462,21 +501,51 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
     return 0;
 }
 
+// WindowResize
+BOOL WindowResize(HWND hWnd, WPARAM wParam, LPARAM lParam)
+{
+    int width = LOWORD(lParam);
+    int height = HIWORD(lParam) - toolbar.rect.bottom;
+
+    // if (width < (height * WIDTH) / HEIGHT)
+    // {
+    //     width = (height * WIDTH) / HEIGHT;
+
+    //     // Set new dimensions
+    //     SetWindowPos(hWnd, NULL, 0, 0,
+    //                  width, height,
+    //                  SWP_NOMOVE | SWP_NOZORDER);
+
+    //     return true;
+    // }
+
+    EnumChildWindows(hWnd, EnumChildProc, lParam);
+    return true;
+}
+
 // Enum child proc for window resizing
 BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 {
     int width = LOWORD(lParam);
-    int height = HIWORD(lParam);
+    int height = HIWORD(lParam) - toolbar.rect.bottom;
 
     // Switch by id to resize tool windows.
     switch ((DWORD)GetWindowLongPtr(hWnd, GWLP_ID))
     {
+	// Toolbar, let it resize itself
+    case TOOLBAR_ID:
+	SendMessage(hWnd, WM_SIZE, 0, lParam);
+	GetWindowRect(hWnd, &toolbar.rect);
+	MapWindowPoints(NULL, window.hwnd, (POINT *)&toolbar.rect, 2);
+	break;
+
 	// Scope, resize it
     case SCOPE_ID:
-	MoveWindow(hWnd, MARGIN, MARGIN, width - MARGIN * 2,
+	MoveWindow(hWnd, MARGIN, toolbar.rect.bottom + MARGIN,
+                   width - MARGIN * 2,
                    (height - TOTAL) * SCOPE_HEIGHT / TOTAL_HEIGHT,
                    FALSE);
-	InvalidateRgn(hWnd, NULL, TRUE);
+	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &scope.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&scope.rect, 2);
 	break;
@@ -487,7 +556,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 		   width - MARGIN * 2,
                    (height - TOTAL) * SPECTRUM_HEIGHT / TOTAL_HEIGHT,
                    FALSE);
-	InvalidateRgn(hWnd, NULL, TRUE);
+	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &spectrum.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&spectrum.rect, 2);
 	break;
@@ -498,7 +567,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
                    width - MARGIN * 2,
                    (height - TOTAL) * DISPLAY_HEIGHT / TOTAL_HEIGHT,
                    FALSE);
-	InvalidateRgn(hWnd, NULL, TRUE);
+	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &display.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&display.rect, 2);
 	break;
@@ -509,7 +578,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
                    width - MARGIN * 2,
                    (height - TOTAL) * STROBE_HEIGHT / TOTAL_HEIGHT,
                    FALSE);
-	InvalidateRgn(hWnd, NULL, TRUE);
+	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &strobe.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&strobe.rect, 2);
 	break;
@@ -520,13 +589,13 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
                    width - MARGIN * 2,
                    (height - TOTAL) * METER_HEIGHT / TOTAL_HEIGHT,
                    FALSE);
-	InvalidateRgn(hWnd, NULL, TRUE);
+	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &meter.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&meter.rect, 2);
 	break;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Window resizing
@@ -546,7 +615,7 @@ BOOL WindowResizing(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
     // Window minimum width and height
     int width  = WIDTH + border;
-    int height = HEIGHT + header;
+    int height = HEIGHT + toolbar.rect.bottom + header;
 
     // Minimum size
     if (rectp->right - rectp->left < width)
@@ -567,23 +636,76 @@ BOOL WindowResizing(HWND hWnd, WPARAM wParam, LPARAM lParam)
     {
     case WMSZ_LEFT:
     case WMSZ_RIGHT:
-        height = (((width - border) * HEIGHT) / WIDTH) + header;
+        height = (((width - border) * HEIGHT) / WIDTH) +
+            toolbar.rect.bottom + header;
         rectp->bottom = rectp->top + height;
         break;
 
     case WMSZ_TOP:
     case WMSZ_BOTTOM:
-        width = (((height - header) * WIDTH) / HEIGHT) + border;
+        width = ((((height - toolbar.rect.bottom) - header) *
+                  WIDTH) / HEIGHT) + border;
         rectp->right = rectp->left + width;
         break;
 
     default:
-        width = (((height - header) * WIDTH) / HEIGHT) + border;
+        width = ((((height - toolbar.rect.bottom) - header) *
+                  WIDTH) / HEIGHT) + border;
         rectp->right = rectp->left + width;
         break;
     }
 
-    return TRUE;
+    return true;
+}
+
+// Add toolbar bitmap
+BOOL AddToolbarBitmap(HWND control, LPCTSTR name)
+{
+    // Load bitmap
+    HBITMAP hbm = (HBITMAP)
+	LoadImage(hInst, name, IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR);
+
+    // Create DC
+    HDC hdc = CreateCompatibleDC(NULL);
+
+    // Select the bitmap
+    SelectObject(hdc, hbm);
+
+    // Select a brush
+    SelectObject(hdc, GetSysColorBrush(COLOR_BTNFACE));
+
+    // Get the colour of the first pixel
+    COLORREF colour = GetPixel(hdc, 0, 0);
+
+    // Flood fill the bitmap
+    ExtFloodFill(hdc, 0, 0, colour, FLOODFILLSURFACE);
+
+    // And the centre of the icon
+    if (GetPixel(hdc, 15, 15) == colour)
+            ExtFloodFill(hdc, 15, 15, colour, FLOODFILLSURFACE);
+
+    // Delete the DC
+    DeleteObject(hdc);
+
+    // Add bitmap
+    TBADDBITMAP bitmap =
+	{NULL, (UINT_PTR)hbm};
+
+    SendMessage(control, TB_ADDBITMAP, 1, (LPARAM)&bitmap);
+}
+
+BOOL AddToolbarButtons(HWND control)
+{
+    // Define the buttons
+    TBBUTTON buttons[] =
+	{{0, 0, 0, BTNS_SEP},
+	 {OPTIONS_BM, OPTIONS_ID, TBSTATE_ENABLED, BTNS_BUTTON,
+	  {0}, 0, (INT_PTR)"Options"},
+	 {0, 0, 0, BTNS_SEP}};
+
+    // Add to toolbar
+    SendMessage(control, TB_ADDBUTTONS,
+		Length(buttons), (LPARAM)&buttons);
 }
 
 // Draw item
@@ -640,21 +762,21 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 
     // Add menu items
     AppendMenu(menu, spectrum.zoom? MF_STRING | MF_CHECKED:
-	       MF_STRING, ZOOM_ID, L"Zoom spectrum");
+	       MF_STRING, ZOOM_ID, "Zoom spectrum");
     AppendMenu(menu, strobe.enable? MF_STRING | MF_CHECKED:
-	       MF_STRING, ENABLE_ID, L"Display strobe");
+	       MF_STRING, ENABLE_ID, "Display strobe");
     AppendMenu(menu, audio.filter? MF_STRING | MF_CHECKED:
-	       MF_STRING, FILTER_ID, L"Audio filter");
-    AppendMenu(menu, audio.downsample? MF_STRING | MF_CHECKED:
-	       MF_STRING, DOWN_ID, L"Downsample");
+	       MF_STRING, FILTER_ID, "Audio filter");
+    AppendMenu(menu, audio.down? MF_STRING | MF_CHECKED:
+	       MF_STRING, DOWN_ID, "Downsample");
     AppendMenu(menu, display.lock? MF_STRING | MF_CHECKED:
-	       MF_STRING, LOCK_ID, L"Lock display");
-    AppendMenu(menu, display.multiple? MF_STRING | MF_CHECKED:
-	       MF_STRING, MULTIPLE_ID, L"Multiple notes");
+	       MF_STRING, LOCK_ID, "Lock display");
+    AppendMenu(menu, display.mult? MF_STRING | MF_CHECKED:
+	       MF_STRING, MULT_ID, "Multiple notes");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(menu, MF_STRING, OPTIONS_ID, L"Options...");
+    AppendMenu(menu, MF_STRING, OPTIONS_ID, "Options...");
     AppendMenu(menu, MF_SEPARATOR, 0, 0);
-    AppendMenu(menu, MF_STRING, QUIT_ID, L"Quit");
+    AppendMenu(menu, MF_STRING, QUIT_ID, "Quit");
 
     // Pop up the menu
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
@@ -665,37 +787,27 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 // Display options
 BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 {
-    // Check if exists
-    if (options.hwnd == NULL)
-    {
-	WNDCLASS wc = 
-	    {CS_HREDRAW | CS_VREDRAW, PopupProc,
-	     0, 0, hInst,
-	     LoadIcon(NULL, IDI_WINLOGO),
-	     LoadCursor(NULL, IDC_ARROW),
-	     GetSysColorBrush(COLOR_WINDOW),
-	     NULL, PCLASS};
+    WNDCLASS wc = 
+        {CS_HREDRAW | CS_VREDRAW, PopupProc,
+         0, 0, hInst,
+         LoadIcon(hInst, "Tuner"),
+         LoadCursor(NULL, IDC_ARROW),
+         GetSysColorBrush(COLOR_WINDOW),
+         NULL, PCLASS};
 
-	// Register the window class.
-	RegisterClass(&wc);
+    // Register the window class.
+    RegisterClass(&wc);
 
-	// Get the main window rect
-	RECT rWnd;
-	GetWindowRect(window.hwnd, &rWnd);
+    // Get the main window rect
+    GetWindowRect(window.hwnd, &window.wind);
 
-	// Create the window, offset right
-	options.hwnd =
-	    CreateWindow(PCLASS, L"Tuner Options",
-			 WS_VISIBLE | WS_POPUP |
-			 WS_CAPTION,
-			 rWnd.right + 10, rWnd.top,
-			 WIDTH, 320, window.hwnd,
-			 (HMENU)NULL, hInst, NULL);
-    }
-
-    // Show existing window
-    else
-	ShowWindow(options.hwnd, TRUE);
+    // Create the window, offset right
+    options.hwnd =
+        CreateWindow(PCLASS, "Tuner Options",
+                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION,
+                     window.wind.right, window.wind.top,
+                     POPUP_WIDTH, POPUP_HEIGHT,
+                     window.hwnd, (HMENU)NULL, hInst, NULL);
 }
 
 // Popup Procedure
@@ -704,201 +816,346 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 			   WPARAM wParam,
 			   LPARAM lParam)
 {
-    RECT cRect;
     static TCHAR s[64];
 
     // Get the client rect
-    GetClientRect(hWnd, &cRect);
-    int width = cRect.right;
+    GetClientRect(hWnd, &options.rect);
+    int width = options.rect.right;
 
     // Switch on message
     switch (uMsg)
     {
     case WM_CREATE:
+        {
+            // Create group box
+            group.hwnd =
+                CreateWindow(WC_BUTTON, NULL,
+                             WS_VISIBLE | WS_CHILD |
+                             BS_GROUPBOX,
+                             MARGIN, MARGIN, width - MARGIN * 2, GROUP_HEIGHT,
+                             hWnd, NULL, hInst, NULL);
+            GetWindowRect(group.hwnd, &group.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&group.rect, 2);
 
-	// Create group box
-	group.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 BS_GROUPBOX,
-			 10, 2, width - 20, 156,
-			 hWnd, NULL, hInst, NULL);
+            // Create zoom tickbox
+            zoom.hwnd =
+                CreateWindow(WC_BUTTON, "Zoom spectrum:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             group.rect.left + MARGIN, group.rect.top + MARGIN,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)ZOOM_ID, hInst, NULL);
+            GetWindowRect(zoom.hwnd, &zoom.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&zoom.rect, 2);
 
-	// Create zoom tickbox
-	zoom.hwnd =
-	    CreateWindow(WC_BUTTON, L"Zoom spectrum:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 20, 20, 124, 24,
-			 hWnd, (HMENU)ZOOM_ID, hInst, NULL);
+            SendMessage(zoom.hwnd, BM_SETCHECK,
+                        spectrum.zoom? BST_CHECKED: BST_UNCHECKED, 0);
 
-	SendMessage(zoom.hwnd, BM_SETCHECK,
-		    spectrum.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)zoom.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Zoom spectrum";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	// Add tickbox to tooltip
-	tooltip.info.uId = (UINT_PTR)zoom.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Zoom spectrum, "
-	    L"click to change";
+            // Create strobe enable tickbox
+            enable.hwnd =
+                CreateWindow(WC_BUTTON, "Display strobe:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             width / 2 + MARGIN, group.rect.top + MARGIN,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)ENABLE_ID, hInst, NULL);
+            GetWindowRect(enable.hwnd, &enable.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&enable.rect, 2);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            SendMessage(enable.hwnd, BM_SETCHECK,
+                        strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Create strobe enable tickbox
-	enable.hwnd =
-	    CreateWindow(WC_BUTTON, L"Display strobe:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 width / 2 + 10, 20, 124, 24,
-			 hWnd, (HMENU)ENABLE_ID, hInst, NULL);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)enable.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Display strobe";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	SendMessage(enable.hwnd, BM_SETCHECK,
-		    strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
+            // Create filter tickbox
+            filter.hwnd =
+                CreateWindow(WC_BUTTON, "Audio filter:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             group.rect.left + MARGIN,
+                             zoom.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)FILTER_ID, hInst, NULL);
+            GetWindowRect(filter.hwnd, &filter.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&filter.rect, 2);
 
-	// Add tickbox to tooltip
+            SendMessage(filter.hwnd, BM_SETCHECK,
+                        audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 
-	tooltip.info.uId = (UINT_PTR)enable.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Display strobe, "
-	    L"click to change";
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)filter.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Audio filter";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Create downsample tickbox
+            down.hwnd =
+                CreateWindow(WC_BUTTON, "Downsample:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             width / 2 + MARGIN, enable.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)DOWN_ID, hInst, NULL);
+            GetWindowRect(down.hwnd, &down.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&down.rect, 2);
 
-	// Create filter tickbox
-	filter.hwnd =
-	    CreateWindow(WC_BUTTON, L"Audio filter:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 20, 54, 124, 24,
-			 hWnd, (HMENU)FILTER_ID, hInst, NULL);
+            SendMessage(down.hwnd, BM_SETCHECK,
+                        audio.down? BST_CHECKED: BST_UNCHECKED, 0);
 
-	SendMessage(filter.hwnd, BM_SETCHECK,
-		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)lock.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Downsample";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	// Add tickbox to tooltip
-	tooltip.info.uId = (UINT_PTR)filter.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Audio filter, "
-	    L"click to change";
+            // Create multiple tickbox
+            mult.hwnd =
+                CreateWindow(WC_BUTTON, "Multiple notes:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             group.rect.left + MARGIN,
+                             filter.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)MULT_ID, hInst, NULL);
+            GetWindowRect(mult.hwnd, &mult.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&mult.rect, 2);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            SendMessage(mult.hwnd, BM_SETCHECK,
+                        display.mult? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Create downsample tickbox
-	down.hwnd =
-	    CreateWindow(WC_BUTTON, L"Downsample:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 width / 2 + 10, 54, 124, 24,
-			 hWnd, (HMENU)DOWN_ID, hInst, NULL);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)mult.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Display multiple notes";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	SendMessage(down.hwnd, BM_SETCHECK,
-		    audio.downsample? BST_CHECKED: BST_UNCHECKED, 0);
+            // Create lock tickbox
+            lock.hwnd =
+                CreateWindow(WC_BUTTON, "Lock display:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             width / 2 + MARGIN,
+                             down.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)LOCK_ID, hInst, NULL);
+            GetWindowRect(lock.hwnd, &lock.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&lock.rect, 2);
 
-	// Add tickbox to tooltip
-	tooltip.info.uId = (UINT_PTR)lock.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Downsample, "
-	    L"click to change";
+            SendMessage(lock.hwnd, BM_SETCHECK,
+                        display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)lock.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Lock display";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	// Create lock tickbox
-	lock.hwnd =
-	    CreateWindow(WC_BUTTON, L"Lock display:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 width / 2 + 10, 88, 124, 24,
-			 hWnd, (HMENU)LOCK_ID, hInst, NULL);
+            // Create fundamental tickbox
+            fund.hwnd =
+                CreateWindow(WC_BUTTON, "Fundamental:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             group.rect.left + MARGIN,
+                             mult.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)FUND_ID, hInst, NULL);
+            GetWindowRect(fund.hwnd, &fund.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&fund.rect, 2);
 
-	SendMessage(lock.hwnd, BM_SETCHECK,
-		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+            SendMessage(fund.hwnd, BM_SETCHECK,
+                        audio.fund? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Add tickbox to tooltip
-	tooltip.info.uId = (UINT_PTR)lock.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Lock display, "
-	    L"click to change";
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)fund.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Fundamental filter";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Create note filter tickbox
+            note.hwnd =
+                CreateWindow(WC_BUTTON, "Note Filter:",
+                             WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                             BS_CHECKBOX,
+                             width / 2 + MARGIN,
+                             lock.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT,
+                             hWnd, (HMENU)NOTE_ID, hInst, NULL);
+            GetWindowRect(note.hwnd, &note.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&note.rect, 2);
 
-	// Create text
-	text.hwnd =
-	    CreateWindow(WC_STATIC, L"Ref:",
-			 WS_VISIBLE | WS_CHILD |
-			 SS_LEFT,
-			 20, 126, 32, 20, hWnd,
-			 (HMENU)TEXT_ID, hInst, NULL);
+            SendMessage(fund.hwnd, BM_SETCHECK,
+                        audio.note? BST_CHECKED: BST_UNCHECKED, 0);
 
-	// Create edit control
-	wsprintf(s, L"%6.2lf", audio.reference);
+            // Add tickbox to tooltip
+            tooltip.info.uId = (UINT_PTR)note.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Note filter";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	legend.reference.hwnd =
-	    CreateWindow(WC_EDIT, s,
-			 WS_VISIBLE | WS_CHILD |
-			 WS_BORDER,
-			 62, 124, 82, 20, hWnd,
-			 (HMENU)REFERENCE_ID, hInst, NULL);
+            // Create group box
+            group.hwnd =
+                CreateWindow(WC_BUTTON, NULL,
+                             WS_VISIBLE | WS_CHILD |
+                             BS_GROUPBOX,
+                             MARGIN, group.rect.bottom + SPACING,
+                             width - MARGIN * 2, GROUP_HEIGHT,
+                             hWnd, NULL, hInst, NULL);
+            GetWindowRect(group.hwnd, &group.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&group.rect, 2);
 
-	// Add edit to tooltip
-	tooltip.info.uId = (UINT_PTR)legend.reference.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Reference, "
-	    L"click to change";
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Spectrum expand:",
+                             WS_VISIBLE | WS_CHILD |
+                             SS_LEFT,
+                             group.rect.left + MARGIN,
+                             group.rect.top + MARGIN,
+                             CHECK_WIDTH, 24, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Create combo box
+            expand.hwnd =
+                CreateWindow(WC_COMBOBOX, "",
+                             WS_VISIBLE | WS_CHILD |
+                             CBS_DROPDOWNLIST,
+                             width / 2 + MARGIN, text.rect.top,
+                             CHECK_WIDTH, 24, hWnd,
+                             (HMENU)EXPAND_ID, hInst, NULL);
+            GetWindowRect(expand.hwnd, &expand.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&expand.rect, 2);
 
-	// Create up-down control
-	reference.hwnd =
-	    CreateWindow(UPDOWN_CLASS, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 UDS_AUTOBUDDY | UDS_ALIGNRIGHT,
-			 0, 0, 0, 0, hWnd,
-			 (HMENU)REFERENCE_ID, hInst, NULL);
+            char sizes[][6] =
+                {" x 1", " x 2", " x 4", " x 8", " x 16"};
+            for (int i = 0; i < Length(sizes); i++)
+                SendMessage(expand.hwnd, CB_ADDSTRING, 0, (LPARAM)sizes[i]);
 
-	SendMessage(reference.hwnd, UDM_SETRANGE32, MIN_REF, MAX_REF);
-	SendMessage(reference.hwnd, UDM_SETPOS32, 0, audio.reference * 10);
+            // Select x 1
+            SendMessage(expand.hwnd, CB_SELECTSTRING, -1, (LPARAM)" x 1");
 
-	// Add updown to tooltip
-	tooltip.info.uId = (UINT_PTR)reference.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Reference, "
-	    L"click to change";
+            // Add edit to tooltip
+            tooltip.info.uId = (UINT_PTR)expand.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Spectrum expand";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Strobe colours:",
+                             WS_VISIBLE | WS_CHILD |
+                             SS_LEFT,
+                             group.rect.left + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, 24, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
 
-	// Create multiple tickbox
-	multiple.hwnd =
-	    CreateWindow(WC_BUTTON, L"Multiple notes:",
-			 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
-			 BS_CHECKBOX,
-			 width / 2 + 10, 122, 124, 24,
-			 hWnd, (HMENU)MULTIPLE_ID, hInst, NULL);
+            // Create combo box
+            colours.hwnd =
+                CreateWindow(WC_COMBOBOX, "",
+                             WS_VISIBLE | WS_CHILD |
+                             CBS_DROPDOWNLIST,
+                             width / 2 + MARGIN, text.rect.top,
+                             CHECK_WIDTH, 24, hWnd,
+                             (HMENU)EXPAND_ID, hInst, NULL);
+            GetWindowRect(colours.hwnd, &colours.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&colours.rect, 2);
 
-	SendMessage(multiple.hwnd, BM_SETCHECK,
-		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
+            char strings[][14] =
+                {" Blue/Cyan", " Olive/Aqua", " Magenta/Cyan"};
+            for (int i = 0; i < Length(strings); i++)
+                SendMessage(colours.hwnd, CB_ADDSTRING, 0, (LPARAM)strings[i]);
 
-	// Add tickbox to tooltip
-	tooltip.info.uId = (UINT_PTR)multiple.hwnd;
-	tooltip.info.lpszText = (LPWSTR)L"Display multiple notes, "
-	    L"click to change";
+            // Select Olive/Aqua
+            SendMessage(colours.hwnd, CB_SELECTSTRING, -1,
+                        (LPARAM)" Olive/Aqua");
 
-	SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
-		    (LPARAM) &tooltip.info);
+            // Add edit to tooltip
+            tooltip.info.uId = (UINT_PTR)colours.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Strobe colours";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
 
-	// Create group box
-	group.hwnd =
-	    CreateWindow(WC_BUTTON, NULL,
-			 WS_VISIBLE | WS_CHILD |
-			 BS_GROUPBOX,
-			 10, 160, width - 20, 124,
-			 hWnd, NULL, hInst, NULL);
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Reference:",
+                             WS_VISIBLE | WS_CHILD |
+                             SS_LEFT,
+                             group.rect.left + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, 20, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
 
-	// Create close button
-	button.close.hwnd =
-	    CreateWindow(WC_BUTTON, L"Close",
-			 WS_VISIBLE | WS_CHILD |
-			 BS_PUSHBUTTON,
-			 209, 247, 85, 26,
-			 hWnd, (HMENU)CLOSE_ID, hInst, NULL);
+            // Create edit control
+            sprintf(s, " %6.2lf", audio.reference);
+
+            reference.hwnd =
+                CreateWindow(WC_EDIT, s,
+                             WS_VISIBLE | WS_CHILD |
+                             WS_BORDER,
+                             width / 2 + MARGIN, text.rect.top,
+                             CHECK_WIDTH, 20, hWnd,
+                             (HMENU)REFERENCE_ID, hInst, NULL);
+            GetWindowRect(reference.hwnd, &reference.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&reference.rect, 2);
+
+            // Add edit to tooltip
+            tooltip.info.uId = (UINT_PTR)reference.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Reference";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
+            // Create up-down control
+            updown.hwnd =
+                CreateWindow(UPDOWN_CLASS, NULL,
+                             WS_VISIBLE | WS_CHILD |
+                             UDS_AUTOBUDDY | UDS_ALIGNRIGHT,
+                             0, 0, 0, 0, hWnd,
+                             (HMENU)UPDOWN_ID, hInst, NULL);
+
+            SendMessage(updown.hwnd, UDM_SETRANGE32, MIN_REF, MAX_REF);
+            SendMessage(updown.hwnd, UDM_SETPOS32, 0, audio.reference * 10);
+
+            // Add updown to tooltip
+            tooltip.info.uId = (UINT_PTR)updown.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Reference";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
+            // Create filter button
+            button.filter.hwnd =
+                CreateWindow(WC_BUTTON, "Filter...",
+                             WS_VISIBLE | WS_CHILD |
+                             BS_PUSHBUTTON,
+                             group.rect.left + MARGIN,
+                             reference.rect.bottom + SPACING,
+                             CHECK_WIDTH, BUTTON_HEIGHT,
+                             hWnd, (HMENU)NOTE_ID, hInst, NULL);
+
+            // Create close button
+            button.close.hwnd =
+                CreateWindow(WC_BUTTON, "Close",
+                             WS_VISIBLE | WS_CHILD |
+                             BS_PUSHBUTTON,
+                             width / 2 + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, BUTTON_HEIGHT,
+                             hWnd, (HMENU)CLOSE_ID, hInst, NULL);
+        }
 	break;
 
 	// Colour static text
@@ -915,7 +1172,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
     case WM_VSCROLL:
 	switch (GetWindowLongPtr((HWND)lParam, GWLP_ID))
 	{
-	case REFERENCE_ID:
+	case UPDOWN_ID:
 	    ChangeReference(wParam, lParam);
 	    break;
 	}
@@ -980,8 +1237,24 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    break;
 
 	    // Multiple control
-	case MULTIPLE_ID:
+	case MULT_ID:
 	    MultipleClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+
+            // Fundamental control
+        case FUND_ID:
+            FundamentalClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+
+            // Note filter control
+        case NOTE_ID:
+            NoteFilterClicked(wParam, lParam);
 
 	    // Set the focus back to the window
 	    SetFocus(hWnd);
@@ -994,6 +1267,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
 	    // Close
 	case CLOSE_ID:
+            SendMessage(hWnd, WM_DESTROY, 0, 0);
 	    ShowWindow(hWnd, FALSE);
 
 	    // Set the focus back to the window
@@ -1006,6 +1280,10 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
     case WM_CHAR:
 	CharPressed(wParam, lParam);
 	break;
+
+    case WM_DESTROY:
+        options.hwnd = NULL;
+        break;
 
 	// Everything else
     default:
@@ -1056,12 +1334,12 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
-	RegSetValueEx(hkey, L"Filter", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Filter", 0, REG_DWORD,
 		      (LPBYTE)&audio.filter, sizeof(audio.filter));
 
 	RegCloseKey(hkey);
@@ -1074,12 +1352,12 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
 
 	return FALSE;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Colour clicked
@@ -1095,7 +1373,7 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 	    if (strobe.colours > MAGENTA)
 		strobe.colours = BLUE;
 
-	    strobe.changed = TRUE;
+	    strobe.changed = true;
 	}
 
 	break;
@@ -1107,12 +1385,12 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
-	RegSetValueEx(hkey, L"Colours", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Colours", 0, REG_DWORD,
 		      (LPBYTE)&strobe.colours, sizeof(strobe.colours));
 
 	RegCloseKey(hkey);
@@ -1125,12 +1403,12 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
 
 	return FALSE;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Down clicked
@@ -1139,7 +1417,7 @@ BOOL DownClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	audio.downsample = !audio.downsample;
+	audio.down = !audio.down;
 	break;
 
     default:
@@ -1148,8 +1426,46 @@ BOOL DownClicked(WPARAM wParam, LPARAM lParam)
 
     if (down.hwnd != NULL)
 	SendMessage(down.hwnd, BM_SETCHECK,
-		    audio.downsample? BST_CHECKED: BST_UNCHECKED, 0);
-    return TRUE;
+		    audio.down? BST_CHECKED: BST_UNCHECKED, 0);
+    return true;
+}
+
+// Fundamental clicked
+BOOL FundamentalClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	audio.fund = !audio.fund;
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    if (down.hwnd != NULL)
+	SendMessage(fund.hwnd, BM_SETCHECK,
+		    audio.fund? BST_CHECKED: BST_UNCHECKED, 0);
+    return true;
+}
+
+// Note filter clicked
+BOOL NoteFilterClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	audio.note = !audio.note;
+	break;
+
+    default:
+	return FALSE;
+    }
+
+    if (note.hwnd != NULL)
+	SendMessage(note.hwnd, BM_SETCHECK,
+		    audio.note? BST_CHECKED: BST_UNCHECKED, 0);
+    return true;
 }
 
 // Expand clicked
@@ -1167,7 +1483,7 @@ BOOL ExpandClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Contract clicked
@@ -1185,7 +1501,7 @@ BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Lock clicked
@@ -1201,12 +1517,12 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    InvalidateRgn(display.hwnd, NULL, TRUE);
+    InvalidateRgn(display.hwnd, NULL, true);
 
     if (lock.hwnd != NULL)
 	SendMessage(lock.hwnd, BM_SETCHECK,
 		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
-    return TRUE;
+    return true;
 }
 
 // Multiple clicked
@@ -1215,20 +1531,20 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	display.multiple = !display.multiple;
+	display.mult = !display.mult;
 	break;
 
     default:
 	return FALSE;
     }
 
-    if (multiple.hwnd != NULL)
-	SendMessage(multiple.hwnd, BM_SETCHECK,
-		    display.multiple? BST_CHECKED: BST_UNCHECKED, 0);
+    if (mult.hwnd != NULL)
+	SendMessage(mult.hwnd, BM_SETCHECK,
+		    display.mult? BST_CHECKED: BST_UNCHECKED, 0);
 
-    InvalidateRgn(display.hwnd, NULL, TRUE);
+    InvalidateRgn(display.hwnd, NULL, true);
 
-    return TRUE;
+    return true;
 }
 
 // Display options menu
@@ -1241,7 +1557,7 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
     ClientToScreen(hWnd, &point);
 
     menu = CreatePopupMenu();
-    AppendMenu(menu, MF_STRING, CLOSE_ID, L"Close");
+    AppendMenu(menu, MF_STRING, CLOSE_ID, "Close");
 
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
@@ -1331,8 +1647,8 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     static TCHAR s[64];
 
     static const TCHAR *notes[] =
-	{L"C", L"C#", L"D", L"Eb", L"E", L"F",
-	 L"F#", L"G", L"Ab", L"A", L"Bb", L"B"};
+	{"C", "C#", "D", "Eb", "E", "F",
+	 "F#", "G", "Ab", "A", "Bb", "B"};
 
     // Open clipboard
     if (!OpenClipboard(window.hwnd))
@@ -1354,7 +1670,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     LPTSTR text = (LPTSTR)GlobalLock(mem);
 
     // Check if multiple
-    if (display.multiple && display.count > 0)
+    if (display.mult && display.count > 0)
     {
 	// For each set of values
 	for (int i = 0; i < display.count; i++)
@@ -1376,7 +1692,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 		continue;
 
 	    // Print the text
-	    wsprintf(s, L"%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+	    wsprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
 		    notes[n % Length(notes)], n / 12,
 		    c * 100.0, fr, f, f - fr);
 
@@ -1392,7 +1708,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     else
     {
 	// Print the values
-	wsprintf(s, L"%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
+	wsprintf(s, "%s%d\t%+6.2lf\t%9.2lf\t%9.2lf\t%+8.2lf\r\n",
 		notes[display.n % Length(notes)], display.n / 12,
 		display.c * 100.0, display.fr, display.f,
 		display.f - display.fr);
@@ -1406,7 +1722,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     SetClipboardData(CF_TEXT, mem);
     CloseClipboard(); 
  
-    return TRUE;
+    return true;
 }
 
 // Meter callback
@@ -1415,7 +1731,7 @@ VOID CALLBACK MeterCallback(PVOID lpParam, BOOL TimerFired)
     METERP meter = (METERP)lpParam;
 
     // Update meter
-    InvalidateRgn(meter->hwnd, NULL, TRUE);
+    InvalidateRgn(meter->hwnd, NULL, true);
 }
 
 // Strobe callback
@@ -1425,7 +1741,7 @@ VOID CALLBACK StrobeCallback(PVOID lpParam, BOOL TimerFired)
 
     // Update strobe
     if (strobe->enable)
-    	InvalidateRgn(strobe->hwnd, NULL, TRUE);
+    	InvalidateRgn(strobe->hwnd, NULL, true);
 }
 
 // Draw scope
@@ -1455,7 +1771,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	 CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
-	 L""};
+	 ""};
 
     // Create font
     if (font == NULL)
@@ -1526,7 +1842,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	BitBlt(hdc, rect.left, rect.top, width, height,
 	       hbdc, 0, 0, SRCCOPY);
 
-	return TRUE;
+	return true;
     }
 
     // Initialise sync
@@ -1553,25 +1869,28 @@ BOOL DrawScope(HDC hdc, RECT rect)
 	max = 4096;
 
     float yscale = max / (height / 2);
-
     max = 0.0;
+    
     // Graphics
     Graphics graphics(hbdc);
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+
     // Move the origin
     graphics.TranslateTransform(0.0, height / 2.0);
+
     // Green pen for scope trace
     Pen pen(Color(0, 255, 0), 1);
 
     // Draw the trace
     PointF last(-1.0, 0.0);
+
     for (int i = 0; i < width && i < scope.length; i++)
     {
 	if (max < abs(scope.data[n + i]))
 	    max = abs(scope.data[n + i]);
 
 	float y = -scope.data[n + i] / yscale;
-        PointF point(i, -scope.data[n + i] / yscale);
+        PointF point(i, y);
         graphics.DrawLine(&pen, last, point);
 
         last = point;
@@ -1585,14 +1904,14 @@ BOOL DrawScope(HDC hdc, RECT rect)
     {
 	// Yellow text
 	SetTextColor(hbdc, RGB(255, 255, 0));
-	TextOut(hbdc, 0, height + 1, L"F", 1);
+	TextOut(hbdc, 0, height + 1, "F", 1);
     }
 
     // Copy the bitmap
     BitBlt(hdc, rect.left, rect.top, width, height,
     	   hbdc, 0, 0, SRCCOPY);
 
-    return TRUE;
+    return true;
 }
 
 // Draw spectrum
@@ -1624,7 +1943,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	 CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
-	 L""};
+	 ""};
 
     static TCHAR s[16];
 
@@ -1696,7 +2015,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	BitBlt(hdc, rect.left, rect.top, width, height,
 	       hbdc, 0, 0, SRCCOPY);
 
-	return TRUE;
+	return true;
     }
 
     static float max;
@@ -1778,7 +2097,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 		if (!isfinite(c))
 		    continue;
 
-		swprintf(s, sizeof(s), L"%+0.0f", c * 100.0);
+		sprintf(s, "%+0.0f", c * 100.0);
 		TextOut(hbdc, x, 2, s, lstrlen(s));
 	    }
 	}
@@ -1845,7 +2164,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    if (!isfinite(c))
 		continue;
 
-	    swprintf(s, sizeof(s),  L"%+0.0f", c * 100.0);
+	    sprintf(s,  "%+0.0f", c * 100.0);
 	    TextOut(hbdc, x, 2, s, lstrlen(s));
 	}
 
@@ -1853,16 +2172,16 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 
 	if (spectrum.expand > 1)
 	{
-	    wsprintf(s, L"x%d", spectrum.expand);
+	    sprintf(s, "x%d", spectrum.expand);
 	    TextOut(hbdc, 0, 2, s, lstrlen(s));
 	}
     }
 
     // D for downsample
-    if (audio.downsample)
+    if (audio.down)
     {
 	SetTextAlign(hbdc, TA_LEFT | TA_BOTTOM);
-	TextOut(hbdc, 0, 10 - height, L"D", 1);
+	TextOut(hbdc, 0, 10 - height, "D", 1);
     }
 
     // Move the origin back
@@ -1872,7 +2191,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     BitBlt(hdc, rect.left, rect.top, width, height,
 	   hbdc, 0, 0, SRCCOPY);
 
-    return TRUE;
+    return true;
 }
 
 // Draw display
@@ -1882,18 +2201,19 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static HFONT medium;
     static HFONT larger;
     static HFONT large;
-    static HFONT decor;
+    static HFONT music;
+    static HFONT half;
     static HFONT font;
     static SIZE size;
     static HDC hbdc;
 
     static const TCHAR *notes[] =
-	{L"C", L"C", L"D", L"E", L"E", L"F",
-	 L"F", L"G", L"A", L"A", L"B", L"B"};
+	{"C", "C", "D", "E", "E", "F",
+	 "F", "G", "A", "A", "B", "B"};
 
     static const TCHAR *sharps[] =
-	{L"", L"\u266F", L"", L"\u266D", L"", L"",
-	 L"\u266F", L"", L"\u266D", L"", L"\u266D", L""};
+	{"", "#", "", "b", "", "",
+	 "#", "", "b", "", "b", ""};
 
     // Bold font
     static LOGFONT lf =
@@ -1905,7 +2225,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	 CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
-	 L"DejaVu Sans"};
+	 ""};
 
     static TCHAR s[64];
 
@@ -1922,14 +2242,16 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
         if (font != NULL)
         {
             DeleteObject(font);
+            DeleteObject(half);
             DeleteObject(large);
             DeleteObject(larger);
             DeleteObject(medium);
-            DeleteObject(decor);
+            DeleteObject(music);
         }
 
 	lf.lfHeight = height / 3;
         lf.lfWeight = FW_BOLD;
+        strcpy(lf.lfFaceName, "");
 	large = CreateFontIndirect(&lf);
 
 	lf.lfHeight = height / 2;
@@ -1938,12 +2260,17 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	lf.lfHeight = height / 5;
 	medium = CreateFontIndirect(&lf);
 
-	lf.lfHeight = height / 4;
-	decor = CreateFontIndirect(&lf);
-
         lf.lfHeight = height / 8;
         lf.lfWeight = FW_NORMAL;
 	font = CreateFontIndirect(&lf);
+
+	lf.lfHeight = height / 4;
+        lf.lfWeight = FW_BOLD;
+        half = CreateFontIndirect(&lf);
+
+	lf.lfHeight = height / 4;
+        strcpy(lf.lfFaceName, "Musica");
+	music = CreateFontIndirect(&lf);
     }
 
     // Create DC
@@ -1969,7 +2296,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     RECT brct = {0, 0, width, height};
     FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
-    if (display.multiple)
+    if (display.mult)
     {
 	// Select font
 	SelectObject(hbdc, font);
@@ -1983,7 +2310,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             int x = 4;
 
 	    // Display note
-	    swprintf(s, sizeof(s), L"%s%s%d", notes[display.n % Length(notes)],
+	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
 		    sharps[display.n % Length(notes)], display.n / 12);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
@@ -1991,28 +2318,28 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             x += size.cx + 4;
 
 	    // Display cents
-	    swprintf(s, sizeof(s), L"%+4.2lfÂ¢", display.c * 100.0);
+	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display reference
-	    swprintf(s, sizeof(s), L"%4.2lfHz", display.fr);
+	    sprintf(s, "%4.2lfHz", display.fr);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display frequency
-	    swprintf(s, sizeof(s), L"%4.2lfHz", display.f);
+	    sprintf(s, "%4.2lfHz", display.f);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display difference
-	    swprintf(s, sizeof(s), L"%+4.2lfHz", display.f - display.fr);
+	    sprintf(s, "%+4.2lfHz", display.f - display.fr);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 	}
 
@@ -2039,7 +2366,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             int x = 4;
 
 	    // Display note
-	    swprintf(s, sizeof(s), L"%S%S%d", notes[n % Length(notes)],
+	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
 		    sharps[n % Length(notes)], n / 12);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
@@ -2047,28 +2374,28 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             x += size.cx + 4;
 
 	    // Display cents
-	    swprintf(s, sizeof(s), L"%+4.2lfÂ¢", c * 100.0);
+	    sprintf(s, "%+4.2lf¢", c * 100.0);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display reference
-	    swprintf(s, sizeof(s), L"%4.2lfHz", fr);
+	    sprintf(s, "%4.2lfHz", fr);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display frequency
-	    swprintf(s, sizeof(s), L"%4.2lfHz", f);
+	    sprintf(s, "%4.2lfHz", f);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
             x += size.cx + 4;
 
 	    // Display difference
-	    swprintf(s, sizeof(s), L"%+4.2lfHz", f - fr);
+	    sprintf(s, "%+4.2lfHz", f - fr);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
@@ -2089,7 +2416,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SetBkMode(hbdc, TRANSPARENT);
 
 	// Display note
-	swprintf(s, sizeof(s), L"%S", notes[display.n % Length(notes)]);
+	sprintf(s, "%s", notes[display.n % Length(notes)]);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 
         int y = size.cy;
@@ -2097,16 +2424,16 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 
 	int x = size.cx + 8;
 
-	// Select decor font
-	SelectObject(hbdc, decor);
+	// Select music font
+	SelectObject(hbdc, half);
 
-	swprintf(s, sizeof(s), L"%d", display.n / 12);
+	sprintf(s, "%d", display.n / 12);
 	TextOut(hbdc, x, y, s, lstrlen(s));
 
-	// Select decor font
-	SelectObject(hbdc, decor);
+	// Select music font
+	SelectObject(hbdc, music);
 
-	swprintf(s, sizeof(s), L"%S", sharps[display.n % Length(sharps)]);
+	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 	TextOut(hbdc, x, y - size.cy, s, lstrlen(s));
 
@@ -2115,7 +2442,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SetTextAlign(hbdc, TA_BOTTOM|TA_RIGHT);
 
 	// Display cents
-	swprintf(s, sizeof(s), L"%+4.2fÂ¢", display.c * 100.0);
+	sprintf(s, "%+4.2f¢", display.c * 100.0);
 	TextOut(hbdc, width - 8, y, s, lstrlen(s));
 
 	// Select medium font
@@ -2123,27 +2450,27 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SetTextAlign(hbdc, TA_BOTTOM|TA_LEFT);
 
 	// Display reference frequency
-	swprintf(s, sizeof(s), L"%4.2fHz", display.fr);
+	sprintf(s, "%4.2fHz", display.fr);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 	y += size.cy;
 	TextOut(hbdc, 8, y, s, lstrlen(s));
 
 	// Display actual frequency
 	SetTextAlign(hbdc, TA_BOTTOM|TA_RIGHT);
-	swprintf(s, sizeof(s), L"%4.2fHz", display.f);
+	sprintf(s, "%4.2fHz", display.f);
 	TextOut(hbdc, width - 8, y, s, lstrlen(s));
 
 
 	// Display reference
 	SetTextAlign(hbdc, TA_BOTTOM|TA_LEFT);
-	swprintf(s, sizeof(s), L"%4.2fHz", audio.reference);
+	sprintf(s, "%4.2fHz", audio.reference);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 	y += size.cy;
 	TextOut(hbdc, 8, y, s, lstrlen(s));
 
 	// Display frequency difference
 	SetTextAlign(hbdc, TA_BOTTOM|TA_RIGHT);
-	swprintf(s, sizeof(s), L"%+4.2lfHz", display.f - display.fr);
+	sprintf(s, "%+4.2lfHz", display.f - display.fr);
 	TextOut(hbdc, width - 8, y, s, lstrlen(s));
     }
 
@@ -2155,7 +2482,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     BitBlt(hdc, rect.left, rect.top, width, height,
 	   hbdc, 0, 0, SRCCOPY);
 
-    return TRUE;
+    return true;
 }
 
 // Draw lock
@@ -2164,19 +2491,13 @@ BOOL DrawLock(HDC hdc, int x, int y)
     POINT point;
     POINT body[] =
 	{{2, -3}, {8, -3}, {8, -8}, {2, -8}, {2, -3}};
+    POINT hasp[] =
+        {{3, -8}, {3, -11}, {7, -11}, {7, -8}};
 
     SetViewportOrgEx(hdc, x, y, &point);
 
     Polyline(hdc, body, Length(body));
-
-    MoveToEx(hdc, 3, -8, NULL);
-    LineTo(hdc, 3, -11);
-
-    MoveToEx(hdc, 7, -8, NULL);
-    LineTo(hdc, 7, -11);
-
-    MoveToEx(hdc, 4, -11, NULL);
-    LineTo(hdc, 7, -11);
+    Polyline(hdc, hasp, Length(hasp));
 
     SetPixel(hdc, 3, -11, RGB(255, 170, 85));
     SetPixel(hdc, 6, -10, RGB(255, 170, 85));
@@ -2191,7 +2512,7 @@ BOOL DrawLock(HDC hdc, int x, int y)
     SetPixel(hdc, 3, -4, RGB(85, 170, 255));
 
     SetViewportOrgEx(hdc, point.x, point.y, NULL);
-    return TRUE;
+    return true;
 }
 
 // Draw meter
@@ -2225,7 +2546,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	 CLIP_DEFAULT_PRECIS,
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
-	 L""};
+	 ""};
 
     // Draw nice etched edge
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
@@ -2278,7 +2599,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	int x = width / 11 * i;
 	static TCHAR s[16];
 
-	swprintf(s, sizeof(s), L"%d", i * 10);
+	sprintf(s, "%d", i * 10);
 	TextOut(hbdc, x + 1, 0, s, lstrlen(s));
 	TextOut(hbdc, -x + 1, 0, s, lstrlen(s));
 
@@ -2302,8 +2623,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 
     RECT bar = {-width * 5 / 11, (height * 3 / 4) - 2,
                 (width * 5 / 11) + 1, (height * 3 / 4) + 2};
-    FillRect(hbdc, &bar, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
-    FrameRect(hbdc, &bar, (HBRUSH)GetStockObject(GRAY_BRUSH));
+    FrameRect(hbdc, &bar, (HBRUSH)GetStockObject(LTGRAY_BRUSH));
 
     // Do calculation
     mc = ((mc * 19.0) + meter.c) / 20.0;
@@ -2340,7 +2660,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     BitBlt(hdc, rect.left, rect.top, width, height,
 	   hbdc, 0, 0, SRCCOPY);
 
-    return TRUE;
+    return true;
 }
 
 // Draw strobe
@@ -2564,7 +2884,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     else
         FillRect(hdc, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
 
-    return TRUE;
+    return true;
 }
 
 // Display clicked
@@ -2585,9 +2905,9 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
 	SendMessage(lock.hwnd, BM_SETCHECK,
 		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
 
-    InvalidateRgn(display.hwnd, NULL, TRUE);
+    InvalidateRgn(display.hwnd, NULL, true);
 
-    return TRUE;
+    return true;
 }
 
 // Scope clicked
@@ -2603,7 +2923,7 @@ BOOL ScopeClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    return TRUE;
+    return true;
 }
 
 // Spectrum clicked
@@ -2626,12 +2946,12 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
-	RegSetValueEx(hkey, L"Zoom", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Zoom", 0, REG_DWORD,
 		      (LPBYTE)&spectrum.zoom, sizeof(spectrum.zoom));
 
 	RegCloseKey(hkey);
@@ -2644,10 +2964,10 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
-    return TRUE;
+    return true;
 }
 
 // Strobe clicked
@@ -2664,7 +2984,7 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    InvalidateRgn(strobe.hwnd, NULL, TRUE);
+    InvalidateRgn(strobe.hwnd, NULL, true);
 
     if (enable.hwnd != NULL)
 	SendMessage(enable.hwnd, BM_SETCHECK,
@@ -2673,12 +2993,12 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
-	RegSetValueEx(hkey, L"Strobe", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Strobe", 0, REG_DWORD,
 		      (LPBYTE)&strobe.enable, sizeof(strobe.enable));
 
 	RegCloseKey(hkey);
@@ -2691,10 +3011,10 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
-    return TRUE;
+    return true;
 }
 
 // Meter clicked
@@ -2714,8 +3034,8 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case EN_KILLFOCUS:
-	GetWindowText(legend.reference.hwnd, s, sizeof(s));
-	audio.reference = wcstof(s, NULL);
+	GetWindowText(reference.hwnd, s, sizeof(s));
+	audio.reference = atof(s);
 
 	SendMessage(reference.hwnd, UDM_SETPOS32, 0,
 		    audio.reference * 10);
@@ -2725,19 +3045,19 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 	return FALSE;
     }
 
-    InvalidateRgn(display.hwnd, NULL, TRUE);
+    InvalidateRgn(display.hwnd, NULL, true);
 
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
 	int value = audio.reference * 10;
 
-	RegSetValueEx(hkey, L"Reference", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Reference", 0, REG_DWORD,
 		      (LPBYTE)&value, sizeof(value));
 
 	RegCloseKey(hkey);
@@ -2750,10 +3070,10 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
-    return TRUE;
+    return true;
 }
 
 // Change reference
@@ -2761,23 +3081,23 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 {
     static TCHAR s[64];
 
-    long value = SendMessage(reference.hwnd, UDM_GETPOS32, 0, 0);
+    long value = SendMessage(updown.hwnd, UDM_GETPOS32, 0, 0);
     audio.reference = (double)value / 10.0;
 
-    swprintf(s, sizeof(s), L"%6.2lf", audio.reference);
-    SetWindowText(legend.reference.hwnd, s);
+    sprintf(s, " %6.2lf", audio.reference);
+    SetWindowText(reference.hwnd, s);
 
-    InvalidateRgn(display.hwnd, NULL, TRUE);
+    InvalidateRgn(display.hwnd, NULL, true);
 
     HKEY hkey;
     LONG error;
 
-    error = RegCreateKeyEx(HKEY_CURRENT_USER, L"SOFTWARE\\CTuner", 0,
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
 			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
 
     if (error == ERROR_SUCCESS)
     {
-	RegSetValueEx(hkey, L"Reference", 0, REG_DWORD,
+	RegSetValueEx(hkey, "Reference", 0, REG_DWORD,
 		      (LPBYTE)&value, sizeof(value));
 
 	RegCloseKey(hkey);
@@ -2790,44 +3110,10 @@ BOOL ChangeReference(WPARAM wParam, LPARAM lParam)
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
 		      0, s, sizeof(s), NULL);
 
-	MessageBox(window.hwnd, s, L"RegCreateKeyEx", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
     }
 
-    return TRUE;
-}
-
-// Tooltip show
-VOID TooltipShow(WPARAM wParam, LPARAM lParam)
-{
-    LPNMHDR pnmh = (LPNMHDR)lParam;
-
-    switch (GetDlgCtrlID((HWND)pnmh->idFrom))
-    {
-    case VOLUME_ID:
-	SetWindowText(status.hwnd, L" Microphone volume");
-	break;
-
-    case SCOPE_ID:
-	SetWindowText(status.hwnd, L" Scope, click to filter audio");
-	break;
-
-    case SPECTRUM_ID:
-	SetWindowText(status.hwnd, L" Spectrum, click to zoom");
-	break;
-
-    case DISPLAY_ID:
-	SetWindowText(status.hwnd, L" Display, click to lock");
-	break;
-
-    case STROBE_ID:
-	SetWindowText(status.hwnd, L" Strobe, click to disable/enable");
-	break;
-
-    case METER_ID:
-    case SLIDER_ID:
-	SetWindowText(status.hwnd, L" Cents, click to lock");
-	break;
-    }
+    return true;
 }
 
 // Audio thread
@@ -2850,7 +3136,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	static TCHAR s[64];
 
 	waveInGetErrorText(mmr, s, sizeof(s));
-	MessageBox(window.hwnd, s, L"WaveInOpen", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "WaveInOpen", MB_OK | MB_ICONERROR);
 	return mmr;
     }
 
@@ -2871,7 +3157,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    static TCHAR s[64];
 
 	    waveInGetErrorText(mmr, s, sizeof(s));
-	    MessageBox(window.hwnd, s, L"WaveInPrepareHeader",
+	    MessageBox(window.hwnd, s, "WaveInPrepareHeader",
 		       MB_OK | MB_ICONERROR);
 	    return mmr;
 	}
@@ -2883,7 +3169,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	    static TCHAR s[64];
 
 	    waveInGetErrorText(mmr, s, sizeof(s));
-	    MessageBox(window.hwnd, s, L"WaveInAddBuffer",
+	    MessageBox(window.hwnd, s, "WaveInAddBuffer",
 		       MB_OK | MB_ICONERROR);
 	    return mmr;
 	}
@@ -2896,7 +3182,7 @@ DWORD WINAPI AudioThread(LPVOID lpParameter)
 	static TCHAR s[64];
 
 	waveInGetErrorText(mmr, s, sizeof(s));
-	MessageBox(window.hwnd, s, L"WaveInStart", MB_OK | MB_ICONERROR);
+	MessageBox(window.hwnd, s, "WaveInStart", MB_OK | MB_ICONERROR);
 	return mmr;
     }
 
@@ -3081,7 +3367,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     }
 
     // Downsample
-    if (audio.downsample)
+    if (audio.down)
     {
 	// x2 = xa << 2
 	for (int i = 0; i < Length(x2); i++)
@@ -3173,7 +3459,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    maxima[count].n = round(cf) + C5_OFFSET;
 
 	    // Set limit to octave above
-	    if (!audio.downsample && (limit > i * 2))
+	    if (!audio.down && (limit > i * 2))
 		limit = i * 2 - 1;
 
 	    count++;
@@ -3195,10 +3481,10 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     // Do the note and cents calculations
     if (max > MIN)
     {
-	found = TRUE;
+	found = true;
 
 	// Frequency
-	if (!audio.downsample)
+	if (!audio.down)
 	    f = maxima[0].f;
 
 	// Cents relative to reference
@@ -3247,7 +3533,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     {
 	// Update scope window
 	scope.data = data;
-	InvalidateRgn(scope.hwnd, NULL, TRUE);
+	InvalidateRgn(scope.hwnd, NULL, true);
 
 	// Update spectrum window
 	for (int i = 0; i < count; i++)
@@ -3263,7 +3549,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    spectrum.h = fh / fps;
 	}
 
-	InvalidateRgn(spectrum.hwnd, NULL, TRUE);
+	InvalidateRgn(spectrum.hwnd, NULL, true);
     }
 
     static long timer;
@@ -3288,7 +3574,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
 
 	// Update display
-	InvalidateRgn(display.hwnd, NULL, TRUE);
+	InvalidateRgn(display.hwnd, NULL, true);
 
 	// Reset count;
 	timer = 0;
@@ -3322,7 +3608,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    }
 
 	    // Update display
-	    InvalidateRgn(display.hwnd, NULL, TRUE);
+	    InvalidateRgn(display.hwnd, NULL, true);
 	}
     }
 
