@@ -21,6 +21,7 @@ class DisplayView: TunerView
       ["", "\u{0266F}", "", "\u{0266D}", "", "",
        "\u{0266F}", "", "\u{0266D}", "", "\u{0266D}", ""]
 
+    // mouseDown
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
@@ -34,6 +35,7 @@ class DisplayView: TunerView
         }
     }
 
+    // draw
     override func draw(_ dirtyRect: NSRect)
     {
         super.draw(dirtyRect)

@@ -16,6 +16,9 @@ HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
 
+AUDIO = Audio
+AUDIOOBJ = $(AUDIO).o
+
 APPNAME = Tuner
 APPVERSION = $(shell $(PLB) -c 'print :CFBundleShortVersionString' Info.plist)
 
@@ -33,7 +36,7 @@ SWIFTH = Tuner-Swift.h
 
 SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
-		TunerView.swift Audio.o
+		TunerView.swift $(AUDIOOBJ)
 
 SFLAGS = -g -target x86_64-apple-macosx10.9 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
@@ -57,6 +60,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 $(APPNAME): $(SOURCES)
 	$(SWIFTC) $(SOURCES) -o $(APPNAME) $(SFLAGS)
 
+$(AUDIOOBJ):	$(AUDIO).m Audio.h Makefile
 
 $(APPNAME).icns: $(APPNAME).png
 	$(RM) -rf $(APPNAME).iconset

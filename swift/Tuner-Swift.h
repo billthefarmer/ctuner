@@ -231,6 +231,7 @@ SWIFT_CLASS("_TtC5Tuner11DisplayView")
 
 SWIFT_CLASS("_TtC5Tuner9MeterView")
 @interface MeterView : TunerView
+- (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
 - (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;

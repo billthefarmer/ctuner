@@ -28,6 +28,20 @@ class MeterView: TunerView
 {
     var cents: Double = 0
 
+    // mouseDown
+    override func mouseDown(with event: NSEvent)
+    {
+        if (event.type == .leftMouseDown)
+        {
+            displayData.lock = !displayData.lock
+            if (lockBox != nil)
+            {
+                lockBox.state = displayData.lock ? .on: .off
+            }
+            displayView.needsDisplay = true
+        }
+    }
+
     // draw
     override func draw(_ dirtyRect: NSRect)
     {

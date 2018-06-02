@@ -53,27 +53,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         // Insert code here to initialize your application
 
-        // Find a window
-        if (NSApp.mainWindow != nil)
-        {
-            window = NSApp.mainWindow
-        }
-
-        else if (NSApp.keyWindow != nil)
-        {
-            window = NSApp.keyWindow
-        }
-
-        else if (NSApp.windows.count > 0)
-        {
-            window = NSApp.windows[0]
-        }
-
-        if (window == nil)
-        {
-            return
-        }
-
         // Set up window
         window.setContentSize(NSMakeSize(400, 480))
         window.contentMinSize = NSMakeSize(400, 480)
@@ -116,7 +95,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         spectrumView.toolTip = "Spectrum - click to zoom"
         displayView.toolTip = "Display - click to lock"
         strobeView.toolTip = "Strobe - click to display"
-        meterView.toolTip = "Meter"
+        meterView.toolTip = "Meter - click to lock"
 
         // Redraw policy
         scopeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
