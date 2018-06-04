@@ -33,7 +33,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // Check for a previous instance of this app
     if (!hPrevInstance)
 	if (!RegisterMainClass(hInstance))
-	    return FALSE;
+	    return false;
 
     // Save the application-instance handle.
     hInst = hInstance;
@@ -60,7 +60,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
     // If the main window cannot be created, terminate
     // the application.
     if (!window.hwnd)
-	return FALSE;
+	return false;
 
     // Show the window and send a WM_PAINT message to the window
     // procedure.
@@ -544,7 +544,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MoveWindow(hWnd, MARGIN, toolbar.rect.bottom + MARGIN,
                    width - MARGIN * 2,
                    (height - TOTAL) * SCOPE_HEIGHT / TOTAL_HEIGHT,
-                   FALSE);
+                   false);
 	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &scope.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&scope.rect, 2);
@@ -555,7 +555,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MoveWindow(hWnd, MARGIN, scope.rect.bottom + SPACING,
 		   width - MARGIN * 2,
                    (height - TOTAL) * SPECTRUM_HEIGHT / TOTAL_HEIGHT,
-                   FALSE);
+                   false);
 	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &spectrum.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&spectrum.rect, 2);
@@ -566,7 +566,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MoveWindow(hWnd, MARGIN, spectrum.rect.bottom + SPACING,
                    width - MARGIN * 2,
                    (height - TOTAL) * DISPLAY_HEIGHT / TOTAL_HEIGHT,
-                   FALSE);
+                   false);
 	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &display.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&display.rect, 2);
@@ -577,7 +577,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MoveWindow(hWnd, MARGIN, display.rect.bottom + SPACING,
                    width - MARGIN * 2,
                    (height - TOTAL) * STROBE_HEIGHT / TOTAL_HEIGHT,
-                   FALSE);
+                   false);
 	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &strobe.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&strobe.rect, 2);
@@ -588,7 +588,7 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MoveWindow(hWnd, MARGIN, strobe.rect.bottom + SPACING,
                    width - MARGIN * 2,
                    (height - TOTAL) * METER_HEIGHT / TOTAL_HEIGHT,
-                   FALSE);
+                   false);
 	InvalidateRgn(hWnd, NULL, true);
 	GetWindowRect(hWnd, &meter.rect);
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&meter.rect, 2);
@@ -788,7 +788,7 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
 BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
 {
     WNDCLASS wc = 
-        {CS_HREDRAW | CS_VREDRAW, PopupProc,
+        {CS_HREDRAW | CS_VREDRAW, OptionWProc,
          0, 0, hInst,
          LoadIcon(hInst, "Tuner"),
          LoadCursor(NULL, IDC_ARROW),
@@ -805,28 +805,49 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
     options.hwnd =
         CreateWindow(PCLASS, "Tuner Options",
                      WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION,
-                     window.wind.right, window.wind.top,
-                     POPUP_WIDTH, POPUP_HEIGHT,
+                     window.wind.left + OFFSET,
+                     window.wind.top + OFFSET,
+                     OPTIONS_WIDTH, OPTIONS_HEIGHT,
                      window.hwnd, (HMENU)NULL, hInst, NULL);
 }
 
-// Popup Procedure
-LRESULT CALLBACK PopupProc(HWND hWnd,
-			   UINT uMsg,
-			   WPARAM wParam,
-			   LPARAM lParam)
+// Options Procedure
+LRESULT CALLBACK OptionWProc(HWND hWnd,
+                             UINT uMsg,
+                             WPARAM wParam,
+                             LPARAM lParam)
 {
-    static TCHAR s[64];
-
-    // Get the client rect
-    GetClientRect(hWnd, &options.rect);
-    int width = options.rect.right;
-
     // Switch on message
     switch (uMsg)
     {
     case WM_CREATE:
         {
+            static TCHAR s[64];
+
+            // Get the window and client dimensions
+            GetWindowRect(hWnd, &options.wind);
+            GetClientRect(hWnd, &options.rect);
+
+            // Calculate desired window width and height
+            int border = (options.wind.right - options.wind.left) -
+                options.rect.right;
+            int header = (options.wind.bottom - options.wind.top) -
+                options.rect.bottom;
+            int width  = OPTIONS_WIDTH + border;
+            int height = OPTIONS_HEIGHT + header;
+
+            // Set new dimensions
+            SetWindowPos(hWnd, NULL, 0, 0,
+                         width, height,
+                         SWP_NOMOVE | SWP_NOZORDER);
+
+            // Get client dimensions
+            GetWindowRect(hWnd, &options.wind);
+            GetClientRect(hWnd, &options.rect);
+
+            width = options.rect.right;
+            height = options.rect.bottom;
+
             // Create group box
             group.hwnd =
                 CreateWindow(WC_BUTTON, NULL,
@@ -878,7 +899,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
                         (LPARAM) &tooltip.info);
 
             // Create filter tickbox
-            filter.hwnd =
+            filt.hwnd =
                 CreateWindow(WC_BUTTON, "Audio filter:",
                              WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
                              BS_CHECKBOX,
@@ -886,14 +907,14 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
                              zoom.rect.bottom + SPACING,
                              CHECK_WIDTH, CHECK_HEIGHT,
                              hWnd, (HMENU)FILTER_ID, hInst, NULL);
-            GetWindowRect(filter.hwnd, &filter.rect);
-            MapWindowPoints(NULL, hWnd, (POINT *)&filter.rect, 2);
+            GetWindowRect(filt.hwnd, &filt.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&filt.rect, 2);
 
-            SendMessage(filter.hwnd, BM_SETCHECK,
+            SendMessage(filt.hwnd, BM_SETCHECK,
                         audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 
             // Add tickbox to tooltip
-            tooltip.info.uId = (UINT_PTR)filter.hwnd;
+            tooltip.info.uId = (UINT_PTR)filt.hwnd;
             tooltip.info.lpszText = (LPSTR)"Audio filter";
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
@@ -924,7 +945,7 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
                              WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
                              BS_CHECKBOX,
                              group.rect.left + MARGIN,
-                             filter.rect.bottom + SPACING,
+                             filt.rect.bottom + SPACING,
                              CHECK_WIDTH, CHECK_HEIGHT,
                              hWnd, (HMENU)MULT_ID, hInst, NULL);
             GetWindowRect(mult.hwnd, &mult.rect);
@@ -1138,13 +1159,13 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 
             // Create filter button
             button.filter.hwnd =
-                CreateWindow(WC_BUTTON, "Filter...",
+                CreateWindow(WC_BUTTON, "Filters...",
                              WS_VISIBLE | WS_CHILD |
                              BS_PUSHBUTTON,
                              group.rect.left + MARGIN,
                              reference.rect.bottom + SPACING,
                              CHECK_WIDTH, BUTTON_HEIGHT,
-                             hWnd, (HMENU)NOTE_ID, hInst, NULL);
+                             hWnd, (HMENU)FILTERS_ID, hInst, NULL);
 
             // Create close button
             button.close.hwnd =
@@ -1265,10 +1286,15 @@ LRESULT CALLBACK PopupProc(HWND hWnd,
 	    EditReference(wParam, lParam);
 	    break;
 
+	    // Filters
+	case FILTERS_ID:
+	    DisplayFilters(wParam, lParam);
+	    break;
+
 	    // Close
 	case CLOSE_ID:
             SendMessage(hWnd, WM_DESTROY, 0, 0);
-	    ShowWindow(hWnd, FALSE);
+	    ShowWindow(hWnd, false);
 
 	    // Set the focus back to the window
 	    SetFocus(hWnd);
@@ -1324,11 +1350,11 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
-    if (filter.hwnd != NULL)
-	SendMessage(filter.hwnd, BM_SETCHECK,
+    if (filt.hwnd != NULL)
+	SendMessage(filt.hwnd, BM_SETCHECK,
 		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
 
     HKEY hkey;
@@ -1354,7 +1380,7 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
 
 	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
 
-	return FALSE;
+	return false;
     }
 
     return true;
@@ -1379,7 +1405,7 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     HKEY hkey;
@@ -1405,7 +1431,7 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 
 	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
 
-	return FALSE;
+	return false;
     }
 
     return true;
@@ -1421,7 +1447,7 @@ BOOL DownClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (down.hwnd != NULL)
@@ -1440,7 +1466,7 @@ BOOL FundamentalClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (down.hwnd != NULL)
@@ -1459,7 +1485,7 @@ BOOL NoteFilterClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (note.hwnd != NULL)
@@ -1480,7 +1506,7 @@ BOOL ExpandClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     return true;
@@ -1498,7 +1524,7 @@ BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     return true;
@@ -1514,7 +1540,7 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     InvalidateRgn(display.hwnd, NULL, true);
@@ -1535,7 +1561,7 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (mult.hwnd != NULL)
@@ -1652,7 +1678,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
 
     // Open clipboard
     if (!OpenClipboard(window.hwnd))
-	return FALSE;
+	return false;
 
     // Empty clipboard
     EmptyClipboard(); 
@@ -1663,7 +1689,7 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     if (mem == NULL)
     {
 	CloseClipboard();
-	return FALSE;
+	return false;
     }
 
     // Lock the memory
@@ -1725,6 +1751,250 @@ BOOL CopyDisplay(WPARAM wParam, LPARAM lParam)
     return true;
 }
 
+// Display filters
+BOOL DisplayFilters(WPARAM wParam, LPARAM lParam)
+{
+    WNDCLASS wc = 
+        {CS_HREDRAW | CS_VREDRAW, FilterWProc,
+         0, 0, hInst,
+         LoadIcon(hInst, "Tuner"),
+         LoadCursor(NULL, IDC_ARROW),
+         GetSysColorBrush(COLOR_WINDOW),
+         NULL, FCLASS};
+
+    // Register the window class.
+    RegisterClass(&wc);
+
+    // Get the options window rect
+    GetWindowRect(options.hwnd, &options.rect);
+
+    // Create the window, offset right
+    filters.hwnd =
+        CreateWindow(FCLASS, "Tuner Filters",
+                     WS_VISIBLE | WS_POPUPWINDOW | WS_CAPTION,
+                     options.rect.left + OFFSET,
+                     options.rect.top + OFFSET,
+                     FILTERS_WIDTH, FILTERS_HEIGHT,
+                     window.hwnd, (HMENU)NULL, hInst, NULL);
+}
+
+// Filters Procedure
+LRESULT CALLBACK FilterWProc(HWND hWnd,
+                             UINT uMsg,
+                             WPARAM wParam,
+                             LPARAM lParam)
+{
+    // Switch on message
+    switch (uMsg)
+    {
+    case WM_CREATE:
+        {
+            // Get the window and client dimensions
+            GetWindowRect(hWnd, &filters.wind);
+            GetClientRect(hWnd, &filters.rect);
+
+            // Calculate desired window width and height
+            int border = (filters.wind.right - filters.wind.left) -
+                filters.rect.right;
+            int header = (filters.wind.bottom - filters.wind.top) -
+                filters.rect.bottom;
+            int width  = FILTERS_WIDTH + border;
+            int height = FILTERS_HEIGHT + header;
+
+            // Set new dimensions
+            SetWindowPos(hWnd, NULL, 0, 0,
+                         width, height,
+                         SWP_NOMOVE | SWP_NOZORDER);
+
+            // Get client dimensions
+            GetWindowRect(hWnd, &filters.wind);
+            GetClientRect(hWnd, &filters.rect);
+
+            width = filters.rect.right;
+            height = filters.rect.bottom;
+
+            // Create group box
+            group.hwnd =
+                CreateWindow(WC_BUTTON, NULL,
+                             WS_VISIBLE | WS_CHILD |
+                             BS_GROUPBOX,
+                             MARGIN, MARGIN,
+                             width - MARGIN * 2, FILTER_HEIGHT,
+                             hWnd, NULL, hInst, NULL);
+            GetWindowRect(group.hwnd, &group.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&group.rect, 2);
+
+            static const TCHAR *labels[] =
+                {"C:", "C#:", "D:", "Eb:", "E:", "F:",
+                 "F#:", "G:", "Ab:", "A:", "Bb:", "B:"};
+            static const UINT_PTR noteIds[] =
+                {NOTES_C, NOTES_Cs, NOTES_D, NOTES_Eb,
+                 NOTES_E, NOTES_F, NOTES_Fs, NOTES_G,
+                 NOTES_Ab, NOTES_A, NOTES_Bb, NOTES_B};
+            static const UINT_PTR octaveIds[] =
+                {OCTAVES_0, OCTAVES_1, OCTAVES_2,
+                 OCTAVES_3, OCTAVES_4, OCTAVES_5,
+                 OCTAVES_6, OCTAVES_7, OCTAVES_8};
+
+            for (int i = 0; i < Length(labels); i++)
+            {
+                boxes.notes[i].hwnd =
+                    CreateWindow(WC_BUTTON, labels[i],
+                                 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                                 BS_CHECKBOX, (i < Length(labels) / 2)?
+                                 group.rect.left + MARGIN:
+                                 group.rect.left + (MARGIN * 2) + NOTE_WIDTH,
+                                 group.rect.top + MARGIN +
+                                 (NOTE_HEIGHT + SPACING) *
+                                 (i % (Length(labels) / 2)),
+                                 NOTE_WIDTH, NOTE_HEIGHT,
+                                 hWnd, (HMENU)noteIds[i], hInst, NULL);
+                GetWindowRect(boxes.notes[i].hwnd, &boxes.notes[i].rect);
+                MapWindowPoints(NULL, hWnd, (POINT *)&boxes.notes[i].rect, 2);
+
+                SendMessage(boxes.notes[i].hwnd, BM_SETCHECK,
+                            filter.note[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            }
+
+            for (int i = 0; i < Length(filter.octave); i++)
+            {
+                static TCHAR s[64];
+                sprintf(s, "Octave %d:", i);
+
+                boxes.octaves[i].hwnd =
+                    CreateWindow(WC_BUTTON, s,
+                                 WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
+                                 BS_CHECKBOX,
+                                 (i < (Length(filter.octave) / 2) + 1)?
+                                 group.rect.left + MARGIN +
+                                 ((NOTE_WIDTH + MARGIN) * 2):
+                                 group.rect.left + MARGIN +
+                                 ((NOTE_WIDTH + MARGIN) * 2) +
+                                 (OCTAVE_WIDTH + MARGIN),
+                                 group.rect.top + MARGIN +
+                                 (OCTAVE_HEIGHT + SPACING) *
+                                 (i % ((Length(filter.octave) / 2) + 1)),
+                                 OCTAVE_WIDTH, OCTAVE_HEIGHT,
+                                 hWnd, (HMENU)octaveIds[i], hInst, NULL);
+                GetWindowRect(boxes.octaves[i].hwnd, &boxes.octaves[i].rect);
+                MapWindowPoints(NULL, hWnd, (POINT *)&boxes.octaves[i].rect, 2);
+
+                SendMessage(boxes.octaves[i].hwnd, BM_SETCHECK,
+                            filter.octave[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            }
+
+            // Create close button
+            button.close.hwnd =
+                CreateWindow(WC_BUTTON, "Close",
+                             WS_VISIBLE | WS_CHILD |
+                             BS_PUSHBUTTON,
+                             width / 2 + MARGIN,
+                             boxes.notes[11].rect.top,
+                             CHECK_WIDTH, BUTTON_HEIGHT,
+                             hWnd, (HMENU)CLOSE_ID, hInst, NULL);
+        }
+	break;
+
+	// Colour static text
+    case WM_CTLCOLORSTATIC:
+	return (LRESULT)GetSysColorBrush(COLOR_WINDOW);
+	break;
+
+	// Draw item
+    case WM_DRAWITEM:
+	return DrawItem(wParam, lParam);
+	break;
+
+	// Set the focus back to the window by clicking
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+	SetFocus(hWnd);
+	break;
+
+	// Display options menu
+    case WM_RBUTTONDOWN:
+	DisplayOptionsMenu(hWnd, MAKEPOINTS(lParam));
+	break;
+
+	// Commands
+    case WM_COMMAND:
+	switch (LOWORD(wParam))
+	{
+	    // Close
+	case CLOSE_ID:
+            SendMessage(hWnd, WM_DESTROY, 0, 0);
+	    ShowWindow(hWnd, false);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+
+        default:
+            BoxClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+	}
+	break;
+
+	// Char pressed
+    case WM_CHAR:
+	CharPressed(wParam, lParam);
+	break;
+
+    case WM_DESTROY:
+        options.hwnd = NULL;
+        break;
+
+	// Everything else
+    default:
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+    }
+
+    return 0;
+}
+
+BOOL BoxClicked(WPARAM wParam, LPARAM lParam)
+{
+    static const UINT_PTR noteIds[] =
+        {NOTES_C, NOTES_Cs, NOTES_D, NOTES_Eb,
+         NOTES_E, NOTES_F, NOTES_Fs, NOTES_G,
+         NOTES_Ab, NOTES_A, NOTES_Bb, NOTES_B};
+    static const UINT_PTR octaveIds[] =
+        {OCTAVES_0, OCTAVES_1, OCTAVES_2,
+         OCTAVES_3, OCTAVES_4, OCTAVES_5,
+         OCTAVES_6, OCTAVES_7, OCTAVES_8};
+
+    int id = LOWORD(wParam);
+
+    // Check notes
+    for (int i = 0; i < Length(filter.note); i++)
+    {
+        if (id == noteIds[i])
+        {
+            filter.note[i] = !filter.note[i];
+            SendMessage((HWND)lParam, BM_SETCHECK,
+                        filter.note[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            return true;
+        }
+    }
+
+    // Check octaves
+    for (int i = 0; i < Length(filter.octave); i++)
+    {
+        if (id == octaveIds[i])
+        {
+            filter.octave[i] = !filter.octave[i];
+            SendMessage((HWND)lParam, BM_SETCHECK,
+                        filter.octave[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 // Meter callback
 VOID CALLBACK MeterCallback(PVOID lpParam, BOOL TimerFired)
 {
@@ -1765,7 +2035,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
     static LOGFONT lf =
 	{0, 0, 0, 0,
 	 FW_BOLD,
-	 FALSE, FALSE, FALSE,
+	 false, false, false,
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
@@ -1937,7 +2207,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
     static LOGFONT lf =
 	{0, 0, 0, 0,
 	 FW_BOLD,
-	 FALSE, FALSE, FALSE,
+	 false, false, false,
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
@@ -2124,12 +2394,14 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    }
 
 	    // Update last index
-	    last = index + 1;
+	    last = index;
 
 	    if (max < value)
 		max = value;
 
-	    PointF point(x, -value * yscale);
+            float y = -value * yscale;
+
+	    PointF point(x, y);
             path.AddLine(lastp, point);
 
             lastp = point;
@@ -2219,7 +2491,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     static LOGFONT lf =
 	{0, 0, 0, 0,
 	 FW_BOLD,
-	 FALSE, FALSE, FALSE,
+	 false, false, false,
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
@@ -2540,7 +2812,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     static LOGFONT lf =
 	{0, 0, 0, 0,
 	 FW_NORMAL,
-	 FALSE, FALSE, FALSE,
+	 false, false, false,
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
@@ -2829,7 +3101,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	DeleteObject(GetCurrentObject(hbdc, OBJ_BITMAP));
 
 	DeleteDC(hbdc);
-	strobe.changed = FALSE;
+	strobe.changed = false;
     }
 
     if (strobe.enable)
@@ -2898,7 +3170,7 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (lock.hwnd != NULL)
@@ -2920,7 +3192,7 @@ BOOL ScopeClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     return true;
@@ -2936,7 +3208,7 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     if (zoom.hwnd != NULL)
@@ -2981,7 +3253,7 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     InvalidateRgn(strobe.hwnd, NULL, true);
@@ -3029,7 +3301,7 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
     static TCHAR s[64];
 
     if (audio.reference == 0)
-	return FALSE;
+	return false;
 
     switch (HIWORD(wParam))
     {
@@ -3042,7 +3314,7 @@ BOOL EditReference(WPARAM wParam, LPARAM lParam)
 	break;
 
     default:
-	return FALSE;
+	return false;
     }
 
     InvalidateRgn(display.hwnd, NULL, true);
@@ -3475,7 +3747,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     int n = 0;
 
     // Found flag and cents value
-    BOOL found = FALSE;
+    BOOL found = false;
     double c = 0.0;
 
     // Do the note and cents calculations
@@ -3502,7 +3774,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	n = round(cf) + C5_OFFSET;
 
 	if (n < 0)
-	    found = FALSE;
+	    found = false;
 
 	// Find nearest maximum to reference note
 	double df = 1000.0;
@@ -3525,7 +3797,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Ignore if not within 50 cents of reference note
 	if (fabs(c) > 0.5)
-	    found = FALSE;
+	    found = false;
     }
 
     // If display not locked

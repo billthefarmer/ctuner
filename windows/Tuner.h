@@ -35,7 +35,8 @@
 #define Length(a) (sizeof(a) / sizeof(a[0]))
 
 #define WCLASS "MainWClass"
-#define PCLASS "PopupClass"
+#define PCLASS "OptionWClass"
+#define FCLASS "FilterWClass"
 
 #define OCTAVE 12
 #define MIN   0.5
@@ -51,6 +52,9 @@ enum
      SCOPE_ID,
      METER_ID,
      QUIT_ID,
+
+     // Options ids
+
      ZOOM_ID,
      TEXT_ID,
      DOWN_ID,
@@ -66,7 +70,33 @@ enum
      UPDOWN_ID,
      COLOURS_ID,
      OPTIONS_ID,
-     REFERENCE_ID};
+     FILTERS_ID,
+     REFERENCE_ID,
+
+     // Filters ids
+
+     NOTES_C,
+     NOTES_Cs,
+     NOTES_D,
+     NOTES_Eb,
+     NOTES_E,
+     NOTES_F,
+     NOTES_Fs,
+     NOTES_G,
+     NOTES_Ab,
+     NOTES_A,
+     NOTES_Bb,
+     NOTES_B,
+
+     OCTAVES_0,
+     OCTAVES_1,
+     OCTAVES_2,
+     OCTAVES_3,
+     OCTAVES_4,
+     OCTAVES_5,
+     OCTAVES_6,
+     OCTAVES_7,
+     OCTAVES_8};
 
 // Bitmap ids
 enum
@@ -128,6 +158,7 @@ enum
 // Margins
 enum
     {MARGIN  = 20,
+     OFFSET = 32,
      SPACING = 8,
      TOTAL   = 72};
 
@@ -135,15 +166,23 @@ enum
 enum
     {CHECK_HEIGHT = 24,
      CHECK_WIDTH = 124,
+     NOTE_HEIGHT = 24,
+     NOTE_WIDTH = 36,
+     OCTAVE_HEIGHT = 24,
+     OCTAVE_WIDTH = 76,
      BUTTON_HEIGHT = 26,
      BUTTON_WIDTH = 85};
 
-// Popup sizes
+// Window sizes
 enum
     {GROUP_WIDTH = (CHECK_WIDTH * 2) + (MARGIN * 4),
      GROUP_HEIGHT = (CHECK_HEIGHT  * 4) + (MARGIN * 2) + (SPACING * 2),
-     POPUP_WIDTH = GROUP_WIDTH + (MARGIN * 2) + 4,
-     POPUP_HEIGHT = (GROUP_HEIGHT * 2) + (MARGIN * 4)};
+     FILTER_WIDTH = (CHECK_WIDTH * 2) + (MARGIN * 4),
+     FILTER_HEIGHT = (CHECK_HEIGHT * 6) + (MARGIN * 2) + (SPACING * 5),
+     OPTIONS_WIDTH = GROUP_WIDTH + (MARGIN * 2) + 4,
+     OPTIONS_HEIGHT = (GROUP_HEIGHT * 2) + (MARGIN * 2) + SPACING,
+     FILTERS_WIDTH = FILTER_WIDTH + (MARGIN * 2) + 4,
+     FILTERS_HEIGHT = FILTER_HEIGHT + (MARGIN * 2)};
 
 // Structs
 typedef struct
@@ -240,6 +279,12 @@ typedef struct
 
 typedef struct
 {
+    TOOL notes[12];
+    TOOL octaves[12];
+} BOXES, *BOXESP;
+
+typedef struct
+{
     HWND hwnd;
     RECT rect;
     double c;
@@ -269,6 +314,12 @@ typedef struct
     double reference;
 } AUDIO, *AUDIOP;
 
+typedef struct
+{
+    BOOL note[12];
+    BOOL octave[9];
+} FILTER;
+
 // Global handle
 HINSTANCE hInst;
 
@@ -280,6 +331,9 @@ Gdiplus::GdiplusStartupInput input;
 
 // Global data
 WINDOW window;
+WINDOW options;
+WINDOW filters;
+
 TOOL toolbar;
 TOOLTIP tooltip;
 SCOPE scope;
@@ -298,20 +352,22 @@ TOOL down;
 TOOL mult;
 TOOL fund;
 TOOL note;
-TOOL filter;
+TOOL filt;
 TOOL enable;
 TOOL expand;
 TOOL updown;
 TOOL colours;
-TOOL options;
 TOOL reference;
 
+BOXES boxes;
 AUDIO audio;
+FILTER filter;
 
-// Function prototypes.
+// Function prototypes
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);
-LRESULT CALLBACK PopupProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK OptionWProc(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK FilterWProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK EnumChildProc(HWND, LPARAM);
 BOOL RegisterMainClass(HINSTANCE);
 VOID GetSavedStatus(VOID);
@@ -324,6 +380,7 @@ BOOL DrawLock(HDC, int, int);
 BOOL DrawMeter(HDC, RECT);
 BOOL DisplayContextMenu(HWND, POINTS);
 BOOL DisplayOptions(WPARAM, LPARAM);
+BOOL DisplayFilters(WPARAM, LPARAM);
 BOOL DisplayOptionsMenu(HWND, POINTS);
 BOOL DisplayClicked(WPARAM, LPARAM);
 BOOL SpectrumClicked(WPARAM, LPARAM);
@@ -343,6 +400,7 @@ BOOL EditReference(WPARAM, LPARAM);
 BOOL CharPressed(WPARAM, LPARAM);
 BOOL CopyDisplay(WPARAM, LPARAM);
 BOOL DownClicked(WPARAM, LPARAM);
+BOOL BoxClicked(WPARAM, LPARAM);
 BOOL ChangeReference(WPARAM, LPARAM);
 BOOL WindowResize(HWND, WPARAM, LPARAM);
 BOOL WindowResizing(HWND, WPARAM, LPARAM);
