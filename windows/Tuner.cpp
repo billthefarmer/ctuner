@@ -869,8 +869,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(zoom.hwnd, &zoom.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&zoom.rect, 2);
 
-            SendMessage(zoom.hwnd, BM_SETCHECK,
-                        spectrum.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(zoom.hwnd,
+                            spectrum.zoom? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)zoom.hwnd;
@@ -889,8 +889,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(enable.hwnd, &enable.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&enable.rect, 2);
 
-            SendMessage(enable.hwnd, BM_SETCHECK,
-                        strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(enable.hwnd,
+                            strobe.enable? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)enable.hwnd;
@@ -910,8 +910,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(filt.hwnd, &filt.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&filt.rect, 2);
 
-            SendMessage(filt.hwnd, BM_SETCHECK,
-                        audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(filt.hwnd,
+                            audio.filter? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)filt.hwnd;
@@ -930,8 +930,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(down.hwnd, &down.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&down.rect, 2);
 
-            SendMessage(down.hwnd, BM_SETCHECK,
-                        audio.down? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(down.hwnd,
+                            audio.down? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)lock.hwnd;
@@ -951,8 +951,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(mult.hwnd, &mult.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&mult.rect, 2);
 
-            SendMessage(mult.hwnd, BM_SETCHECK,
-                        display.mult? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(mult.hwnd,
+                            display.mult? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)mult.hwnd;
@@ -972,8 +972,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(lock.hwnd, &lock.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&lock.rect, 2);
 
-            SendMessage(lock.hwnd, BM_SETCHECK,
-                        display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(lock.hwnd,
+                            display.lock? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)lock.hwnd;
@@ -993,8 +993,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(fund.hwnd, &fund.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&fund.rect, 2);
 
-            SendMessage(fund.hwnd, BM_SETCHECK,
-                        audio.fund? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(fund.hwnd,
+                            audio.fund? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)fund.hwnd;
@@ -1014,8 +1014,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(note.hwnd, &note.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&note.rect, 2);
 
-            SendMessage(fund.hwnd, BM_SETCHECK,
-                        audio.note? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck(fund.hwnd,
+                            audio.note? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
             tooltip.info.uId = (UINT_PTR)note.hwnd;
@@ -1060,10 +1060,10 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             char sizes[][6] =
                 {" x 1", " x 2", " x 4", " x 8", " x 16"};
             for (int i = 0; i < Length(sizes); i++)
-                SendMessage(expand.hwnd, CB_ADDSTRING, 0, (LPARAM)sizes[i]);
+                ComboBox_AddString(expand.hwnd, sizes[i]);
 
             // Select x 1
-            SendMessage(expand.hwnd, CB_SELECTSTRING, -1, (LPARAM)" x 1");
+            ComboBox_SelectString(expand.hwnd, -1, " x 1");
 
             // Add edit to tooltip
             tooltip.info.uId = (UINT_PTR)expand.hwnd;
@@ -1097,11 +1097,10 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             char strings[][14] =
                 {" Blue/Cyan", " Olive/Aqua", " Magenta/Cyan"};
             for (int i = 0; i < Length(strings); i++)
-                SendMessage(colours.hwnd, CB_ADDSTRING, 0, (LPARAM)strings[i]);
+                ComboBox_AddString(colours.hwnd, strings[i]);
 
             // Select Olive/Aqua
-            SendMessage(colours.hwnd, CB_SELECTSTRING, -1,
-                        (LPARAM)" Olive/Aqua");
+            ComboBox_SelectString(colours.hwnd, -1, " Olive/Aqua");
 
             // Add edit to tooltip
             tooltip.info.uId = (UINT_PTR)colours.hwnd;
@@ -1166,6 +1165,9 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                              reference.rect.bottom + SPACING,
                              CHECK_WIDTH, BUTTON_HEIGHT,
                              hWnd, (HMENU)FILTERS_ID, hInst, NULL);
+
+            // Enable button
+            Button_Enable(button.filter.hwnd, audio.note);
 
             // Create close button
             button.close.hwnd =
@@ -1354,8 +1356,7 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (filt.hwnd != NULL)
-	SendMessage(filt.hwnd, BM_SETCHECK,
-		    audio.filter? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(filt.hwnd, audio.filter? BST_CHECKED: BST_UNCHECKED);
 
     HKEY hkey;
     LONG error;
@@ -1451,8 +1452,7 @@ BOOL DownClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (down.hwnd != NULL)
-	SendMessage(down.hwnd, BM_SETCHECK,
-		    audio.down? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(down.hwnd, audio.down? BST_CHECKED: BST_UNCHECKED);
     return true;
 }
 
@@ -1470,8 +1470,7 @@ BOOL FundamentalClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (down.hwnd != NULL)
-	SendMessage(fund.hwnd, BM_SETCHECK,
-		    audio.fund? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(fund.hwnd, audio.fund? BST_CHECKED: BST_UNCHECKED);
     return true;
 }
 
@@ -1489,8 +1488,10 @@ BOOL NoteFilterClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (note.hwnd != NULL)
-	SendMessage(note.hwnd, BM_SETCHECK,
-		    audio.note? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(note.hwnd, audio.note? BST_CHECKED: BST_UNCHECKED);
+
+    if (button.filter.hwnd != NULL)
+        Button_Enable(button.filter.hwnd, audio.note);
     return true;
 }
 
@@ -1546,8 +1547,7 @@ BOOL LockClicked(WPARAM wParam, LPARAM lParam)
     InvalidateRgn(display.hwnd, NULL, true);
 
     if (lock.hwnd != NULL)
-	SendMessage(lock.hwnd, BM_SETCHECK,
-		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(lock.hwnd, display.lock? BST_CHECKED: BST_UNCHECKED);
     return true;
 }
 
@@ -1565,8 +1565,7 @@ BOOL MultipleClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (mult.hwnd != NULL)
-	SendMessage(mult.hwnd, BM_SETCHECK,
-		    display.mult? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(mult.hwnd, display.mult? BST_CHECKED: BST_UNCHECKED);
 
     InvalidateRgn(display.hwnd, NULL, true);
 
@@ -1852,8 +1851,8 @@ LRESULT CALLBACK FilterWProc(HWND hWnd,
                 GetWindowRect(boxes.notes[i].hwnd, &boxes.notes[i].rect);
                 MapWindowPoints(NULL, hWnd, (POINT *)&boxes.notes[i].rect, 2);
 
-                SendMessage(boxes.notes[i].hwnd, BM_SETCHECK,
-                            filter.note[i]? BST_CHECKED: BST_UNCHECKED, 0);
+                Button_SetCheck(boxes.notes[i].hwnd,
+                                filter.note[i]? BST_CHECKED: BST_UNCHECKED);
             }
 
             for (int i = 0; i < Length(filter.octave); i++)
@@ -1879,8 +1878,8 @@ LRESULT CALLBACK FilterWProc(HWND hWnd,
                 GetWindowRect(boxes.octaves[i].hwnd, &boxes.octaves[i].rect);
                 MapWindowPoints(NULL, hWnd, (POINT *)&boxes.octaves[i].rect, 2);
 
-                SendMessage(boxes.octaves[i].hwnd, BM_SETCHECK,
-                            filter.octave[i]? BST_CHECKED: BST_UNCHECKED, 0);
+                Button_SetCheck(boxes.octaves[i].hwnd,
+                                filter.octave[i]? BST_CHECKED: BST_UNCHECKED);
             }
 
             // Create close button
@@ -1974,8 +1973,8 @@ BOOL BoxClicked(WPARAM wParam, LPARAM lParam)
         if (id == noteIds[i])
         {
             filter.note[i] = !filter.note[i];
-            SendMessage((HWND)lParam, BM_SETCHECK,
-                        filter.note[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck((HWND)lParam,
+                            filter.note[i]? BST_CHECKED: BST_UNCHECKED);
             return true;
         }
     }
@@ -1986,8 +1985,8 @@ BOOL BoxClicked(WPARAM wParam, LPARAM lParam)
         if (id == octaveIds[i])
         {
             filter.octave[i] = !filter.octave[i];
-            SendMessage((HWND)lParam, BM_SETCHECK,
-                        filter.octave[i]? BST_CHECKED: BST_UNCHECKED, 0);
+            Button_SetCheck((HWND)lParam,
+                            filter.octave[i]? BST_CHECKED: BST_UNCHECKED);
             return true;
         }
     }
@@ -2350,10 +2349,10 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each that are in range
-	    if (spectrum.values[i].f > spectrum.l &&
-		spectrum.values[i].f < spectrum.h)
+	    if (spectrum.values[i] > spectrum.l &&
+		spectrum.values[i] < spectrum.h)
 	    {
-		int x = round((spectrum.values[i].f - spectrum.l) * xscale);
+		int x = round((spectrum.values[i] - spectrum.l) * xscale);
 		MoveToEx(hbdc, x, 0, NULL);
 		LineTo(hbdc, x, -height);
 
@@ -2422,7 +2421,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each
-	    int x = round(log(spectrum.values[i].f) / xscale);
+	    int x = round(log(spectrum.values[i]) / xscale);
 	    MoveToEx(hbdc, x, 0, NULL);
 	    LineTo(hbdc, x, -height);
 
@@ -3174,8 +3173,7 @@ BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (lock.hwnd != NULL)
-	SendMessage(lock.hwnd, BM_SETCHECK,
-		    display.lock? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(lock.hwnd, display.lock? BST_CHECKED: BST_UNCHECKED);
 
     InvalidateRgn(display.hwnd, NULL, true);
 
@@ -3212,8 +3210,7 @@ BOOL SpectrumClicked(WPARAM wParam, LPARAM lParam)
     }
 
     if (zoom.hwnd != NULL)
-	SendMessage(zoom.hwnd, BM_SETCHECK,
-		    spectrum.zoom? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(zoom.hwnd, spectrum.zoom? BST_CHECKED: BST_UNCHECKED);
 
     HKEY hkey;
     LONG error;
@@ -3259,8 +3256,7 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
     InvalidateRgn(strobe.hwnd, NULL, true);
 
     if (enable.hwnd != NULL)
-	SendMessage(enable.hwnd, BM_SETCHECK,
-		    strobe.enable? BST_CHECKED: BST_UNCHECKED, 0);
+	Button_SetCheck(enable.hwnd, strobe.enable? BST_CHECKED: BST_UNCHECKED);
 
     HKEY hkey;
     LONG error;
@@ -3515,7 +3511,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     static double dx[RANGE];
 
     static maximum maxima[MAXIMA];
-    static value   values[MAXIMA];
+    static double  values[MAXIMA];
 
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
@@ -3707,6 +3703,46 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     // Find maximum value, and list of maxima
     for (int i = 1; i < limit; i++)
     {
+        // Clear maxima
+        maxima[count].f  = 0.0;
+        maxima[count].fr = 0.0;
+        maxima[count].n  = 0;
+
+        values[count] = 0.0;
+
+        // Cents relative to reference
+        double cf = -12.0 * log2(audio.reference / xf[i]);
+
+        // Note number
+        int n = round(cf) + C5_OFFSET;
+
+        // Don't use if negative
+        if (n < 0)
+            continue;
+
+        // Fundamental filter
+        if (audio.fund && (count > 0) &&
+            ((n % OCTAVE) != (maxima[0].n % OCTAVE)))
+            continue;
+
+        // Note filter
+        if (audio.note)
+        {
+            // Get note and octave
+            int note = n % OCTAVE;
+            int octave = n / OCTAVE;
+
+            // Ignore too high
+            if (octave >= Length(filter.octave))
+                continue;
+
+            // Ignore if filtered
+            if (!filter.note[note] ||
+                !filter.octave[octave])
+                continue;
+        }
+
+        // Find maximum value
 	if (xa[i] > max)
 	{
 	    max = xa[i];
@@ -3718,17 +3754,14 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    xa[i] > MIN && xa[i] > (max / 4.0) &&
 	    dx[i] > 0.0 && dx[i + 1] < 0.0)
 	{
+            // Frequency
 	    maxima[count].f = xf[i];
-
-	    // Cents relative to reference
-	    double cf =
-	    	-12.0 * log2(audio.reference / xf[i]);
 
 	    // Reference note
 	    maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
 
 	    // Note number
-	    maxima[count].n = round(cf) + C5_OFFSET;
+	    maxima[count].n = n;
 
 	    // Set limit to octave above
 	    if (!audio.down && (limit > i * 2))
@@ -3809,7 +3842,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 
 	// Update spectrum window
 	for (int i = 0; i < count; i++)
-	    values[i].f = maxima[i].f / fps;
+	    values[i] = maxima[i].f / fps;
 
 	spectrum.count = count;
 

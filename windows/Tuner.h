@@ -30,6 +30,7 @@
 #include <windows.h>
 #include <gdiplus.h>
 #include <commctrl.h>
+#include <windowsx.h>
 
 // Macros
 #define Length(a) (sizeof(a) / sizeof(a[0]))
@@ -200,14 +201,6 @@ typedef struct
 
 typedef struct
 {
-    float f;
-    float r;
-    float l;
-    float h;
-} value;
-
-typedef struct
-{
     float x;
     float y;
 } POINTF;
@@ -253,7 +246,7 @@ typedef struct
     float h;
     int count;
     double *data;
-    value *values;
+    double *values;
 } SPECTRUM, *SPECTRUMP;
 
 typedef struct
