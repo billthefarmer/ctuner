@@ -101,8 +101,7 @@ enum
 
 // Bitmap ids
 enum
-    {OPTIONS_BM,
-     QUIT_BM};
+    {OPTIONS_BM};
 
 // Wave in values
 enum

@@ -507,17 +507,26 @@ BOOL WindowResize(HWND hWnd, WPARAM wParam, LPARAM lParam)
     int width = LOWORD(lParam);
     int height = HIWORD(lParam) - toolbar.rect.bottom;
 
-    // if (width < (height * WIDTH) / HEIGHT)
-    // {
-    //     width = (height * WIDTH) / HEIGHT;
+    // Get the window and client dimensions
+    GetWindowRect(hWnd, &window.wind);
+    GetClientRect(hWnd, &window.rect);
 
-    //     // Set new dimensions
-    //     SetWindowPos(hWnd, NULL, 0, 0,
-    //                  width, height,
-    //                  SWP_NOMOVE | SWP_NOZORDER);
+    if (width < (height * WIDTH) / HEIGHT)
+    {
+        // Calculate desired window width and height
+        int border = (window.wind.right - window.wind.left) -
+            window.rect.right;
+        int header = (window.wind.bottom - window.wind.top) -
+            window.rect.bottom;
+        width = ((height * WIDTH) / HEIGHT) + border;
+        height = height + toolbar.rect.bottom + header;
 
-    //     return true;
-    // }
+        // Set new dimensions
+        SetWindowPos(hWnd, NULL, 0, 0,
+                     width, height,
+                     SWP_NOMOVE | SWP_NOZORDER);
+        return true;
+    }
 
     EnumChildWindows(hWnd, EnumChildProc, lParam);
     return true;
