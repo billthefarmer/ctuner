@@ -2,9 +2,9 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Tuner"
-!define PRODUCT_VERSION "1.04"
+!define PRODUCT_VERSION "1.05"
 !define PRODUCT_PUBLISHER "Bill Farmer"
-!define PRODUCT_WEB_SITE "http://ctuner.googlecode.com"
+!define PRODUCT_WEB_SITE "https://github.com/billthefarmer/c-tuner"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Tuner.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -75,7 +75,7 @@ Section -AdditionalIcons
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
   SetShellVarContext all
-  CreateShortCut "$SMPROGRAMS\$ICONS_GROUP\CTuner on Google Code.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  CreateShortCut "$SMPROGRAMS\$ICONS_GROUP\CTuner.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
   CreateShortCut "$SMPROGRAMS\$ICONS_GROUP\Uninstall.lnk" "$INSTDIR\uninst.exe"
   !insertmacro MUI_STARTMENU_WRITE_END
 SectionEnd
@@ -114,7 +114,7 @@ Section Uninstall
 
   SetShellVarContext all
   Delete "$SMPROGRAMS\$ICONS_GROUP\Uninstall.lnk"
-  Delete "$SMPROGRAMS\$ICONS_GROUP\CTuner on Google Code.lnk"
+  Delete "$SMPROGRAMS\$ICONS_GROUP\CTuner.lnk"
   Delete "$SMPROGRAMS\$ICONS_GROUP\Tuner.lnk"
 
   RMDir "$SMPROGRAMS\$ICONS_GROUP"
