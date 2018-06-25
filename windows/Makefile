@@ -4,9 +4,9 @@
 #
 ################################################################################
 
-GCC	  = gcc
-GPLUSPLUS = g++
-WINDRES   = windres
+GCC	= gcc
+GXX     = g++
+WINDRES = windres
 
 all:	Tuner.exe
 
@@ -18,7 +18,7 @@ clean:
 	rm *.exe *.o
 
 %.exe:	%.cpp
-	$(GPLUSPLUS) -o $@ $^ -Os -std=gnu++11 \
+	$(GXX) -o $@ $^ -Os -std=gnu++11 -static \
 	-mwindows -lgdiplus -lcomctl32 -lwinmm -lmsimg32
 
 %.o:	%.rc

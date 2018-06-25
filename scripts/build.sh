@@ -4,7 +4,7 @@ if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
     sudo apt update
     sudo apt install mingw-w64
     cd windows
-    make GPLUSPLUS=x86_64-w64-mingw32-g++ WINDRES=x86_64-w64-mingw32-windres
+    make GXX=x86_64-w64-mingw32-g++ WINDRES=x86_64-w64-mingw32-windres
 
 #    cd ../linux
 #    ./configure
