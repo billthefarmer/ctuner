@@ -299,7 +299,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
 
-        let expandRow = NSStackView(views: [expandLabel, expandPopUp])
+        let expandRow = NSStackView(views: [expandLabel])
+	expandRow.addView(expandPopUp, in: .trailing)
         expandRow.spacing = 8
 
         let colourLabel = NSTextField()
@@ -316,7 +317,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourPopUp.target = self
         colourPopUp.action = #selector(popUpChanged)
 
-        let colourRow = NSStackView(views: [colourLabel, colourPopUp])
+        let colourRow = NSStackView(views: [colourLabel])
+	colourRow.addView(colourPopUp, in: .trailing)
         colourRow.spacing = 8
 
         let refLabel = NSTextField()
@@ -350,16 +352,18 @@ class AppDelegate: NSObject, NSApplicationDelegate
         transPopUp.pullsDown = false
         transPopUp.addItems(withTitles:
                               ["+6[Key:F\u{266F}]", "+5[Key:F]", "+4[Key:E]",
-                               "+3[Key:E\u{266D}]", "+2[Key:D]", "+1[Key:C\u{266F}]",
-                               "+0[Key:C]", "-1[Key:B]", "-2[Key:B\u{266D}]",
-                               "-3[Key:A]", "-4[Key:A\u{266D}]", "-5[Key:G]",
+                               "+3[Key:E\u{266D}]", "+2[Key:D]",
+			       "+1[Key:C\u{266F}]", "+0[Key:C]", "-1[Key:B]",
+			       "-2[Key:B\u{266D}]", "-3[Key:A]",
+			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
         transPopUp.selectItem(at: Int(audioData.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
 
-        let transRow = NSStackView(views: [transLabel, transPopUp])
+        let transRow = NSStackView(views: [transLabel])
+	transRow.addView(transPopUp, in: .trailing)
         transRow.spacing = 8
 
         let tempLabel = NSTextField()
@@ -391,11 +395,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         tempPopUp.target = self
         tempPopUp.action = #selector(popUpChanged)
 
-        let tempRow = NSStackView(views: [tempLabel, tempPopUp])
+        let tempRow = NSStackView(views: [tempLabel])
+	tempRow.addView(tempPopUp, in: .trailing)
         tempRow.spacing = 8
 
         let keyLabel = NSTextField()
-        keyLabel.stringValue = "Key:"
+        keyLabel.stringValue = "Temperament key:"
         keyLabel.isEditable = false
         keyLabel.isBordered = false
         keyLabel.drawsBackground = false
@@ -416,7 +421,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         button.target = self
         button.action = #selector(showNotes)
 
-        let keyRow = NSStackView(views: [keyLabel, keyPopUp, button])
+        let keyRow = NSStackView(views: [keyLabel, keyPopUp])
+	keyRow.addView(button, in: .trailing)
         keyRow.spacing = 8
 
         stack = NSStackView(views: [hStack, expandRow, colourRow, refRow,
@@ -603,8 +609,24 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func popUpChanged(sender: NSPopUpButton)
     {
-        strobeData.colours = Int32(sender.indexOfSelectedItem)
-        strobeData.changed = true
+        switch sender.tag
+        {
+        case kColour:
+            strobeData.colours = Int32(sender.indexOfSelectedItem)
+            strobeData.changed = true
+
+        case kTrans:
+            audioData.trans = Int32(sender.indexOfSelectedItem)
+
+        case kTemp:
+            audioData.temper = Int32(sender.indexOfSelectedItem)
+
+        case kKey:
+            audioData.key = Int32(sender.indexOfSelectedItem)
+
+        default:
+            break
+        }
     }
 
     // refChanged
@@ -655,6 +677,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         if (ref == 0)
         {
             audioData.reference = Double(kA5Reference)
+            audioData.temper = 8
+            audioData.trans = 6
             spectrumData.zoom = true
             spectrumData.expand = 1
             strobeData.colours = 1
@@ -662,6 +686,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
 
         audioData.reference = ref
+        audioData.temper = Int32(defaults.integer(forKey: "Temper"))
+        audioData.trans = Int32(defaults.integer(forKey: "Trans"))
+        audioData.key = Int32(defaults.integer(forKey: "Key"))
         strobeData.colours = Int32(defaults.integer(forKey: "Colours"))
         for (index, key) in keys.enumerated()
         {
@@ -694,6 +721,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         let defaults = UserDefaults.standard
         defaults.set(audioData.reference, forKey: "Ref")
+        defaults.set(audioData.temper, forKey: "Temper")
+        defaults.set(audioData.trans, forKey: "Trans")
+        defaults.set(audioData.key, forKey: "Key")
         defaults.set(strobeData.colours, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
