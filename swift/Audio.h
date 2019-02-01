@@ -83,6 +83,12 @@ enum
     {kRefText = 'RefT',
      kRefStep = 'RefS'};
 
+// Transpose and temperament tags
+enum
+    {kTrans = 'Tran',
+     kTemp  = 'Temp',
+     kKey   = 'Key'};
+
 // Maximum
 typedef struct
 {
@@ -160,6 +166,9 @@ typedef struct
     AudioDeviceID id;
     int divisor;
     int frames;
+    int temper;
+    int trans;
+    int key;
     double *buffer;
     double sample;
     double reference;

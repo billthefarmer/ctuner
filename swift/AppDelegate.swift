@@ -35,6 +35,10 @@ var colourPopUp: NSPopUpButton!
 var refText: NSTextField!
 var refStep: NSStepper!
 
+var transPopUp: NSPopUpButton!
+var temperPopUp: NSPopUpButton!
+var keyPopUp: NSPopUpButton!
+
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
@@ -315,11 +319,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let colourRow = NSStackView(views: [colourLabel, colourPopUp])
         colourRow.spacing = 8
 
-        let label = NSTextField()
-        label.stringValue = "Ref:"
-        label.isEditable = false
-        label.isBordered = false
-        label.drawsBackground = false
+        let refLabel = NSTextField()
+        refLabel.stringValue = "Ref:"
+        refLabel.isEditable = false
+        refLabel.isBordered = false
+        refLabel.drawsBackground = false
         refText = NSTextField()
         refText.tag = kRefText
         refText.doubleValue = audioData.reference
@@ -340,7 +344,25 @@ class AppDelegate: NSObject, NSApplicationDelegate
         button.target = self
         button.action = #selector(showNotes)
 
-        let Refrow = NSStackView(views: [label, refText, refStep, button])
+        let transLabel = NSTextField()
+        transLabel.stringValue = "Transcribe:"
+        transLabel.isEditable = false
+        transLabel.isBordered = false
+        transLabel.drawsBackground = false
+        transPopUp = NSPopUpButton()
+        transPopUp.pullsDown = false
+        transPopUp.addItems(withTitles:
+                              ["+6[Key:F\u266F]", "+5[Key:F]", "+4[Key:E]",
+                               "+3[Key:E\u266D]", "+2[Key:D]", "+1[Key:C\u266F]",
+                               "+0[Key:C]", "-1[Key:B]", "-2[Key:B\u266D]",
+                               "-3[Key:A]", "-4[Key:A\u266D]", "-5[Key:G]",
+                               "-6[Key:F\u266F]"])
+        transPopUp.selectItem(at: Int(audioData.transcribe))
+        transPopUp.tag = kTrans
+        transPopUp.target = self
+        transPopUp.action = #selector(popUpChanged)
+
+        let Refrow = NSStackView(views: [refLabel, refText, refStep, button])
         Refrow.spacing = 8
 
         stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow])
