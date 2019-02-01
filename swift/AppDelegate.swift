@@ -344,6 +344,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         button.target = self
         button.action = #selector(showNotes)
 
+        let Refrow = NSStackView(views: [refLabel, refText, refStep, button])
+        Refrow.spacing = 8
+
         let transLabel = NSTextField()
         transLabel.stringValue = "Transcribe:"
         transLabel.isEditable = false
@@ -357,15 +360,67 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                "+0[Key:C]", "-1[Key:B]", "-2[Key:B\u266D]",
                                "-3[Key:A]", "-4[Key:A\u266D]", "-5[Key:G]",
                                "-6[Key:F\u266F]"])
-        transPopUp.selectItem(at: Int(audioData.transcribe))
+        transPopUp.selectItem(at: Int(audioData.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
 
-        let Refrow = NSStackView(views: [refLabel, refText, refStep, button])
-        Refrow.spacing = 8
+        let Transrow = NSStackView(views: [transLabel, transPopUp])
+        Transrow.spacing = 8
 
-        stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow])
+        let tempLabel = NSTextField()
+        tempLabel.stringValue = "Temperament:"
+        tempLabel.isEditable = false
+        tempLabel.isBordered = false
+        tempLabel.drawsBackground = false
+        tempPopUp = NSPopUpButton()
+        tempPopUp.pullsDown = false
+        tempPopUp.addItems(withTitles:
+                             ["Kirnberger II", "Kirnberger III",
+                              "Werckmeister III", "Werckmeister IV",
+                              "Werckmeister V", "Werckmeister VI",
+                              "Bach (Klais)", "Just (Barbour)",
+                              "Equal Temperament", "Pythagorean",
+                              "Van Zwolle", "Meantone (-1/4)",
+                              "Silbermann (-1/6)", "Salinas (-1/3)",
+                              "Zarlino (-2/7)", "Rossi (-1/5)",
+                              "Rossi (-2/9)", "Rameau (-1/4)",
+                              "Kellner", "Vallotti",
+                              "Young II", "Bendeler III",
+                              "Neidhardt I", "Neidhardt II",
+                              "Neidhardt III", "Bruder 1829",
+                              "Barnes 1977", "Lambert 1774",
+                              "Schlick (H. Vogel)", "Meantone # (-1/4)",
+                              "Meantone b (-1/4)", "Lehman-Bach"])
+        tempPopUp.selectItem(at: Int(audioData.temper))
+        tempPopUp.tag = kTemp
+        tempPopUp.target = self
+        tempPopUp.action = #selector(popUpChanged)
+
+        let Temprow = NSStackView(views: [tempLabel, tempPopUp])
+        Temprow.spacing = 8
+
+        let keyLabel = NSTextField()
+        keyLabel.stringValue = "Key:"
+        keyLabel.isEditable = false
+        keyLabel.isBordered = false
+        keyLabel.drawsBackground = false
+        keyPopUp = NSPopUpButton()
+        keyPopUp.pullsDown = false
+        keyPopUp.addItems(withTitles:
+                            ["C", "C\u266F", "D", "E\u266D",
+                             "E", "F", "F\u266F", "G",
+                             "A\u266D", "A", "B\u266D", "B"])
+        keyPopUp.selectItem(at: Int(audioData.keyer))
+        keyPopUp.tag = kKey
+        keyPopUp.target = self
+        keyPopUp.action = #selector(popUpChanged)
+
+        let Keyrow = NSStackView(views: [keyLabel, keyPopUp])
+        Keyrow.spacing = 8
+
+        stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow,
+                                    transRow, temperRow, keyRow])
         stack.orientation = .vertical
         stack.alignment = .left
         stack.spacing = 16

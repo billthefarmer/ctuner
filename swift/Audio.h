@@ -87,7 +87,7 @@ enum
 enum
     {kTrans = 'Tran',
      kTemp  = 'Temp',
-     kKey   = 'Key'};
+     kKey   = 'Key '};
 
 // Maximum
 typedef struct
