@@ -36,7 +36,7 @@ var refText: NSTextField!
 var refStep: NSStepper!
 
 var transPopUp: NSPopUpButton!
-var temperPopUp: NSPopUpButton!
+var tempPopUp: NSPopUpButton!
 var keyPopUp: NSPopUpButton!
 
 @NSApplicationMain
@@ -320,7 +320,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourRow.spacing = 8
 
         let refLabel = NSTextField()
-        refLabel.stringValue = "Ref:"
+        refLabel.stringValue = "Reference:"
         refLabel.isEditable = false
         refLabel.isBordered = false
         refLabel.drawsBackground = false
@@ -337,15 +337,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refStep.doubleValue = audioData.reference
         refStep.target = self
         refStep.action = #selector(refChanged)
-        let button = NSButton()
-        button.title = "Filters…"
-        button.setButtonType(.momentaryPushIn)
-        button.bezelStyle = .rounded
-        button.target = self
-        button.action = #selector(showNotes)
 
-        let Refrow = NSStackView(views: [refLabel, refText, refStep, button])
-        Refrow.spacing = 8
+        let refRow = NSStackView(views: [refLabel, refText, refStep])
+        refRow.spacing = 8
 
         let transLabel = NSTextField()
         transLabel.stringValue = "Transcribe:"
@@ -355,18 +349,18 @@ class AppDelegate: NSObject, NSApplicationDelegate
         transPopUp = NSPopUpButton()
         transPopUp.pullsDown = false
         transPopUp.addItems(withTitles:
-                              ["+6[Key:F\u266F]", "+5[Key:F]", "+4[Key:E]",
-                               "+3[Key:E\u266D]", "+2[Key:D]", "+1[Key:C\u266F]",
-                               "+0[Key:C]", "-1[Key:B]", "-2[Key:B\u266D]",
-                               "-3[Key:A]", "-4[Key:A\u266D]", "-5[Key:G]",
-                               "-6[Key:F\u266F]"])
+                              ["+6[Key:F\u{266F}]", "+5[Key:F]", "+4[Key:E]",
+                               "+3[Key:E\u{266D}]", "+2[Key:D]", "+1[Key:C\u{266F}]",
+                               "+0[Key:C]", "-1[Key:B]", "-2[Key:B\u{266D}]",
+                               "-3[Key:A]", "-4[Key:A\u{266D}]", "-5[Key:G]",
+                               "-6[Key:F\u{266F}]"])
         transPopUp.selectItem(at: Int(audioData.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
 
-        let Transrow = NSStackView(views: [transLabel, transPopUp])
-        Transrow.spacing = 8
+        let transRow = NSStackView(views: [transLabel, transPopUp])
+        transRow.spacing = 8
 
         let tempLabel = NSTextField()
         tempLabel.stringValue = "Temperament:"
@@ -397,8 +391,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         tempPopUp.target = self
         tempPopUp.action = #selector(popUpChanged)
 
-        let Temprow = NSStackView(views: [tempLabel, tempPopUp])
-        Temprow.spacing = 8
+        let tempRow = NSStackView(views: [tempLabel, tempPopUp])
+        tempRow.spacing = 8
 
         let keyLabel = NSTextField()
         keyLabel.stringValue = "Key:"
@@ -408,19 +402,25 @@ class AppDelegate: NSObject, NSApplicationDelegate
         keyPopUp = NSPopUpButton()
         keyPopUp.pullsDown = false
         keyPopUp.addItems(withTitles:
-                            ["C", "C\u266F", "D", "E\u266D",
-                             "E", "F", "F\u266F", "G",
-                             "A\u266D", "A", "B\u266D", "B"])
-        keyPopUp.selectItem(at: Int(audioData.keyer))
+                            ["C", "C\u{266F}", "D", "E\u{266D}",
+                             "E", "F", "F\u{266F}", "G",
+                             "A\u{266D}", "A", "B\u{266D}", "B"])
+        keyPopUp.selectItem(at: Int(audioData.key))
         keyPopUp.tag = kKey
         keyPopUp.target = self
         keyPopUp.action = #selector(popUpChanged)
+        let button = NSButton()
+        button.title = "Filters…"
+        button.setButtonType(.momentaryPushIn)
+        button.bezelStyle = .rounded
+        button.target = self
+        button.action = #selector(showNotes)
 
-        let Keyrow = NSStackView(views: [keyLabel, keyPopUp])
-        Keyrow.spacing = 8
+        let keyRow = NSStackView(views: [keyLabel, keyPopUp, button])
+        keyRow.spacing = 8
 
-        stack = NSStackView(views: [hStack, expandRow, colourRow, Refrow,
-                                    transRow, temperRow, keyRow])
+        stack = NSStackView(views: [hStack, expandRow, colourRow, refRow,
+                                    transRow, tempRow, keyRow])
         stack.orientation = .vertical
         stack.alignment = .left
         stack.spacing = 16
