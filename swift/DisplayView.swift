@@ -53,7 +53,7 @@ class DisplayView: TunerView
         {
 	    // Select font
             let font = NSFont.systemFont(ofSize: textSizeSmall)
-            let attribs: [NSAttributedStringKey: Any] = [.font: font]
+            let attribs: [NSAttributedString.Key: Any] = [.font: font]
 
             var s = ""
             var x = NSMinX(rect) + 2
@@ -160,7 +160,7 @@ class DisplayView: TunerView
 
 	    // Select font
             var font = NSFont.boldSystemFont(ofSize: textSizeLarger)
-            var attribs: [NSAttributedStringKey: Any] = [.font: font]
+            var attribs: [NSAttributedString.Key: Any] = [.font: font]
 
 	    s = String(format: "%@", notes[Int(displayData.n) % notes.endIndex])
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
@@ -229,7 +229,7 @@ class DisplayView: TunerView
         if (displayData.lock == true)
         {
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            let attribs: [NSAttributedStringKey: Any] = [.font: font]
+            let attribs: [NSAttributedString.Key: Any] = [.font: font]
 
             "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
                      withAttributes: attribs)

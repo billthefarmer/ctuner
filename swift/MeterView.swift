@@ -60,7 +60,7 @@ class MeterView: TunerView
 
         // Font
         let font = NSFont.systemFont(ofSize: textSize)
-        var attribs: [NSAttributedStringKey: Any] = [.font: font]
+        var attribs: [NSAttributedString.Key: Any] = [.font: font]
 
         // Scale text if necessary
         let dx = "50".size(withAttributes: attribs).width

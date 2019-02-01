@@ -132,7 +132,7 @@ class ScopeView: TunerView
 
 	// Select font
         let font = NSFont.systemFont(ofSize: kTextSize)
-        let attribs: [NSAttributedStringKey: Any] =
+        let attribs: [NSAttributedString.Key: Any] =
           [.foregroundColor: NSColor.yellow,
            .font: font]
 

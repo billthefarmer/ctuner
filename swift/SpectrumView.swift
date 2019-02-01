@@ -166,7 +166,7 @@ class SpectrumView: TunerView
 
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            let attribs: [NSAttributedStringKey: Any] =
+            let attribs: [NSAttributedString.Key: Any] =
               [.foregroundColor: NSColor.yellow, .font: font]
             context.shouldAntialias = true;
 
@@ -280,7 +280,7 @@ class SpectrumView: TunerView
 
 	    // Select font
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
-            let attribs: [NSAttributedStringKey: Any] =
+            let attribs: [NSAttributedString.Key: Any] =
               [.foregroundColor: NSColor.yellow,
                .font: font]
             context.shouldAntialias = true;
@@ -322,7 +322,7 @@ class SpectrumView: TunerView
         }
 
         let font = NSFont.systemFont(ofSize: kTextSize)
-        let attribs: [NSAttributedStringKey: Any] =
+        let attribs: [NSAttributedString.Key: Any] =
           [.foregroundColor: NSColor.yellow, .font: font]
         context.shouldAntialias = true;
 
