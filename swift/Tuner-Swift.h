@@ -256,6 +256,15 @@ SWIFT_CLASS("_TtC5Tuner12SpectrumView")
 @end
 
 
+SWIFT_CLASS("_TtC5Tuner9StaffView")
+@interface StaffView : TunerView
+- (void)mouseDown:(NSEvent * _Nonnull)event;
+- (void)drawRect:(NSRect)dirtyRect;
+- (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
+- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)decoder OBJC_DESIGNATED_INITIALIZER;
+@end
+
+
 SWIFT_CLASS("_TtC5Tuner10StrobeView")
 @interface StrobeView : TunerView
 - (void)mouseDown:(NSEvent * _Nonnull)event;

@@ -48,10 +48,13 @@ class StrobeView: TunerView
         if (event.type == .leftMouseDown)
         {
             strobeData.enable = !strobeData.enable
+            staffData.enable = !strobeData.enable
             if (strbBox != nil)
             {
                 strbBox.state = strobeData.enable ? .on: .off
             }
+
+            isHidden = !strobeData.enable
             needsDisplay = true
         }
     }
