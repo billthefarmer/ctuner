@@ -1,5 +1,5 @@
 //
-//  Strobe.swift
+//  StrobeView.swift
 //  Tuner
 //
 //  Created by Bill Farmer on 08/10/2017.
@@ -30,7 +30,7 @@ class StrobeView: TunerView
     let colours: [[[CGFloat]]] =
       [[[0.25, 0.25, 1, 1], [0.25, 1, 1, 1]],
        [[0.5, 0.5, 0, 1], [0.5, 1, 0.85, 1]],
-       [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]];
+       [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]]
 
     let kMaxColours: Int32 = 3
 
