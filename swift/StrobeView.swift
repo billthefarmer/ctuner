@@ -55,6 +55,7 @@ class StrobeView: TunerView
             }
 
             isHidden = !strobeData.enable
+            staffView.isHidden = !staffData.enable
             needsDisplay = true
         }
     }
@@ -65,11 +66,6 @@ class StrobeView: TunerView
         super.draw(dirtyRect)
 
         // Drawing code here.
-        if (!strobeData.enable)
-        {
-            NSEraseRect(rect)
-            return
-        }
 
         // Create patterns
         if (gradient == nil || strobeData.changed)

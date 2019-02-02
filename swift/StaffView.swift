@@ -111,6 +111,7 @@ class StaffView: TunerView
             }
 
             isHidden = !staffData.enable
+            strobeView.isHidden = !strobeData.enable
             needsDisplay = true
         }
     }

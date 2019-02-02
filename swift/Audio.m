@@ -647,31 +647,31 @@ void (^ProcessAudio)() = ^
 
         // Cents relative to reference
         double cf = -12.0 * log2(audioData.reference / xf[i]);
-        int n = round(cf) + kC5Offset;
+        int note = round(cf) + kC5Offset;
 
         // Ignore negative
-        if (n < 0)
+        if (note < 0)
             continue;
 
         // Fundamental filter
         if ((audioData.fund) && (count > 0) &&
-            ((n % kOctave) != (maxima[0].n % kOctave)))
+            ((note % kOctave) != (maxima[0].n % kOctave)))
             continue;
 
         // Note filter
         if (audioData.note)
         {
             // Get note and octave
-            int note = n % kOctave;
-            int octave = n / kOctave;
+            int n = note % kOctave;
+            int o = note / kOctave;
 
             // Ignore too high
-            if (octave >= Length(filterData.octave))
+            if (o >= Length(filterData.octave))
                 continue;
 
             // Ignore if filtered
-            if (!filterData.note[note] ||
-                !filterData.octave[octave])
+            if (!filterData.note[n] ||
+                !filterData.octave[o])
                 continue;
         }
 
@@ -684,11 +684,26 @@ void (^ProcessAudio)() = ^
 	    maxima[count].f = xf[i];
 
 	    // Note number
-	    maxima[count].n = n;
+	    maxima[count].n = note;
+
+	    // Octave note number
+	    int n = (note - audioData.key + kOctave) % kOctave;
+	    // A note number
+	    int a = (kAOffset - audioData.key + kOctave) % kOctave;
+
+	    // Temperament ratio
+	    double temperRatio = temperamentValues[audioData.temper][n] /
+	      temperamentValues[audioData.temper][a];
+	    // Equal ratio
+	    double equalRatio = temperamentValues[kEqual][n] /
+	      temperamentValues[kEqual][a];
+
+	    // Temperament adjustment
+	    double temperAdjust = temperRatio / equalRatio;
 
 	    // Reference note
 	    maxima[count].fr = audioData.reference *
-                pow(2.0, round(cf) / 12.0);
+                pow(2.0, round(cf) / 12.0) * temperAdjust;
 
 	    // Set limit to octave above
 	    if (!audioData.down && (limit > i * 2))
@@ -704,7 +719,7 @@ void (^ProcessAudio)() = ^
     double fh = 0.0;
 
     // Note number
-    int n = 0;
+    int note = 0;
 
     // Found flag and cents value
     bool found = false;
@@ -729,18 +744,35 @@ void (^ProcessAudio)() = ^
             found = false;
         }
 
+	// Note number
+	note = round(cf) + kC5Offset;
+
+	if (note < 0)
+	    found = false;
+
+	// Octave note number
+	int n = (note - audioData.key + kOctave) % kOctave;
+	// A note number
+	int a = (kAOffset - audioData.key + kOctave) % kOctave;
+
+	// Temperament ratio
+	double temperRatio = temperamentValues[audioData.temper][n] /
+	  temperamentValues[audioData.temper][a];
+	// Equal ratio
+	double equalRatio = temperamentValues[kEqual][n] /
+	  temperamentValues[kEqual][a];
+
+	    // Temperament adjustment
+	    double temperAdjust = temperRatio / equalRatio;
+
 	// Reference note
-	fr = audioData.reference * pow(2.0, round(cf) / 12.0);
+	fr = audioData.reference * pow(2.0, round(cf) / 12.0) * temperAdjust;
 
 	// Lower and upper freq
-	fl = audioData.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
-	fh = audioData.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
-
-	// Note number
-	n = round(cf) + kC5Offset;
-
-	if (n < 0)
-	    found = false;
+	fl = audioData.reference * pow(2.0, (round(cf) - 0.60) /
+				       12.0) * temperAdjust;
+	fh = audioData.reference * pow(2.0, (round(cf) + 0.60) /
+				       12.0) * temperAdjust;
 
 	// Find nearest maximum to reference note
 	double df = 1000.0;
@@ -765,7 +797,7 @@ void (^ProcessAudio)() = ^
         }
 
 	// Ignore if not within 50 cents of reference note
-	if (fabs(c) > 0.5)
+	if (fabs(c) > 0.6)
 	    found = false;
     }
 
@@ -807,7 +839,7 @@ void (^ProcessAudio)() = ^
 	    displayData.f = f;
 	    displayData.fr = fr;
 	    displayData.c = c;
-	    displayData.n = n;
+	    displayData.n = note;
 	    displayData.count = count;
 
 	    // Update display

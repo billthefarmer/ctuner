@@ -603,6 +603,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         case kStrobe:
             strobeData.enable = (sender.state == .on) ? true: false
+            staffData.enable = !strobeData.enable
+
+            strobeView.isHidden = !strobeData.enable
+            staffView.isHidden = !staffData.enable
 
         case kDown:
             audioData.down = (sender.state == .on) ? true: false
@@ -706,23 +710,26 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             switch index
             {
-            case kZoom:
+            case 0:
                 spectrumData.zoom = defaults.bool(forKey: key)
 
-            case kFilt:
+            case 1:
                 audioData.filt = defaults.bool(forKey: key)
 
-            case kStrobe:
+            case 2:
                 strobeData.enable = defaults.bool(forKey: key)
-                staffData.enable = !strobeData.enable
 
-            case kDown:
+            case 3:
                 audioData.down = defaults.bool(forKey: key)
 
             default:
                 break
             }
         }
+
+        strobeView.isHidden = !strobeData.enable
+        staffData.enable = !strobeData.enable
+        staffView.isHidden = !staffData.enable
     }
 
     // savePreferences
