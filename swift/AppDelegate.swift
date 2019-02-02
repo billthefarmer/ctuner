@@ -92,6 +92,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         spectrumView = SpectrumView()
         displayView = DisplayView()
         strobeView = StrobeView()
+        staffView = StaffView()
         meterView = MeterView()
 
         // Tooltips
@@ -99,6 +100,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         spectrumView.toolTip = "Spectrum - click to zoom"
         displayView.toolTip = "Display - click to lock"
         strobeView.toolTip = "Strobe - click to display"
+        staffView.toolTip = "Staff - click to lock"
         meterView.toolTip = "Meter - click to lock"
 
         // Redraw policy
@@ -106,11 +108,12 @@ class AppDelegate: NSObject, NSApplicationDelegate
         spectrumView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         displayView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         strobeView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+        staffView.layerContentsRedrawPolicy = .onSetNeedsDisplay
         meterView.layerContentsRedrawPolicy = .onSetNeedsDisplay
 
         // Stack
         stack = NSStackView(views: [scopeView, spectrumView, displayView,
-                                    strobeView, meterView])
+                                    strobeView, staffView, meterView])
 
         // View height constraints
         let spectrumHeight = NSLayoutConstraint(item: spectrumView,
@@ -137,6 +140,14 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                               multiplier: 1.375,
                                               constant: 0)
 
+        let staffHeight = NSLayoutConstraint(item: staffView,
+                                             attribute: .height,
+                                             relatedBy: .equal,
+                                             toItem: spectrumView,
+                                             attribute: .height,
+                                             multiplier: 1.375,
+                                             constant: 0)
+
         let meterHeight = NSLayoutConstraint(item: meterView,
                                              attribute: .height,
                                              relatedBy: .equal,
@@ -149,6 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         stack.addConstraint(spectrumHeight)
         stack.addConstraint(displayHeight)
         stack.addConstraint(strobeHeight)
+        stack.addConstraint(staffHeight)
         stack.addConstraint(meterHeight)
 
         // Config stack
@@ -702,6 +714,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
             case kStrobe:
                 strobeData.enable = defaults.bool(forKey: key)
+                staffData.enable = !strobeData.enable
 
             case kDown:
                 audioData.down = defaults.bool(forKey: key)

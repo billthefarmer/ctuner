@@ -101,6 +101,7 @@ ScopeView *scopeView;
 SpectrumView *spectrumView;
 DisplayView *displayView;
 StrobeView *strobeView;
+StaffView *staffView;
 MeterView *meterView;
 
 // Scope data
@@ -151,6 +152,14 @@ typedef struct
     double c;
 } StrobeData;
 StrobeData strobeData;
+
+// Staff data
+typedef struct
+{
+    bool enable;
+    int note;
+} StaffData;
+StaffData staffData;
 
 // Meter data
 typedef struct
