@@ -1,0 +1,13 @@
+table, th, td {
+    border: none;
+}
+
+td {
+    vertical-align: top;
+    padding: 0;
+}
+
+section.page h1 {
+    border: none;
+    padding: 0;
+}
