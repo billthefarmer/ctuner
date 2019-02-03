@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Using on Tuner</title>
+    <link>https://billthefarmer.github.io/ctuner/using/</link>
+    <description>Recent content in Using on Tuner</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-gb</language>
+    <copyright>Copyright &amp;copy; 2018 Bill Farmer</copyright>
+    <lastBuildDate>Sun, 03 Feb 2019 09:07:57 +0000</lastBuildDate>
+    
+	<atom:link href="https://billthefarmer.github.io/ctuner/using/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Keyboard Shortcuts</title>
+      <link>https://billthefarmer.github.io/ctuner/using/shortcuts/</link>
+      <pubDate>Sun, 03 Feb 2019 09:23:59 +0000</pubDate>
+      
+      <guid>https://billthefarmer.github.io/ctuner/using/shortcuts/</guid>
+      <description>There are a number of keyboard shortcuts for toggling the options. Some options may not be implemented on all versions.
+ F - Low pass filter L - Display lock D - Downsampling M - Multiple notes Z - Spectrum zoom S - Strobe or Staff display K - Change strobe colours C - Copy results to clipboard  The spectrum expand/contract options apply to the non-zoomed spectrum.
+ + - Expand the spectrum display &amp;ndash; - Contract the spectrum display  </description>
+    </item>
+    
+  </channel>
+</rss>

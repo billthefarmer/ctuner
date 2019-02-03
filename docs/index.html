@@ -38,6 +38,22 @@
             
                 <li><a href="#displays">Displays</a></li>
             
+                <li><a href="#options">Options</a></li>
+            
+        </ul>
+    </li>
+
+
+
+        
+            
+    <li>
+        <a href="#using">Using</a>
+        <ul>
+            
+            
+                <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
+            
         </ul>
     </li>
 
@@ -56,7 +72,7 @@
     </div>
 
     <div class="version">
-            generated on Feb 2, 2019
+            generated on Feb 3, 2019
     </div>
 </div>
 
@@ -70,7 +86,8 @@
     </h1>
     <div class="content">
         <p><a href="https://github.com/billthefarmer/ctuner">Tuner</a> is a musical intrument tuner developed for tuning
-accordions. It has many features intended to help with this.</p>
+accordions. It has many features intended to help with this particular
+use case, but may be used to tune any musical instrument.</p>
 
 <table>
 <thead>
@@ -107,6 +124,90 @@ error, reference note frequency and actual measured frequency</li>
 <li>Strobe display, which may be hidden to remove distraction</li>
 <li>Staff display, which replaces the strobe display when hidden</li>
 <li>Meter display, showing the cents error</li>
+</ul>
+
+    </div>
+</section>
+
+            
+                <section class="page" id="options">
+    <h1>
+        <a href="#options">Options</a>
+    </h1>
+    <div class="content">
+        <ul>
+<li>Low pass filter option for tuning bass reeds</li>
+<li>Fundamental filter option to remove spurious results</li>
+<li>Note filter - show only one note</li>
+<li>Downsampling option - use with caution</li>
+<li>Spectrum zoom - show just the current note</li>
+<li>Display lock - locks all the displays</li>
+<li>Multiple results - show up to eight results</li>
+<li>Copy results to clipboard</li>
+<li>Adjustable reference frequency</li>
+<li>Transpose the results display</li>
+<li>Multiple temperaments</li>
+</ul>
+
+    </div>
+</section>
+
+            
+
+
+
+        
+            
+    <section class="page" id="using">
+    <h1>
+        <a href="#using">Using</a>
+    </h1>
+    <div class="content">
+        <p>Play your instrument into your microphone and observe the display. The
+oscilloscope display at the top shows the input waveform. The display
+below shows the spectrum of the input. It may be zoomed in and out by
+clicking on the pane. When zoomed in the display shows about
+&plusmn;60 cents around the current note and includes all concurrent
+notes within that range.</p>
+
+<p>The numeric display shows the note, deviation in cents, correct
+frequency, actual frequency, reference and frequency deviation. The
+display may be locked by clicking on it. The displayed values may be
+copied to the clipboard for pasting into another application by typing
+Ctrl-C. The strobe display below shifts left or right according to
+whether the input note is flat or sharp. The alternative staff display
+shows the note on a musical staff. It displays may be switched by
+clicking on them. The meter below shows the deviation in cents.</p>
+
+    </div>
+</section>
+
+    
+            
+                <section class="page" id="shortcuts">
+    <h1>
+        <a href="#shortcuts">Keyboard Shortcuts</a>
+    </h1>
+    <div class="content">
+        <p>There are a number of keyboard shortcuts for toggling the
+options. Some options may not be implemented on all versions.</p>
+
+<ul>
+<li><strong>F</strong> - Low pass filter</li>
+<li><strong>L</strong> - Display lock</li>
+<li><strong>D</strong> - Downsampling</li>
+<li><strong>M</strong> - Multiple notes</li>
+<li><strong>Z</strong> - Spectrum zoom</li>
+<li><strong>S</strong> - Strobe or Staff display</li>
+<li><strong>K</strong> - Change strobe colours</li>
+<li><strong>C</strong> - Copy results to clipboard</li>
+</ul>
+
+<p>The spectrum expand/contract options apply to the non-zoomed spectrum.</p>
+
+<ul>
+<li><strong>+</strong> - Expand the spectrum display</li>
+<li><strong>&ndash;</strong> - Contract the spectrum display</li>
 </ul>
 
     </div>
