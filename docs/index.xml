@@ -27,7 +27,8 @@
       <pubDate>Sun, 03 Feb 2019 09:02:53 +0000</pubDate>
       
       <guid>https://billthefarmer.github.io/ctuner/introduction/options/</guid>
-      <description> Low pass filter option for tuning bass reeds Fundamental filter option to remove spurious results Note filter - show only one note Downsampling option - use with caution Spectrum zoom - show just the current note Display lock - locks all the displays Multiple results - show up to eight results Copy results to clipboard Adjustable reference frequency Transpose the results display Multiple temperaments  </description>
+      <description>Some options may not be implemented on all versions.
+ Low pass filter option for tuning bass reeds Fundamental filter option to remove spurious results Note filter - show only one note Downsampling option - use with caution Spectrum zoom - show just the current note Display lock - locks all the displays Multiple results - show up to eight results Copy results to clipboard Adjustable reference frequency Transpose the results display Multiple temperaments  </description>
     </item>
     
     <item>
@@ -36,7 +37,7 @@
       <pubDate>Sun, 03 Feb 2019 09:23:59 +0000</pubDate>
       
       <guid>https://billthefarmer.github.io/ctuner/using/shortcuts/</guid>
-      <description>There are a number of keyboard shortcuts for toggling the options. Some options may not be implemented on all versions.
+      <description>There are a number of keyboard shortcuts for toggling the options. Some may not be implemented on all versions.
  F - Low pass filter L - Display lock D - Downsampling M - Multiple notes Z - Spectrum zoom S - Strobe or Staff display K - Change strobe colours C - Copy results to clipboard  The spectrum expand/contract options apply to the non-zoomed spectrum.
  + - Expand the spectrum display &amp;ndash; - Contract the spectrum display  </description>
     </item>

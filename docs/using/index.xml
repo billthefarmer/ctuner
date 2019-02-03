@@ -18,7 +18,7 @@
       <pubDate>Sun, 03 Feb 2019 09:23:59 +0000</pubDate>
       
       <guid>https://billthefarmer.github.io/ctuner/using/shortcuts/</guid>
-      <description>There are a number of keyboard shortcuts for toggling the options. Some options may not be implemented on all versions.
+      <description>There are a number of keyboard shortcuts for toggling the options. Some may not be implemented on all versions.
  F - Low pass filter L - Display lock D - Downsampling M - Multiple notes Z - Spectrum zoom S - Strobe or Staff display K - Change strobe colours C - Copy results to clipboard  The spectrum expand/contract options apply to the non-zoomed spectrum.
  + - Expand the spectrum display &amp;ndash; - Contract the spectrum display  </description>
     </item>
