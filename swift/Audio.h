@@ -141,6 +141,7 @@ typedef struct
     bool zoom;
     bool mult;
     int count;
+    int trans;
     int n;
 } DisplayData;
 DisplayData displayData;
@@ -182,7 +183,6 @@ typedef struct
     int divisor;
     int frames;
     int temper;
-    int trans;
     int key;
     double *buffer;
     double sample;

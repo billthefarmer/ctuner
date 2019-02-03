@@ -298,7 +298,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         hStack.edgeInsets = NSEdgeInsets(top: 0, left: 40,
                                          bottom: 0, right: 40)
         let expandLabel = NSTextField()
-        expandLabel.stringValue = "Spectrum expand:"
+        expandLabel.stringValue = "Spectrum display expand:"
         expandLabel.isEditable = false
         expandLabel.isBordered = false
         expandLabel.drawsBackground = false
@@ -369,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 			       "-2[Key:B\u{266D}]", "-3[Key:A]",
 			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
-        transPopUp.selectItem(at: Int(audioData.trans))
+        transPopUp.selectItem(at: Int(displayData.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
@@ -625,20 +625,24 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func popUpChanged(sender: NSPopUpButton)
     {
+        let transpositions: [Int] =
+          [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
+        let index = sender.indexOfSelectedItem
+
         switch sender.tag
         {
         case kColour:
-            strobeData.colours = Int32(sender.indexOfSelectedItem)
+            strobeData.colours = Int32(index)
             strobeData.changed = true
 
         case kTrans:
-            audioData.trans = Int32(sender.indexOfSelectedItem)
+            displayData.trans = Int32(transpositions[index])
 
         case kTemp:
-            audioData.temper = Int32(sender.indexOfSelectedItem)
+            audioData.temper = Int32(index)
 
         case kKey:
-            audioData.key = Int32(sender.indexOfSelectedItem)
+            audioData.key = Int32(index)
 
         default:
             break
@@ -694,7 +698,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             audioData.reference = Double(kA5Reference)
             audioData.temper = 8
-            audioData.trans = 6
+            displayData.trans = 6
             spectrumData.zoom = true
             spectrumData.expand = 1
             strobeData.colours = 1
@@ -703,8 +707,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         audioData.reference = ref
         audioData.temper = Int32(defaults.integer(forKey: "Temper"))
-        audioData.trans = Int32(defaults.integer(forKey: "Trans"))
         audioData.key = Int32(defaults.integer(forKey: "Key"))
+        displayData.trans = Int32(defaults.integer(forKey: "Trans"))
         strobeData.colours = Int32(defaults.integer(forKey: "Colours"))
         for (index, key) in keys.enumerated()
         {
@@ -742,8 +746,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let defaults = UserDefaults.standard
         defaults.set(audioData.reference, forKey: "Ref")
         defaults.set(audioData.temper, forKey: "Temper")
-        defaults.set(audioData.trans, forKey: "Trans")
         defaults.set(audioData.key, forKey: "Key")
+        defaults.set(displayData.trans, forKey: "Trans")
         defaults.set(strobeData.colours, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {

@@ -38,11 +38,11 @@ SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
 		StaffView.swift TunerView.swift $(AUDIOOBJ)
 
-SFLAGS = -g -target x86_64-apple-macosx10.9 \
+SFLAGS = -target x86_64-apple-macosx10.9 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
 	-Xlinker -rpath -Xlinker @loader_path/../Frameworks -Xlinker -w
 
-CFLAGS = -g -target x86_64-apple-macosx10.9
+CFLAGS = -target x86_64-apple-macosx10.9
 
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(RM) -rf $(APPBUNDLE)
@@ -60,7 +60,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 $(APPNAME): $(SOURCES)
 	$(SWIFTC) $(SOURCES) -o $(APPNAME) $(SFLAGS)
 
-$(AUDIOOBJ):	$(AUDIO).m Audio.h Makefile
+$(AUDIOOBJ):	$(AUDIO).m Audio.h Temperaments.h Makefile
 
 $(APPNAME).icns: $(APPNAME).png
 	$(RM) -rf $(APPNAME).iconset
