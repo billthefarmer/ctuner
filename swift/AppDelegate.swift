@@ -360,6 +360,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         transLabel.isEditable = false
         transLabel.isBordered = false
         transLabel.drawsBackground = false
+        let trans = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
         transPopUp = NSPopUpButton()
         transPopUp.pullsDown = false
         transPopUp.addItems(withTitles:
@@ -369,7 +370,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 			       "-2[Key:B\u{266D}]", "-3[Key:A]",
 			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
-        transPopUp.selectItem(at: Int(displayData.trans))
+        transPopUp.selectItem(at: trans[Int(displayData.trans)])
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
@@ -625,8 +626,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
     @objc func popUpChanged(sender: NSPopUpButton)
     {
-        let transpositions: [Int] =
-          [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
+        let values = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
         let index = sender.indexOfSelectedItem
 
         switch sender.tag
@@ -636,7 +636,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             strobeData.changed = true
 
         case kTrans:
-            displayData.trans = Int32(transpositions[index])
+            displayData.trans = Int32(values[index])
 
         case kTemp:
             audioData.temper = Int32(index)

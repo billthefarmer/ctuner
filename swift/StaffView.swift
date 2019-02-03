@@ -129,17 +129,54 @@ class StaffView: TunerView
         NSEraseRect(rect)
         if treble.isEmpty
         {
-            for (index, value) in tc.enumerated()
+            // Treble clef
+            treble.move(to: NSMakePoint(tc[0][0], tc[0][1]))
+            treble.line(to: NSMakePoint(tc[1][0], tc[1][1]))
+            for i in stride(from: 2, to: tc.count, by: 3)
             {
-                if index == 0
-                {
-                  treble.move(to: NSMakePoint(value[0], value[1]));
-                }
+                treble.curve(to: NSMakePoint(tc[i + 2][0], tc[i + 2][1]),
+                             controlPoint1: NSMakePoint(tc[i][0], tc[i][1]),
+                             controlPoint2: NSMakePoint(tc[i + 1][0],
+                                                        tc[i + 1][1]));
+            }
 
-                else
-                {
-                    treble.line(to: NSMakePoint(value[0], value[1]));
-                }
+            // Bass clef
+            bass.move(to: NSMakePoint(bc[0][0], bc[0][1]))
+            for i in stride(from: 1, to: 27, by: 3)
+            {
+                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                           controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                      bc[i + 1][1]));
+            }
+
+            // Two dots
+            bass.move(to: NSMakePoint(bc[28][0], bc[25][1]))
+            for i in stride(from: 29, to: 34, by: 3)
+            {
+                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                           controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                      bc[i + 1][1]));
+            }
+
+            bass.move(to: NSMakePoint(bc[35][0], bc[25][1]))
+            for i in stride(from: 36, to: bc.count, by: 3)
+            {
+                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                           controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                      bc[i + 1][1]));
+            }
+
+            // Note head
+            head.move(to: NSMakePoint(hd[0][0], hd[0][1]))
+            for i in stride(from: 1, to: hd.count, by: 3)
+            {
+                head.curve(to: NSMakePoint(hd[i + 2][0], hd[i + 2][1]),
+                           controlPoint1: NSMakePoint(hd[i][0], hd[i][1]),
+                           controlPoint2: NSMakePoint(hd[i + 1][0],
+                                                      hd[i + 1][1]));
             }
         }
     }

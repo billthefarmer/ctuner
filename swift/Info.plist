@@ -1,58 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+"http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<key>BuildMachineOSBuild</key>
-	<string>16G29</string>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
-	<key>CFBundleExecutable</key>
-	<string>Tuner</string>
-        <key>CFBundleHelpBookFolder</key>
-        <string>.</string>
-        <key>CFBundleHelpBookName</key>
-        <string>Help.rtf</string>
-	<key>CFBundleIconFile</key>
-	<string>Tuner.icns</string>
-	<key>CFBundleIdentifier</key>
-	<string>org.billthefarmer.Tuner</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>Tuner</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.05</string>
-	<key>CFBundleSupportedPlatforms</key>
-	<array>
-		<string>MacOSX</string>
-	</array>
-	<key>CFBundleVersion</key>
-	<string>1.05</string>
-	<key>DTCompiler</key>
-	<string>com.apple.compilers.llvm.clang.1_0</string>
-	<key>DTPlatformBuild</key>
-	<string>9A235</string>
-	<key>DTPlatformVersion</key>
-	<string>GM</string>
-	<key>DTSDKBuild</key>
-	<string>17A360</string>
-	<key>DTSDKName</key>
-	<string>macosx10.13</string>
-	<key>DTXcode</key>
-	<string>0900</string>
-	<key>DTXcodeBuild</key>
-	<string>9A235</string>
-	<key>LSApplicationCategoryType</key>
-	<string>public.app-category.music</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.9</string>
-	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2017 Bill Farmer. All rights reserved.</string>
-	<key>NSMainNibFile</key>
-	<string>MainMenu</string>
-	<key>NSPrincipalClass</key>
-	<string>NSApplication</string>
-</dict>
+  <dict>
+    <key>BuildMachineOSBuild</key>
+    <string>16G29</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    <key>CFBundleExecutable</key>
+    <string>Tuner</string>
+    <key>CFBundleHelpBookFolder</key>
+    <string>.</string>
+    <key>CFBundleHelpBookName</key>
+    <string>Help.rtf</string>
+    <key>CFBundleIconFile</key>
+    <string>Tuner.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>org.billthefarmer.Tuner</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Tuner</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.05</string>
+    <key>CFBundleSupportedPlatforms</key>
+    <array>
+      <string>MacOSX</string>
+    </array>
+    <key>CFBundleVersion</key>
+    <string>1.05</string>
+    <key>DTCompiler</key>
+    <string>com.apple.compilers.llvm.clang.1_0</string>
+    <key>DTPlatformBuild</key>
+    <string>9A235</string>
+    <key>DTPlatformVersion</key>
+    <string>GM</string>
+    <key>DTSDKBuild</key>
+    <string>17A360</string>
+    <key>DTSDKName</key>
+    <string>macosx10.13</string>
+    <key>DTXcode</key>
+    <string>0900</string>
+    <key>DTXcodeBuild</key>
+    <string>9A235</string>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.music</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.9</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2017 Bill Farmer. All rights reserved.</string>
+    <key>NSMainNibFile</key>
+    <string>MainMenu</string>
+    <key>NSPrincipalClass</key>
+    <string>NSApplication</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>
+      This app requires microphone access to record the audio of
+      your instrument.
+    </string>
+  </dict>
 </plist>
