@@ -70,7 +70,13 @@ class TunerView: NSView
 
         switch key.lowercased()
         {
-        case "c", "k":
+        case "c":
+            // let s = String(format: "%@%@%d %+4.2lf\u{00A2} %4.2lfHz"
+            let pboard = NSPasteboard.general
+            pboard.clearContents()
+            pboard.setString("Test", forType: .string)
+
+        case "k":
             strobeData.colours += 1
             if (strobeData.colours >= strobeView.kMaxColours)
             {
