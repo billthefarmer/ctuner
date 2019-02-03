@@ -118,11 +118,15 @@ class TunerView: NSView
 
         case "s":
             strobeData.enable = !strobeData.enable
+            staffData.enable = !strobeData.enable
+            strobeView.isHidden = !strobeData.enable
+            staffView.isHidden = !staffData.enable
             if (strbBox != nil)
             {
                 strbBox.state = strobeData.enable ? .on: .off
             }
             strobeView.needsDisplay = true
+            staffView.needsDisplay = true
 
         case "z":
             spectrumData.zoom = !spectrumData.zoom

@@ -334,7 +334,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourRow.spacing = 8
 
         let refLabel = NSTextField()
-        refLabel.stringValue = "Reference:"
+        refLabel.stringValue = "Reference frequency:"
         refLabel.isEditable = false
         refLabel.isBordered = false
         refLabel.drawsBackground = false
@@ -356,7 +356,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refRow.spacing = 8
 
         let transLabel = NSTextField()
-        transLabel.stringValue = "Transcribe:"
+        transLabel.stringValue = "Transpose display:"
         transLabel.isEditable = false
         transLabel.isBordered = false
         transLabel.drawsBackground = false
@@ -441,7 +441,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                     transRow, tempRow, keyRow])
         stack.orientation = .vertical
         stack.alignment = .left
-        stack.spacing = 16
+        stack.spacing = 8
         stack.edgeInsets = NSEdgeInsets(top: 40, left: 40,
                                         bottom: 40, right: 40)
 
