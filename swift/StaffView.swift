@@ -98,6 +98,10 @@ class StaffView: TunerView
         3, 4, 5, 5, 6, 6
       ]
 
+    let treble = NSBezierPath()
+    let bass = NSBezierPath()
+    let head = NSBezierPath()
+
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
@@ -123,6 +127,20 @@ class StaffView: TunerView
 
         // Drawing code here.
         NSEraseRect(rect)
+        if treble.isEmpty
+        {
+            for (index, value) in tc.enumerated()
+            {
+                if index == 0
+                {
+                  treble.move(to: NSMakePoint(value[0], value[1]));
+                }
 
+                else
+                {
+                    treble.line(to: NSMakePoint(value[0], value[1]));
+                }
+            }
+        }
     }
 }

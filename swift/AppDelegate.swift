@@ -99,8 +99,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
         scopeView.toolTip = "Scope - click to filter audio"
         spectrumView.toolTip = "Spectrum - click to zoom"
         displayView.toolTip = "Display - click to lock"
-        strobeView.toolTip = "Strobe - click to display"
-        staffView.toolTip = "Staff - click to lock"
+        strobeView.toolTip = "Strobe - click for staff"
+        staffView.toolTip = "Staff - click for strobe"
         meterView.toolTip = "Meter - click to lock"
 
         // Redraw policy
