@@ -13,6 +13,9 @@ class DisplayView: TunerView
     let kOctave: Int32 = 12
     let kTextSize: CGFloat = 12
 
+    let trans: [Int32] =
+      [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
+
     let notes =
       ["C", "C", "D", "E", "E", "F",
        "F", "G", "A", "A", "B", "B"]
@@ -64,9 +67,11 @@ class DisplayView: TunerView
 	    {
 	        // Display note
                 s = String(format: "%@%@%d",
-                           notes[Int(displayData.n - displayData.trans +
+                           notes[Int(displayData.n -
+                                       trans[Int(displayData.trans)] +
                                        kOctave) % notes.endIndex],
-		           sharps[Int(displayData.n - displayData.trans +
+		           sharps[Int(displayData.n -
+                                        trans[Int(displayData.trans)] +
                                        kOctave) % sharps.endIndex],
                                   displayData.n / kOctave)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
@@ -124,9 +129,9 @@ class DisplayView: TunerView
 
 	        // Display note
 	        s = String(format: "%@%@%d",
-                           notes[Int(n - displayData.trans +
+                           notes[Int(n - trans[Int(displayData.trans)] +
                                        kOctave) % notes.endIndex],
-		           sharps[Int(n - displayData.trans +
+		           sharps[Int(n - trans[Int(displayData.trans)] +
                                         kOctave) % sharps.endIndex],
                            n / kOctave)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
@@ -169,7 +174,8 @@ class DisplayView: TunerView
             var attribs: [NSAttributedString.Key: Any] = [.font: font]
 
 	    s = String(format: "%@",
-                       notes[Int(displayData.n - displayData.trans +
+                       notes[Int(displayData.n -
+                                   trans[Int(displayData.trans)] +
                                    kOctave) % notes.endIndex])
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
             x += s.size(withAttributes: attribs).width
@@ -186,7 +192,8 @@ class DisplayView: TunerView
             attribs = [.font: font]
 
 	    s = String(format: "%@",
-                       sharps[Int(displayData.n - displayData.trans +
+                       sharps[Int(displayData.n -
+                                    trans[Int(displayData.trans)] +
                                     kOctave) % sharps.endIndex])
             s.draw(at: NSMakePoint(x, y + textSizeLarger / 2),
                    withAttributes: attribs)
