@@ -27,12 +27,6 @@ import Cocoa
 class StaffView: TunerView
 {
 
-    let sharps: [String] =
-      [
-        "", "\u{266F}", "", "\u{266D}", "", "",
-        "\u{266F}", "", "\u{266D}", "", "\u{266D}", ""
-      ]
-
     // Treble clef
     let tc: [[CGFloat]] =
     [

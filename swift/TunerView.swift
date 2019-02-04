@@ -22,6 +22,19 @@ import Cocoa
 
 class TunerView: NSView
 {
+    let kOctave: Int32 = 12
+
+    let trans: [Int32] =
+      [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
+
+    let notes =
+      ["C", "C", "D", "E", "E", "F",
+       "F", "G", "A", "A", "B", "B"]
+
+    let sharps =
+      ["", "\u{0266F}", "", "\u{0266D}", "", "",
+       "\u{0266F}", "", "\u{0266D}", "", "\u{0266D}", ""]
+
     var rect: NSRect = .zero
     var width: CGFloat = 0
     var height: CGFloat = 0
@@ -74,7 +87,7 @@ class TunerView: NSView
             // Create string
             let string =
               String(format:
-                       "%@%@%d %+4.2lf\u{00A2} %4.2lfHz %4.2lfHz %4.2lfHz",
+                       "%@%@%d %+4.2lf\u{00A2} %4.2lfHz %4.2lfHz %4.2lfHz\n",
                      notes[Int(displayData.n - trans[Int(displayData.trans)] +
                                  kOctave) % notes.endIndex],
 		     sharps[Int(displayData.n - trans[Int(displayData.trans)] +
@@ -202,7 +215,7 @@ class TunerView: NSView
             spectrumView.needsDisplay = true
 
         default:
-            NSLog("Key %@ %@", key, event.charactersIgnoringModifiers)
+            NSLog("Key %@ %@", key, event.charactersIgnoringModifiers ?? "")
             break
         }
     }

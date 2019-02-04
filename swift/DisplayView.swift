@@ -10,19 +10,7 @@ import Cocoa
 
 class DisplayView: TunerView
 {
-    let kOctave: Int32 = 12
     let kTextSize: CGFloat = 12
-
-    let trans: [Int32] =
-      [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
-
-    let notes =
-      ["C", "C", "D", "E", "E", "F",
-       "F", "G", "A", "A", "B", "B"]
-
-    let sharps =
-      ["", "\u{0266F}", "", "\u{0266D}", "", "",
-       "\u{0266F}", "", "\u{0266D}", "", "\u{0266D}", ""]
 
     // mouseDown
     override func mouseDown(with event: NSEvent)
