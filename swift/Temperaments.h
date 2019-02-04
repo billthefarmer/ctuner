@@ -1,8 +1,8 @@
 //
-//  Audio.h
+//  Temperaments.h
 //  Tuner
 //
-//  Created by Bill Farmer on 18/02/2018.
+//  Created by Bill Farmer on 03/02/2019.
 //  Copyright © 2018 Bill Farmer. All rights reserved.
 //
 //  This program is free software: you can redistribute it and/or modify

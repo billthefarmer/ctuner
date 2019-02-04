@@ -61,7 +61,7 @@ class TunerView: NSView
         return inset
     }
 
-    // This IMHO is a kludge because you ought to be able to do this
+    // This, IMHO is a kludge because you ought to be able to do this
     // in AppDelegate rather than one of the views
     // keyDown
     override func keyDown(with event: NSEvent)
@@ -71,78 +71,108 @@ class TunerView: NSView
         switch key.lowercased()
         {
         case "c":
-            // let s = String(format: "%@%@%d %+4.2lf\u{00A2} %4.2lfHz"
+            // Create string
+            let string =
+              String(format:
+                       "%@%@%d %+4.2lf\u{00A2} %4.2lfHz %4.2lfHz %4.2lfHz",
+                     notes[Int(displayData.n - trans[Int(displayData.trans)] +
+                                 kOctave) % notes.endIndex],
+		     sharps[Int(displayData.n - trans[Int(displayData.trans)] +
+                                  kOctave) % sharps.endIndex],
+                     displayData.n / kOctave, displayData.c * 100.0,
+                     displayData.fr, displayData.f,
+                     displayData.f - displayData.fr)
+
+            // Put it on the pasteboard
             let pboard = NSPasteboard.general
             pboard.clearContents()
-            pboard.setString("Test", forType: .string)
+            pboard.setString(string, forType: .string)
 
         case "k":
+            // Change colour
             strobeData.colours += 1
             if (strobeData.colours >= strobeView.kMaxColours)
             {
                 strobeData.colours = 0
             }
 
+            // Update popup
             if (colourPopUp != nil)
             {
                 colourPopUp.selectItem(at: Int(strobeData.colours))
             }
+
+            // Update strobe view
             strobeData.changed = true
             strobeView.needsDisplay = true
 
         case "d":
+            // Update downsampling
             audioData.down = !audioData.down
             if (downBox != nil)
             {
                 downBox.state = audioData.down ? .on: .off
             }
+            // Update spectrum view
             spectrumView.needsDisplay = true
 
         case "f":
+            // Update filter
             audioData.filt = !audioData.filt
             if (filtBox != nil)
             {
                 filtBox.state = audioData.filt ? .on: .off
             }
+            // Update scope view
             scopeView.needsDisplay = true
 
         case "l":
+            // Update display lock
             displayData.lock = !displayData.lock
             if (lockBox != nil)
             {
                 lockBox.state = displayData.lock ? .on: .off
             }
+            // Update display
             displayView.needsDisplay = true
 
         case "m":
+            // Update multiple notes
             displayData.mult = !displayData.mult
             if (multBox != nil)
             {
                 multBox.state = displayData.mult ? .on: .off
             }
+            // Update display
             displayView.needsDisplay = true
 
         case "s":
+            // Switch views
             strobeData.enable = !strobeData.enable
             staffData.enable = !strobeData.enable
+            // Hide views, animation here
             strobeView.isHidden = !strobeData.enable
             staffView.isHidden = !staffData.enable
             if (strbBox != nil)
             {
                 strbBox.state = strobeData.enable ? .on: .off
             }
+            // Update views
             strobeView.needsDisplay = true
             staffView.needsDisplay = true
 
         case "z":
+            // Update zoom
             spectrumData.zoom = !spectrumData.zoom
             if (zoomBox != nil)
             {
                 zoomBox.state = spectrumData.zoom ? .on: .off
             }
+            // Update spectrum view
             spectrumView.needsDisplay = true
 
         case "+":
+            // Expand spectrum
             spectrumData.expand *= 2
             if (spectrumData.expand > kMaxExpand)
             {
@@ -150,11 +180,14 @@ class TunerView: NSView
             }
             if (expandPopUp != nil)
             {
-                expandPopUp.selectItem(at:
-                                         Int(log2(Float(spectrumData.expand))))
+                expandPopUp
+                  .selectItem(at: Int(log2(Float(spectrumData.expand))))
             }
+            // Update spectrum view
+            spectrumView.needsDisplay = true
 
         case "-":
+            // Contract spectrum
             spectrumData.expand /= 2
             if (spectrumData.expand < kMinExpand)
             {
@@ -165,9 +198,11 @@ class TunerView: NSView
                 expandPopUp.selectItem(at:
                                          Int(log2(Float(spectrumData.expand))))
             }
+            // Update spectrum view
+            spectrumView.needsDisplay = true
 
         default:
-            NSLog("Key %@", key)
+            NSLog("Key %@ %@", key, event.charactersIgnoringModifiers)
             break
         }
     }

@@ -590,9 +590,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
         case kZoom:
             spectrumData.zoom = (sender.state == .on) ? true: false
+            spectrumView.needsDisplay = true
 
         case kFilt:
             audioData.filt = (sender.state == .on) ? true: false
+            scopeView.needsDisplay = true
 
         case kMult:
             displayData.mult = (sender.state == .on) ? true: false
@@ -600,16 +602,20 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         case kFund:
             audioData.fund = (sender.state == .on) ? true: false
+            scopeView.needsDisplay = true
 
         case kStrobe:
             strobeData.enable = (sender.state == .on) ? true: false
             staffData.enable = !strobeData.enable
-
+            // Hide views, animation here
             strobeView.isHidden = !strobeData.enable
             staffView.isHidden = !staffData.enable
+            strobeView.needsDisplay = true
+            staffView.needsDisplay = true
 
         case kDown:
             audioData.down = (sender.state == .on) ? true: false
+            spectrumView.needsDisplay = true
 
         case kLock:
             displayData.lock = (sender.state == .on) ? true: false
@@ -617,6 +623,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         case kNote:
             audioData.note = (sender.state == .on) ? true: false
+            spectrumView.needsDisplay = true
 
         default:
             break
@@ -630,17 +637,28 @@ class AppDelegate: NSObject, NSApplicationDelegate
         switch sender.tag
         {
         case kColour:
+            // Update strobe view
             strobeData.colours = Int32(index)
             strobeData.changed = true
+            strobeView.needsDisplay = true
 
         case kTrans:
+            // Update display
             displayData.trans = Int32(index)
+            displayView.needsDisplay = true
+            staffView.needsDisplay = true
 
         case kTemp:
+            // Update display
             audioData.temper = Int32(index)
+            displayView.needsDisplay = true
+            staffView.needsDisplay = true
 
         case kKey:
+            // Update display
             audioData.key = Int32(index)
+            displayView.needsDisplay = true
+            staffView.needsDisplay = true
 
         default:
             break
@@ -714,12 +732,19 @@ class AppDelegate: NSObject, NSApplicationDelegate
             {
             case 0:
                 spectrumData.zoom = defaults.bool(forKey: key)
+                spectrumView.needsDisplay = true
 
             case 1:
                 audioData.filt = defaults.bool(forKey: key)
+                scopeView.needsDisplay = true
 
             case 2:
                 strobeData.enable = defaults.bool(forKey: key)
+                staffData.enable = !strobeData.enable
+                strobeView.isHidden = !strobeData.enable
+                staffView.isHidden = !staffData.enable
+                strobeView.needsDisplay = true
+                staffView.needsDisplay = true
 
             case 3:
                 audioData.down = defaults.bool(forKey: key)
@@ -728,10 +753,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
                 break
             }
         }
-
-        strobeView.isHidden = !strobeData.enable
-        staffData.enable = !strobeData.enable
-        staffView.isHidden = !staffData.enable
     }
 
     // savePreferences
