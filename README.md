@@ -1,4 +1,4 @@
-# Musical instrument strobe tuner [![Build Status](https://travis-ci.org/billthefarmer/c-tuner.svg?branch=master)](https://travis-ci.org/billthefarmer/c-tuner)
+# Musical instrument strobe tuner [![Build Status](https://travis-ci.org/billthefarmer/ctuner.svg?branch=master)](https://travis-ci.org/billthefarmer/ctuner)
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
@@ -107,23 +107,3 @@ peak detector which detects up to eight peaks in the
 spectrum. The highest peak is taken as the measured note, other
 peaks are shown on the zoomed in spectrum if within range, all of
 them are displayed if the multiple option is on.
-
-## Bugs ##
-
-  * The microphone input slider does not work correctly on a
-    machine with more than one audio device under Windows XP. It
-    adjusts something, I haven't found what yet. It works fine
-    under Windows 7 and probably Vista. Use the recording control
-    to adjust the level on XP if necessary.
-
-  * Even with the filter, it can be difficult to get the correct
-    display tuning accordion bass reeds due to the high level of
-    harmonics. Using a microphone with a good bass response and
-    pointing it right at the bass end helps. The downsampling
-    algorithm is intended to address this problem.
-
-  * I am a bit suspicious of the way the actual frequency always
-    seems to appear on the low side of the spectrum peak at lower
-    frequencies. The actual frequency checks out ok despite
-    this. Fixed - added an offset to correct for this. Fixed
-    again, did it right this time.
