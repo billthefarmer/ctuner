@@ -92,10 +92,6 @@ class StaffView: TunerView
         3, 4, 5, 5, 6, 6
       ]
 
-    let treble = NSBezierPath()
-    let bass = NSBezierPath()
-    let head = NSBezierPath()
-
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
@@ -119,64 +115,65 @@ class StaffView: TunerView
     {
         super.draw(dirtyRect)
 
-        if treble.isEmpty
+        let treble = NSBezierPath()
+        let bass = NSBezierPath()
+        let head = NSBezierPath()
+
+        // Treble clef
+        treble.move(to: NSMakePoint(tc[0][0], tc[0][1]))
+        treble.line(to: NSMakePoint(tc[1][0], tc[1][1]))
+        for i in stride(from: 2, to: tc.count, by: 3)
         {
-            // Treble clef
-            treble.move(to: NSMakePoint(tc[0][0], tc[0][1]))
-            treble.line(to: NSMakePoint(tc[1][0], tc[1][1]))
-            for i in stride(from: 2, to: tc.count, by: 3)
-            {
-                treble.curve(to: NSMakePoint(tc[i + 2][0], tc[i + 2][1]),
-                             controlPoint1: NSMakePoint(tc[i][0], tc[i][1]),
-                             controlPoint2: NSMakePoint(tc[i + 1][0],
-                                                        tc[i + 1][1]));
-            }
+            treble.curve(to: NSMakePoint(tc[i + 2][0], tc[i + 2][1]),
+                         controlPoint1: NSMakePoint(tc[i][0], tc[i][1]),
+                         controlPoint2: NSMakePoint(tc[i + 1][0],
+                                                    tc[i + 1][1]));
+        }
 
-            // Bass clef
-            bass.move(to: NSMakePoint(bc[0][0], bc[0][1]))
-            for i in stride(from: 1, to: 27, by: 3)
-            {
-                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
-                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
-                           controlPoint2: NSMakePoint(bc[i + 1][0],
-                                                      bc[i + 1][1]));
-            }
+        // Bass clef
+        bass.move(to: NSMakePoint(bc[0][0], bc[0][1]))
+        for i in stride(from: 1, to: 27, by: 3)
+        {
+            bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                       controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                       controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                  bc[i + 1][1]));
+        }
 
-            // Two dots
-            bass.move(to: NSMakePoint(bc[28][0], bc[25][1]))
-            for i in stride(from: 29, to: 34, by: 3)
-            {
-                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
-                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
-                           controlPoint2: NSMakePoint(bc[i + 1][0],
-                                                      bc[i + 1][1]));
-            }
+        // Two dots
+        bass.move(to: NSMakePoint(bc[28][0], bc[28][1]))
+        for i in stride(from: 29, to: 34, by: 3)
+        {
+            bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                       controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                       controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                  bc[i + 1][1]));
+        }
 
-            bass.move(to: NSMakePoint(bc[35][0], bc[25][1]))
-            for i in stride(from: 36, to: bc.count, by: 3)
-            {
-                bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
-                           controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
-                           controlPoint2: NSMakePoint(bc[i + 1][0],
-                                                      bc[i + 1][1]));
-            }
+        bass.move(to: NSMakePoint(bc[35][0], bc[35][1]))
+        for i in stride(from: 36, to: bc.count, by: 3)
+        {
+            bass.curve(to: NSMakePoint(bc[i + 2][0], bc[i + 2][1]),
+                       controlPoint1: NSMakePoint(bc[i][0], bc[i][1]),
+                       controlPoint2: NSMakePoint(bc[i + 1][0],
+                                                  bc[i + 1][1]));
+        }
 
-            // Note head
-            head.move(to: NSMakePoint(hd[0][0], hd[0][1]))
-            for i in stride(from: 1, to: hd.count, by: 3)
-            {
-                head.curve(to: NSMakePoint(hd[i + 2][0], hd[i + 2][1]),
-                           controlPoint1: NSMakePoint(hd[i][0], hd[i][1]),
-                           controlPoint2: NSMakePoint(hd[i + 1][0],
-                                                      hd[i + 1][1]));
-            }
+        // Note head
+        head.move(to: NSMakePoint(hd[0][0], hd[0][1]))
+        for i in stride(from: 1, to: hd.count, by: 3)
+        {
+            head.curve(to: NSMakePoint(hd[i + 2][0], hd[i + 2][1]),
+                       controlPoint1: NSMakePoint(hd[i][0], hd[i][1]),
+                       controlPoint2: NSMakePoint(hd[i + 1][0],
+                                                  hd[i + 1][1]));
         }
 
         // Drawing code here.
         NSEraseRect(rect)
 
         // Move the origin
-        let transform = AffineTransform(translationByX: 0,
+        var transform = AffineTransform(translationByX: 0,
                                         byY: NSMidY(rect))
         (transform as NSAffineTransform).concat()
 
@@ -184,6 +181,7 @@ class StaffView: TunerView
         let lineWidth = width / 16
         let margin = width / 32
 
+        // Draw staff
         for i in 1 ... 5
         {
             let y = CGFloat(i) * lineHeight
@@ -192,5 +190,69 @@ class StaffView: TunerView
             NSBezierPath.strokeLine(from: NSMakePoint(margin, -y),
 	                            to: NSMakePoint(width - margin, -y))
         }
+
+        // Draw leger lines
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 - lineWidth / 2, 0),
+	              to: NSMakePoint(width / 2 + lineWidth / 2, 0))
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 + lineWidth * 5.5,
+                                        lineHeight * 6),
+                      to: NSMakePoint(width / 2 + lineWidth * 6.5,
+                                      lineHeight * 6))
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 - lineWidth * 5.5,
+                                        -lineHeight * 6),
+                      to: NSMakePoint(width / 2 - lineWidth * 6.5,
+                                      -lineHeight * 6))
+
+        // Scale treble clef
+        var bounds = treble.bounds
+        var scale = (height / 2) / (bounds.height)
+        transform = AffineTransform(scale: scale)
+        treble.transform(using: transform)
+        transform = AffineTransform(translationByX: margin + lineWidth / 2,
+                                    byY: lineHeight)
+        treble.transform(using: transform)
+        treble.fill()
+
+        // Scale bass clef
+        bounds = bass.bounds
+        scale = (lineHeight * 4) / (bounds.height)
+        transform = AffineTransform(scale: scale)
+        bass.transform(using: transform)
+        transform = AffineTransform(translationByX: margin + lineWidth / 4,
+                                    byY: -lineHeight * 5.4)
+        bass.transform(using: transform)
+        bass.fill()
+
+        // Scale note head
+        bounds = head.bounds
+        scale = (lineHeight * 1.5) / (bounds.height)
+        transform = AffineTransform(scale: scale)
+        head.transform(using: transform)
+
+        // Calculate transform for note
+        let xBase = lineWidth * 14;
+        let yBase = lineHeight * 14;
+        let note = staffData.note - displayData.trans;
+        var octave = note / kOctave;
+
+        // Wrap top two octaves
+        if octave >= 6
+        {
+            octave -= 2;
+        }
+
+        let index = (note + kOctave) % kOctave;
+        let dx = (CGFloat(octave) * lineWidth * 3.5) +
+          (CGFloat(offset[Int(index)]) * (lineWidth / 2));
+        let dy = (CGFloat(octave) * lineHeight * 3.5) +
+          (CGFloat(offset[Int(index)]) * (lineHeight / 2));
+
+        transform = AffineTransform(translationByX: width / 2 - xBase + dx,
+                                    byY: -yBase + dy)
+        head.transform(using: transform)
+        head.fill()
     }
 }

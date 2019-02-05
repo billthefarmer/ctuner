@@ -845,6 +845,10 @@ void (^ProcessAudio)() = ^
 	    // Update display
             displayView.needsDisplay = true;
 
+	    // Update staff
+	    staffData.note = note;
+	    staffView.needsDisplay = true;
+
 	    // Update meter
 	    meterData.c = c;
 
@@ -876,6 +880,10 @@ void (^ProcessAudio)() = ^
 
 		// Update display
                 displayView.needsDisplay = true;
+
+		// Update staff
+		staffData.note = 0;
+		staffView.needsDisplay = true;
 
 		// Update meter
 		meterData.c = 0.0;
