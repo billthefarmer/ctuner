@@ -2,9 +2,6 @@
 //  StaffView.swift
 //  Tuner
 //
-//  Created by Bill Farmer on 08/10/2017.
-//  Copyright © 2017 Bill Farmer. All rights reserved.
-//
 //  Created by Bill Farmer on 18/02/2018.
 //  Copyright © 2018 Bill Farmer. All rights reserved.
 //
@@ -86,7 +83,7 @@ class StaffView: TunerView
       ]
 
     // Scale offsets
-    let offset:  [Int] =
+    let offset =
       [
         0, 0, 1, 2, 2, 3,
         3, 4, 5, 5, 6, 6
@@ -181,30 +178,32 @@ class StaffView: TunerView
         let lineWidth = width / 16
         let margin = width / 32
 
+        let path = NSBezierPath()
+        path.lineWidth = 2
+
         // Draw staff
         for i in 1 ... 5
         {
             let y = CGFloat(i) * lineHeight
-            NSBezierPath.strokeLine(from: NSMakePoint(margin, y),
-	                            to: NSMakePoint(width - margin, y))
-            NSBezierPath.strokeLine(from: NSMakePoint(margin, -y),
-	                            to: NSMakePoint(width - margin, -y))
+            path.move(to: NSMakePoint(margin, y))
+	    path.line(to: NSMakePoint(width - margin, y))
+            path.move(to: NSMakePoint(margin, -y))
+	    path.line(to: NSMakePoint(width - margin, -y))
         }
 
         // Draw leger lines
-        NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 - lineWidth / 2, 0),
-	              to: NSMakePoint(width / 2 + lineWidth / 2, 0))
-        NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 + lineWidth * 5.5,
-                                        lineHeight * 6),
-                      to: NSMakePoint(width / 2 + lineWidth * 6.5,
-                                      lineHeight * 6))
-        NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 - lineWidth * 5.5,
-                                        -lineHeight * 6),
-                      to: NSMakePoint(width / 2 - lineWidth * 6.5,
-                                      -lineHeight * 6))
+        path.move(to: NSMakePoint(width / 2 - lineWidth / 2, 0))
+	path.line(to: NSMakePoint(width / 2 + lineWidth / 2, 0))
+        path.move(to: NSMakePoint(width / 2 + lineWidth * 5.5,
+                                  lineHeight * 6))
+        path.line(to: NSMakePoint(width / 2 + lineWidth * 6.5,
+                                  lineHeight * 6))
+        path.move(to: NSMakePoint(width / 2 - lineWidth * 5.5,
+                                  -lineHeight * 6))
+        path.line(to: NSMakePoint(width / 2 - lineWidth * 6.5,
+                                  -lineHeight * 6))
+        NSColor.darkGray.set()
+        path.stroke()
 
         // Scale treble clef
         var bounds = treble.bounds
@@ -214,6 +213,7 @@ class StaffView: TunerView
         transform = AffineTransform(translationByX: margin + lineWidth / 2,
                                     byY: lineHeight)
         treble.transform(using: transform)
+        NSColor.black.set()
         treble.fill()
 
         // Scale bass clef
@@ -235,7 +235,7 @@ class StaffView: TunerView
         // Calculate transform for note
         let xBase = lineWidth * 14;
         let yBase = lineHeight * 14;
-        let note = staffData.note - displayData.trans;
+        let note = staffData.note - trans[Int(displayData.trans)];
         var octave = note / kOctave;
 
         // Wrap top two octaves
@@ -254,5 +254,11 @@ class StaffView: TunerView
                                     byY: -yBase + dy)
         head.transform(using: transform)
         head.fill()
+        let font = NSFont.boldSystemFont(ofSize: lineHeight * 3)
+        let attribs: [NSAttributedString.Key: Any] = [.font: font]
+        sharps[Int(index)]
+          .draw(at: NSMakePoint(width / 2 - xBase + dx - lineWidth,
+                                -yBase + dy - lineHeight * 1.5),
+                withAttributes: attribs)
     }
 }
