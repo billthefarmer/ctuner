@@ -119,8 +119,6 @@ class StaffView: TunerView
     {
         super.draw(dirtyRect)
 
-        // Drawing code here.
-        NSEraseRect(rect)
         if treble.isEmpty
         {
             // Treble clef
@@ -172,6 +170,27 @@ class StaffView: TunerView
                            controlPoint2: NSMakePoint(hd[i + 1][0],
                                                       hd[i + 1][1]));
             }
+        }
+
+        // Drawing code here.
+        NSEraseRect(rect)
+
+        // Move the origin
+        let transform = AffineTransform(translationByX: 0,
+                                        byY: NSMidY(rect))
+        (transform as NSAffineTransform).concat()
+
+        let lineHeight = height / 14
+        let lineWidth = width / 16
+        let margin = width / 32
+
+        for i in 1 ... 5
+        {
+            let y = CGFloat(i) * lineHeight
+            NSBezierPath.strokeLine(from: NSMakePoint(margin, y),
+	                            to: NSMakePoint(width - margin, y))
+            NSBezierPath.strokeLine(from: NSMakePoint(margin, -y),
+	                            to: NSMakePoint(width - margin, -y))
         }
     }
 }
