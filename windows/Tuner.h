@@ -294,6 +294,7 @@ typedef struct
     HWND hwnd;
     RECT rect;
     int note;
+    BOOL enable;
 } STAFF, *STAFFP;
 
 typedef struct
@@ -380,6 +381,7 @@ BOOL RegisterMainClass(HINSTANCE);
 VOID GetSavedStatus(VOID);
 BOOL DrawItem(WPARAM, LPARAM);
 BOOL DrawStrobe(HDC, RECT);
+BOOL DrawStaff(HDC, RECT);
 BOOL DrawScope(HDC, RECT);
 BOOL DrawSpectrum(HDC, RECT);
 BOOL DrawDisplay(HDC, RECT);
@@ -392,6 +394,7 @@ BOOL DisplayOptionsMenu(HWND, POINTS);
 BOOL DisplayClicked(WPARAM, LPARAM);
 BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
+BOOL StaffClicked(WPARAM, LPARAM);
 BOOL MeterClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL FundamentalClicked(WPARAM, LPARAM);

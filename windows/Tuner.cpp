@@ -108,9 +108,11 @@ VOID GetSavedStatus()
     int size = sizeof(value);
 
     // Initial values
-    strobe.enable = true;
-    audio.filter = true;
+    strobe.enable = false;
+    staff.enable = true;
+    audio.filter = false;
     spectrum.expand = 1;
+    spectrum.zoom = true;
 
     // Reference initial value
     audio.reference = A5_REFNCE;
@@ -133,7 +135,10 @@ VOID GetSavedStatus()
 				(LPBYTE)&value,(LPDWORD)&size);
 	// Update value
 	if (error == ERROR_SUCCESS)
+        {
 	    strobe.enable = value;
+            staff.enable = !value;
+        }
 
 	// Strobe colours
 	error = RegQueryValueEx(hkey, "Colours", NULL, NULL,
@@ -307,6 +312,9 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
 
+            // Show window
+            ShowWindow(strobe.hwnd, strobe.enable? SW_SHOW: SW_HIDE);
+
             // Create staff
             staff.hwnd =
                 CreateWindow(WC_STATIC, NULL,
@@ -324,6 +332,9 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
+
+            // Show window
+            ShowWindow(staff.hwnd, staff.enable? SW_SHOW: SW_HIDE);
 
             // Create meter
             meter.hwnd =
@@ -428,6 +439,11 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
 	    // Strobe
 	case STROBE_ID:
 	    StrobeClicked(wParam, lParam);
+	    break;
+
+	    // Staff
+	case STAFF_ID:
+	    StaffClicked(wParam, lParam);
 	    break;
 
 	    // Meter
@@ -610,6 +626,17 @@ BOOL CALLBACK EnumChildProc(HWND hWnd, LPARAM lParam)
 	MapWindowPoints(NULL, window.hwnd, (POINT *)&strobe.rect, 2);
 	break;
 
+	// Staff, resize it
+    case STAFF_ID:
+	MoveWindow(hWnd, MARGIN, display.rect.bottom + SPACING,
+                   width - MARGIN * 2,
+                   (height - TOTAL) * STAFF_HEIGHT / TOTAL_HEIGHT,
+                   false);
+	InvalidateRgn(hWnd, NULL, true);
+	GetWindowRect(hWnd, &staff.rect);
+	MapWindowPoints(NULL, window.hwnd, (POINT *)&staff.rect, 2);
+	break;
+
 	// Meter, resize it
     case METER_ID:
 	MoveWindow(hWnd, MARGIN, strobe.rect.bottom + SPACING,
@@ -760,6 +787,11 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 	// Strobe
     case STROBE_ID:
 	return DrawStrobe(hdc, rect);
+	break;
+
+	// Staff
+    case STAFF_ID:
+	return DrawStaff(hdc, rect);
 	break;
 
 	// Display
@@ -3130,7 +3162,7 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
 	strobe.changed = false;
     }
 
-    if (strobe.enable)
+    if (true)
     {
         // Transform viewport
         SetViewportOrgEx(hdc, rect.left, rect.top, NULL);
@@ -3258,6 +3290,31 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Move origin
     SetViewportOrgEx(hbdc, 0, height / 2, NULL);
 
+    float lineHeight = height / 14.0;
+    float lineWidth = width / 16.0;
+    float margin = width / 32.0;
+
+    GraphicsPath path;
+
+    for (int i = 1; i < 6; i++)
+    {
+        path.StartFigure();
+        path.AddLine(margin, i * lineHeight, width - margin, i * lineHeight);
+        path.StartFigure();
+        path.AddLine(margin, -i * lineHeight, width - margin, -i * lineHeight);
+    }
+
+    Graphics graphics(hbdc);
+    Pen pen(Color(63, 63, 63), 2);
+    graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+    graphics.DrawPath(&pen, &path);
+
+    // Move origin back
+    SetViewportOrgEx(hbdc, 0, 0, NULL);
+
+    // Copy the bitmap
+    BitBlt(hdc, rect.left, rect.top, width, height,
+	   hbdc, 0, 0, SRCCOPY);
 
     return true;
 }
@@ -3350,12 +3407,68 @@ BOOL StrobeClicked(WPARAM wParam, LPARAM lParam)
     {
     case BN_CLICKED:
 	strobe.enable = !strobe.enable;
+        staff.enable = !strobe.enable;
 	break;
 
     default:
 	return false;
     }
 
+    ShowWindow(strobe.hwnd, strobe.enable? SW_SHOW: SW_HIDE);
+    ShowWindow(staff.hwnd, staff.enable? SW_SHOW: SW_HIDE);
+
+    InvalidateRgn(strobe.hwnd, NULL, true);
+    InvalidateRgn(staff.hwnd, NULL, true);
+
+    if (enable.hwnd != NULL)
+	Button_SetCheck(enable.hwnd, strobe.enable? BST_CHECKED: BST_UNCHECKED);
+
+    HKEY hkey;
+    LONG error;
+
+    error = RegCreateKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
+			   NULL, 0, KEY_WRITE, NULL, &hkey, NULL);
+
+    if (error == ERROR_SUCCESS)
+    {
+	RegSetValueEx(hkey, "Strobe", 0, REG_DWORD,
+		      (LPBYTE)&strobe.enable, sizeof(strobe.enable));
+
+	RegCloseKey(hkey);
+    }
+
+    else
+    {
+	static TCHAR s[64];
+
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, 0, error,
+		      0, s, sizeof(s), NULL);
+
+	MessageBox(window.hwnd, s, "RegCreateKeyEx", MB_OK | MB_ICONERROR);
+    }
+
+    return true;
+}
+
+// Staff clicked
+BOOL StaffClicked(WPARAM wParam, LPARAM lParam)
+{
+
+    switch (HIWORD(wParam))
+    {
+    case BN_CLICKED:
+	staff.enable = !staff.enable;
+        strobe.enable = !staff.enable;
+	break;
+
+    default:
+	return false;
+    }
+
+    ShowWindow(staff.hwnd, staff.enable? SW_SHOW: SW_HIDE);
+    ShowWindow(strobe.hwnd, strobe.enable? SW_SHOW: SW_HIDE);
+
+    InvalidateRgn(staff.hwnd, NULL, true);
     InvalidateRgn(strobe.hwnd, NULL, true);
 
     if (enable.hwnd != NULL)
