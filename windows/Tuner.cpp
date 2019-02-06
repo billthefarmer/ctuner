@@ -307,6 +307,24 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
 
+            // Create staff
+            staff.hwnd =
+                CreateWindow(WC_STATIC, NULL,
+                             WS_VISIBLE | WS_CHILD |
+                             SS_NOTIFY | SS_OWNERDRAW,
+                             MARGIN, display.rect.bottom + SPACING,
+                             width - MARGIN * 2, STAFF_HEIGHT, hWnd,
+                             (HMENU)STAFF_ID, hInst, NULL);
+            GetWindowRect(staff.hwnd, &staff.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&staff.rect, 2);
+
+            // Create tooltip for staff
+            tooltip.info.uId = (UINT_PTR)staff.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Staff, click to disable/enable";
+
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
             // Create meter
             meter.hwnd =
                 CreateWindow(WC_STATIC, NULL,
@@ -3167,6 +3185,82 @@ BOOL DrawStrobe(HDC hdc, RECT rect)
     return true;
 }
 
+// Draw staff
+BOOL DrawStaff(HDC hdc, RECT rect)
+{
+    using Gdiplus::SmoothingModeAntiAlias;
+    using Gdiplus::GraphicsPath;
+    using Gdiplus::SolidBrush;
+    using Gdiplus::Graphics;
+    using Gdiplus::Matrix;
+    using Gdiplus::Color;
+    using Gdiplus::Point;
+    using Gdiplus::Pen;
+
+    static HBITMAP bitmap;
+    static HFONT font;
+    static SIZE size;
+    static HDC hbdc;
+
+    // Music font
+    static LOGFONT lf =
+	{0, 0, 0, 0,
+	 FW_BOLD,
+	 false, false, false,
+	 DEFAULT_CHARSET,
+	 OUT_DEFAULT_PRECIS,
+	 CLIP_DEFAULT_PRECIS,
+	 DEFAULT_QUALITY,
+	 DEFAULT_PITCH | FF_DONTCARE,
+	 "Musica"};
+
+    // Draw nice etched edge
+    DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
+
+    // Calculate dimensions
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+
+    // Create DC
+    if (hbdc == NULL)
+    {
+	// Create DC
+	hbdc = CreateCompatibleDC(hdc);
+    }
+
+    // Create new font and bitmap if resized
+    if (width != size.cx || height != size.cy)
+    {
+        if (font != NULL)
+            DeleteObject(font);
+
+        lf.lfHeight = height / 3;
+	font = CreateFontIndirect(&lf);
+	SelectObject(hbdc, font);
+
+	// Delete old bitmap
+	if (bitmap != NULL)
+	    DeleteObject(bitmap);
+
+	// Create new bitmap
+	bitmap = CreateCompatibleBitmap(hdc, width, height);
+	SelectObject(hbdc, bitmap);
+
+	size.cx = width;
+	size.cy = height;
+    }
+
+    // Erase background
+    SetViewportOrgEx(hbdc, 0, 0, NULL);
+    RECT brct = {0, 0, width, height};
+    FillRect(hbdc, &brct, (HBRUSH)GetStockObject(WHITE_BRUSH));
+
+    // Move origin
+    SetViewportOrgEx(hbdc, 0, height / 2, NULL);
+
+
+    return true;
+}
 // Display clicked
 BOOL DisplayClicked(WPARAM wParam, LPARAM lParam)
 {
