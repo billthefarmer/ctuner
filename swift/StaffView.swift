@@ -237,6 +237,7 @@ class StaffView: TunerView
         let yBase = lineHeight * 14;
         let note = staffData.note - trans[Int(displayData.trans)];
         var octave = note / kOctave;
+        let index = (note + kOctave) % kOctave;
 
         // Wrap top two octaves
         if octave >= 6
@@ -244,16 +245,30 @@ class StaffView: TunerView
             octave -= 2;
         }
 
-        let index = (note + kOctave) % kOctave;
+        // Wrap C0
+        else if octave == 0 && index <= 1
+        {
+            octave += 4;
+        }
+
+        // Wrap bottom two octaves
+        else if octave <= 1 || octave == 2 && index <= 1
+        {
+            octave += 2;
+        }
+
         let dx = (CGFloat(octave) * lineWidth * 3.5) +
           (CGFloat(offset[Int(index)]) * (lineWidth / 2));
         let dy = (CGFloat(octave) * lineHeight * 3.5) +
           (CGFloat(offset[Int(index)]) * (lineHeight / 2));
 
+        // Draw note
         transform = AffineTransform(translationByX: width / 2 - xBase + dx,
                                     byY: -yBase + dy)
         head.transform(using: transform)
         head.fill()
+
+        // Draw sharp/flat
         let font = NSFont.boldSystemFont(ofSize: lineHeight * 3)
         let attribs: [NSAttributedString.Key: Any] = [.font: font]
         sharps[Int(index)]
