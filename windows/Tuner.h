@@ -355,6 +355,10 @@ BOXES boxes;
 AUDIO audio;
 FILTER filter;
 
+// Temperaments data
+double temperamentValues[32][12] =
+#include "Temperaments.h"
+
 // Function prototypes
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int);
 LRESULT CALLBACK MainWndProc(HWND, UINT, WPARAM, LPARAM);

@@ -12,7 +12,8 @@ all:	Tuner.exe
 
 Tuner.exe:	Tuner.cpp Tuner.o
 
-Tuner.o:	Tuner.rc Tuner.h Tuner.manifest Tuner.ico Toolbar.bmp Makefile
+Tuner.o:	Tuner.rc Tuner.h Tuner.manifest Tuner.ico Toolbar.bmp \
+		Temperaments.h Makefile
 
 clean:
 	rm *.exe *.o
