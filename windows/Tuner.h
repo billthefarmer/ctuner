@@ -52,10 +52,11 @@ enum
      STROBE_ID,
      SCOPE_ID,
      METER_ID,
+     STAFF_ID,
      QUIT_ID,
 
      // Options ids
-
+     KEY_ID,
      ZOOM_ID,
      TEXT_ID,
      DOWN_ID,
@@ -65,6 +66,8 @@ enum
      NOTE_ID,
      FILT_ID,
      CLOSE_ID,
+     TEMP_ID,
+     TRANS_ID,
      FILTER_ID,
      ENABLE_ID,
      EXPAND_ID,
@@ -75,7 +78,6 @@ enum
      REFERENCE_ID,
 
      // Filters ids
-
      NOTES_C,
      NOTES_Cs,
      NOTES_D,
@@ -153,6 +155,7 @@ enum
      DISPLAY_HEIGHT  = 158,
      STROBE_HEIGHT   = 68,
      METER_HEIGHT    = 82,
+     STAFF_HEIGHT    = 68,
      TOTAL_HEIGHT    = 408};
 
 // Margins
@@ -280,19 +283,27 @@ typedef struct
     HWND hwnd;
     RECT rect;
     double c;
+    int colours;
+    BOOL enable;
+    BOOL changed;
     HANDLE timer;
-} METER, *METERP;
+} STROBE, *STROBEP;
+
+typedef struct
+{
+    HWND hwnd;
+    RECT rect;
+    int note;
+    BOOL enable;
+} STAFF, *STAFFP;
 
 typedef struct
 {
     HWND hwnd;
     RECT rect;
     double c;
-    int colours;
-    BOOL enable;
-    BOOL changed;
     HANDLE timer;
-} STROBE, *STROBEP;
+} METER, *METERP;
 
 typedef struct
 {
@@ -332,6 +343,7 @@ SCOPE scope;
 SPECTRUM spectrum;
 DISPLAY display;
 STROBE strobe;
+STAFF staff;
 METER meter;
 
 BUTTON button;
@@ -369,6 +381,7 @@ BOOL RegisterMainClass(HINSTANCE);
 VOID GetSavedStatus(VOID);
 BOOL DrawItem(WPARAM, LPARAM);
 BOOL DrawStrobe(HDC, RECT);
+BOOL DrawStaff(HDC, RECT);
 BOOL DrawScope(HDC, RECT);
 BOOL DrawSpectrum(HDC, RECT);
 BOOL DrawDisplay(HDC, RECT);
@@ -381,6 +394,7 @@ BOOL DisplayOptionsMenu(HWND, POINTS);
 BOOL DisplayClicked(WPARAM, LPARAM);
 BOOL SpectrumClicked(WPARAM, LPARAM);
 BOOL StrobeClicked(WPARAM, LPARAM);
+BOOL StaffClicked(WPARAM, LPARAM);
 BOOL MeterClicked(WPARAM, LPARAM);
 BOOL FilterClicked(WPARAM, LPARAM);
 BOOL FundamentalClicked(WPARAM, LPARAM);
