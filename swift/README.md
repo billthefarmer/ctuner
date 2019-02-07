@@ -11,6 +11,7 @@ instruments
  * Spectrum with zoom, shows individual reeds
  * Display frequency, cents, frequency deviation for single reed or up to eight
  * Strobe with choice of colours
+ * Staff displays current note
  * Meter shows cents deviation
  * Display lock
  * Audio lowpass filter for bass reeds
@@ -28,12 +29,13 @@ This is a port to Swift of the old Carbon based app
  * **k** - Change strobe colours
  * **l** - Toggle display lock
  * **m** - Toggle multiple reeds
- * **s** - Toggle strobe display
+ * **s** - Toggle strobe/staff display
  * **z** - Toggle Spectrum zoom
 
 ### Actions
  * Click on scope to toggle audio filter
  * Click on spectrum to toggle zoom
  * Click on display to lock
- * Click on strobe to enable
- 
+ * click on meter to lock
+ * Click on strobe to toggle
+ * Click on staff to toggle
