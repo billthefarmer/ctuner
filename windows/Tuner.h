@@ -293,7 +293,7 @@ typedef struct
 {
     HWND hwnd;
     RECT rect;
-    int note;
+    int n;
     BOOL enable;
 } STAFF, *STAFFP;
 

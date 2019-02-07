@@ -3226,7 +3226,9 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     using Gdiplus::Graphics;
     using Gdiplus::Matrix;
     using Gdiplus::Color;
+    using Gdiplus::RectF;
     using Gdiplus::Point;
+    using Gdiplus::SizeF;
     using Gdiplus::Pen;
 
     static HBITMAP bitmap;
@@ -3245,6 +3247,73 @@ BOOL DrawStaff(HDC hdc, RECT rect)
 	 DEFAULT_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 "Musica"};
+
+    // Treble clef
+    static const float tc[][2] =
+        {
+         {-6, 16}, {-8, 13},
+         {-14, 19}, {-10, 35}, {2, 35},
+         {8, 37}, {21, 30}, {21, 17},
+         {21, 5}, {10, -1}, {0, -1},
+         {-12, -1}, {-23, 5}, {-23, 22},
+         {-23, 29}, {-22, 37}, {-7, 49},
+         {10, 61}, {10, 68}, {10, 73},
+         {10, 78}, {9, 82}, {7, 82},
+         {2, 78}, {-2, 68}, {-2, 62},
+         {-2, 25}, {10, 18}, {11, -8},
+         {11, -18}, {5, -23}, {-4, -23},
+         {-10, -23}, {-15, -18}, {-15, -13},
+         {-15, -8}, {-12, -4}, {-7, -4},
+         {3, -4}, {3, -20}, {-6, -17},
+         {-5, -23}, {9, -20}, {9, -9},
+         {7, 24}, {-5, 30}, {-5, 67},
+         {-5, 78}, {-2, 87}, {7, 91},
+         {13, 87}, {18, 80}, {17, 73},
+         {17, 62}, {10, 54}, {1, 45},
+         {-5, 38}, {-15, 33}, {-15, 19},
+         {-15, 7}, {-8, 1}, {0, 1},
+         {8, 1}, {15, 6}, {15, 14},
+         {15, 23}, {7, 26}, {2, 26},
+         {-5, 26}, {-9, 21}, {-6, 16}
+        };
+
+    // Bass clef
+    static const float bc[][2] =
+        {
+         {-2.3,3},
+         {6,7}, {10.5,12}, {10.5,16},
+         {10.5,20.5}, {8.5,23.5}, {6.2,23.3},
+         {5.2,23.5}, {2,23.5}, {0.5,19.5},
+         {2,20}, {4,19.5}, {4,18},
+         {4,17}, {3.5,16}, {2,16},
+         {1,16}, {0,16.9}, {0,18.5},
+         {0,21}, {2.1,24}, {6,24},
+         {10,24}, {13.5,21.5}, {13.5,16.5},
+         {13.5,11}, {7,5.5}, {-2.0,2.8},
+         {14.9,21},
+         {14.9,22.5}, {16.9,22.5}, {16.9,21},
+         {16.9,19.5}, {14.9,19.5}, {14.9,21},
+         {14.9,15},
+         {14.9,16.5}, {16.9,16.5}, {16.9,15},
+         {16.9,13.5}, {14.9,13.5}, {14.9,15}
+        };
+
+    // Note head
+    static const float hd[][2] =
+        {
+         {8.0, 0.0},
+         {8.0, 8.0}, {-8.0, 8.0}, {-8.0, 0.0},
+         {-8.0, -8.0}, {8.0, -8.0}, {8.0, 0.0}
+        };
+
+    // Scale offsets
+    static const int offset[] =
+        {0, 0, 1, 2, 2, 3,
+         3, 4, 5, 5, 6, 6};
+
+    static const TCHAR *sharps[] =
+	{"", "#", "", "b", "", "",
+	 "#", "", "b", "", "b", ""};
 
     // Draw nice etched edge
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
@@ -3294,8 +3363,10 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     float lineWidth = width / 16.0;
     float margin = width / 32.0;
 
+    // Graphics path
     GraphicsPath path;
 
+    // Draw staff
     for (int i = 1; i < 6; i++)
     {
         path.StartFigure();
@@ -3304,10 +3375,108 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         path.AddLine(margin, -i * lineHeight, width - margin, -i * lineHeight);
     }
 
+    // Draw leger lines
+    path.StartFigure();
+    path.AddLine(width / 2 - lineWidth / 2, 0.0,
+                 width / 2 + lineWidth / 2, 0.0);
+    path.StartFigure();
+    path.AddLine(width / 2 + lineWidth * 5.5, -lineHeight * 6,
+                 width / 2 + lineWidth * 6.5, -lineHeight * 6);
+    path.StartFigure();
+    path.AddLine(width / 2 - lineWidth * 5.5, lineHeight * 6,
+                 width / 2 - lineWidth * 6.5, lineHeight * 6);
+
     Graphics graphics(hbdc);
     Pen pen(Color(63, 63, 63), 2);
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
     graphics.DrawPath(&pen, &path);
+
+    // Draw treble clef
+    path.Reset();
+    path.AddLine(tc[0][0], tc[0][1], tc[1][0], tc[1][1]);
+    for (int i = 1; i < Length(tc) - 1; i += 3)
+        path.AddBezier(tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
+                       tc[i + 2][0], tc[i + 2][1], tc[i + 3][0], tc[i + 3][1]);
+    pen.SetWidth(1);
+    Matrix matrix;
+    RectF bounds;
+    SizeF sizeF;
+    SolidBrush brush(Color(0, 0, 0));
+    path.GetBounds(&bounds, &matrix, &pen);
+    bounds.GetSize(&sizeF);
+    float scale = (height / 2) / sizeF.Height;
+    matrix.Scale(scale, -scale);
+    path.Transform(&matrix);
+    matrix.Reset();
+    matrix.Translate(margin + lineWidth / 2, -lineHeight);
+    path.Transform(&matrix);
+    graphics.FillPath(&brush, &path);
+
+    // Draw bass clef
+    path.Reset();
+    for (int i = 0; i < 27; i += 3)
+        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+    path.StartFigure();
+    for (int i = 28; i < 34; i += 3)
+        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+    path.StartFigure();
+    for (int i = 35; i < Length(bc) - 1; i += 3)
+        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+
+    path.GetBounds(&bounds, &matrix, &pen);
+    bounds.GetSize(&sizeF);
+    scale = (lineHeight * 4.5) / sizeF.Height;
+    matrix.Reset();
+    matrix.Scale(scale, -scale);
+    path.Transform(&matrix);
+    matrix.Reset();
+    matrix.Translate(margin + lineWidth / 4, lineHeight * 5.35);
+    path.Transform(&matrix);
+    graphics.FillPath(&brush, &path);
+
+    // Note head
+    path.Reset();
+    for (int i = 0; i < Length(hd) - 1; i += 3)
+        path.AddBezier(hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
+                       hd[i + 2][0], hd[i + 2][1], hd[i + 3][0], hd[i + 3][1]);
+    path.GetBounds(&bounds, &matrix, &pen);
+    bounds.GetSize(&sizeF);
+    scale = (lineHeight * 1.75) / sizeF.Height;
+    matrix.Reset();
+    matrix.Scale(scale, -scale);
+    path.Transform(&matrix);
+
+    // Calculate transform for note
+    float xBase = lineWidth * 14;
+    float yBase = lineHeight * 14;
+    int note = staff.n;
+    int octave = note / OCTAVE;
+    int index = (note + OCTAVE) % OCTAVE;
+
+    // Wrap top two octaves
+    if (octave >= 6)
+        octave -= 2;
+
+    // Wrap C0
+    else if (octave == 0 && index <= 1)
+        octave += 4;
+
+    // Wrap bottom two octaves
+    else if (octave <= 1 || octave == 2 && index <= 1)
+        octave += 2;
+
+    float dx = (octave * lineWidth * 3.5) +
+        (offset[index] * lineWidth / 2);
+    float dy = (octave * lineHeight * 3.5) +
+        (offset[index] * lineHeight / 2);
+
+    matrix.Reset();
+    matrix.Translate(width / 2 - xBase + dx, yBase - dy);
+    path.Transform(&matrix);
+    graphics.FillPath(&brush, &path);
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);
@@ -4087,15 +4256,19 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    display.n = n;
 	    display.count = count;
 
-	    // Update meter
-	    meter.c = c;
-
 	    // Update strobe
 	    strobe.c = c;
+
+	    // Update staff
+	    staff.n = n;
+
+	    // Update meter
+	    meter.c = c;
 	}
 
-	// Update display
+	// Update display and staff
 	InvalidateRgn(display.hwnd, NULL, true);
+	InvalidateRgn(staff.hwnd, NULL, true);
 
 	// Reset count;
 	timer = 0;
@@ -4115,11 +4288,14 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 		display.n = 0;
 		display.count = 0;
 
-		// Update meter
-		meter.c = 0.0;
-
 		// Update strobe
 		strobe.c = 0.0;
+
+		// Update staff
+		staff.n = 0.0;
+
+		// Update meter
+		meter.c = 0.0;
 
 		// Update spectrum
 		spectrum.f = 0.0;
@@ -4128,8 +4304,9 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 		spectrum.h = 0.0;
 	    }
 
-	    // Update display
+	    // Update display and staff
 	    InvalidateRgn(display.hwnd, NULL, true);
+	    InvalidateRgn(staff.hwnd, NULL, true);
 	}
     }
 
