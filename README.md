@@ -2,14 +2,14 @@
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
-melodeons. The strobe display may be disabled, if
-required. Windows and
-[Mac](swift) versions have
-been released. An
-[Android](https://github.com/billthefarmer/tuner) version
-is available, also on [F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner).
+melodeons. The strobe display may be replaced with the staff, if
+required. Windows and [Mac](swift) versions have been releasedare
+available. An [Android](https://github.com/billthefarmer/tuner)
+version is available, also on
+[F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner). [Tuner
+website](http://billthefarmer.github.io/ctuner).
 
-![http://ctuner.googlecode.com/svn/wiki/images/Tuner.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![http://ctuner.googlecode.com/svn/wiki/images/Options.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
+![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
 
 
 ## Using
