@@ -4,16 +4,14 @@ A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
 melodeons. The strobe display may be disabled, if
 required. Windows and
-[Mac](http://code.google.com/p/ctuner/wiki/Mac) versions have
+[Mac](swift) versions have
 been released. An
-[Android](http://code.google.com/p/ctuner/wiki/Android) version
-has been released. The android version may also be found on
-[Github](https://github.com/billthefarmer/tuner).
-
+[Android](https://github.com/billthefarmer/tuner) version
+is available, also on [F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner).
 ![http://ctuner.googlecode.com/svn/wiki/images/Tuner.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![http://ctuner.googlecode.com/svn/wiki/images/Options.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
 
 
-## Using ##
+## Using
 
 Play your instrument into your microphone and observe the
 display. The slider at the top left adjusts the microphone input
@@ -34,7 +32,7 @@ below shows the deviation in cents. The Options button pops up
 the Options window, the Quit button quits the application. The
 status bar shows the sample rate and the correction.
 
-## Options ##
+## Options
 
 The zoom and strobe tick boxes may be used to turn the zoom and
 strobe display off and on. The Filter tick box controls a
@@ -56,22 +54,7 @@ known standard may be used to set this value. For example, my
 netbook has a correction value of 0.99322. The done button
 dismisses the window.
 
-## Enhancements ##
-
-  * Added the facility to lock the display and to copy the
-    displayed values to the clipboard. The values are delimited
-    by tab characters so that they paste into adjacent cells in
-    Open Office Calc. I assume this also works in Excel, not
-    tested.
-
-  * Added display resize function. This makes everything twice
-    the size, except for the slider which isn't resizeable. The
-    buttons look a bit odd too, but all the rest of the display
-    resizes ok.
-
-  * Added the options above to the pop-up context menu.
-
-  * Added multiple option for displaying multiple sets of values.
+## Keyboard shortcuts
 
   * All the options may be changed by pressing keys, they are:
     * C, Ctrl-C - Copy values to clipboard
