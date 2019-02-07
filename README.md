@@ -72,12 +72,7 @@ dismisses the window.
     * + - Expand spectrum display
     * - - Contract spectrum display
 
-  * Removed reference slider from main window to options window and replaced with a text box with up/down arrows.
-  * Spectrum now shows cents.
-  * Added downsampling algorithm and spectrum expansion.
-  * Added coloured spectrum and real sharp and flat signs.
-
-## How it works ##
+## How it works
 
 I have included a How It Works section because none of the other
 open source tuners that I have looked at give any explanation of
