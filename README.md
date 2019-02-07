@@ -3,9 +3,9 @@
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
 melodeons. The strobe display may be replaced with the staff, if
-required. Windows and [Mac](swift) versions have been releasedare
-available. An [Android](https://github.com/billthefarmer/tuner)
-version is available, also on
+required. Windows and [Mac](swift) versions are available. An
+[Android](https://github.com/billthefarmer/tuner) version is
+available, also on
 [F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner). [Tuner
 website](http://billthefarmer.github.io/ctuner).
 
