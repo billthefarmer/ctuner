@@ -368,7 +368,7 @@ LRESULT CALLBACK MainWndProc(HWND hWnd,
                 // Add font
                 AddFontMemResourceEx(data, size, 0, &n);
             }
-    
+
             // Start audio thread
             audio.thread = CreateThread(NULL, 0, AudioThread, hWnd,
                                         0, &audio.id);
@@ -2553,7 +2553,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY,
+	 ANTIALIASED_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
 
@@ -2874,7 +2874,7 @@ BOOL DrawMeter(HDC hdc, RECT rect)
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY,
+	 ANTIALIASED_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
 	 ""};
 
@@ -3225,10 +3225,11 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     using Gdiplus::SolidBrush;
     using Gdiplus::Graphics;
     using Gdiplus::Matrix;
+    using Gdiplus::PointF;
     using Gdiplus::Color;
     using Gdiplus::RectF;
-    using Gdiplus::Point;
     using Gdiplus::SizeF;
+    using Gdiplus::Font;
     using Gdiplus::Pen;
 
     static HBITMAP bitmap;
@@ -3237,16 +3238,16 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     static HDC hbdc;
 
     // Music font
-    static LOGFONT lf =
+    static LOGFONTW lf =
 	{0, 0, 0, 0,
 	 FW_BOLD,
 	 false, false, false,
 	 DEFAULT_CHARSET,
 	 OUT_DEFAULT_PRECIS,
 	 CLIP_DEFAULT_PRECIS,
-	 DEFAULT_QUALITY,
+	 ANTIALIASED_QUALITY,
 	 DEFAULT_PITCH | FF_DONTCARE,
-	 "Musica"};
+         L"Musica"};
 
     // Treble clef
     static const float tc[][2] =
@@ -3306,14 +3307,79 @@ BOOL DrawStaff(HDC hdc, RECT rect)
          {-8.0, -8.0}, {8.0, -8.0}, {8.0, 0.0}
         };
 
+    // Sharp symbol
+    static const float sp[][2] =
+        {
+         {35, 35}, // moveto
+         {8, 22}, // lineto
+         {8, 46}, // lineto
+         {35, 59}, // lineto
+         {35, 101}, // lineto
+         {8, 88}, // lineto
+         {8, 111}, // lineto
+         {35, 125}, // lineto
+         {35, 160}, // lineto
+         {44, 160}, // lineto
+         {44, 129}, // lineto
+         {80, 147}, // lineto
+         {80, 183}, // lineto
+         {89, 183}, // lineto
+         {89, 151}, // lineto
+         {116, 165}, // lineto
+         {116, 141}, // lineto
+         {89, 127}, // lineto
+         {89, 86}, // lineto
+         {116, 100}, // lineto
+         {116, 75}, // lineto
+         {89, 62}, // lineto
+         {89, 19}, // lineto
+         {80, 19}, // lineto
+         {80, 57}, // lineto
+         {44, 39}, // lineto
+         {44, -1}, // lineto
+         {35, -1}, // lineto
+         {35, 35}, // lineto
+         // closepath
+         {44, 64}, // moveto
+         {80, 81}, // lineto
+         {80, 123}, // lineto
+         {44, 105}, // lineto
+         {44, 64}, // lineto
+         // closepath
+        };
+
+    // Flat symbol
+    static const float ft[][2] =
+        {
+         {20, 86}, // moveto
+         {28, 102.667}, {41.6667, 111}, {61, 111}, // curveto
+         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5}, // curveto
+         {93.6667, 93.5}, {97, 83.6667}, {97, 71}, // curveto
+         {97, 53}, {89, 36.6667}, {73, 22}, // curveto
+         {57, 7.33333}, {35.3333, -1.33333}, {8, -4}, // curveto
+         {8, 195}, // lineto
+         {20, 195}, // lineto
+         {20, 86}, // lineto
+         // closepath
+         {20, 7}, // moveto
+         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // curveto
+         {67.1667, 38.3333}, {72, 51.6667}, {72, 67}, // curveto
+         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87}, // curveto
+         {62.8333, 91.6667}, {57.3333, 94}, {50, 94}, // curveto
+         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83}, // curveto
+         {22.8333, 75.6667}, {20, 64.6667}, {20, 50}, // curveto
+         {20, 7}, // lineto
+         // closepath
+        };
+
     // Scale offsets
     static const int offset[] =
         {0, 0, 1, 2, 2, 3,
          3, 4, 5, 5, 6, 6};
 
-    static const TCHAR *sharps[] =
-	{"", "#", "", "b", "", "",
-	 "#", "", "b", "", "b", ""};
+    static const WCHAR *sharps[] =
+	{L"", L"#", L"", L"b", L"", L"",
+	 L"#", L"", L"b", L"", L"b", L""};
 
     // Draw nice etched edge
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
@@ -3321,6 +3387,10 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Calculate dimensions
     int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
+
+    int lineHeight = height / 14.0;
+    int lineWidth = width / 16.0;
+    int margin = width / 32.0;
 
     // Create DC
     if (hbdc == NULL)
@@ -3335,9 +3405,9 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         if (font != NULL)
             DeleteObject(font);
 
-        lf.lfHeight = height / 3;
-	font = CreateFontIndirect(&lf);
-	SelectObject(hbdc, font);
+        lf.lfHeight = lineHeight * 4;
+	font = CreateFontIndirectW(&lf);
+	// SelectObject(hbdc, font);
 
 	// Delete old bitmap
 	if (bitmap != NULL)
@@ -3359,48 +3429,37 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Move origin
     SetViewportOrgEx(hbdc, 0, height / 2, NULL);
 
-    float lineHeight = height / 14.0;
-    float lineWidth = width / 16.0;
-    float margin = width / 32.0;
-
-    // Graphics path
-    GraphicsPath path;
-
     // Draw staff
     for (int i = 1; i < 6; i++)
     {
-        path.StartFigure();
-        path.AddLine(margin, i * lineHeight, width - margin, i * lineHeight);
-        path.StartFigure();
-        path.AddLine(margin, -i * lineHeight, width - margin, -i * lineHeight);
+	MoveToEx(hbdc, margin, i * lineHeight, NULL);
+	LineTo(hbdc, width - margin, i * lineHeight);
+	MoveToEx(hbdc, margin, -i * lineHeight, NULL);
+	LineTo(hbdc, width - margin, -i * lineHeight);
     }
 
     // Draw leger lines
-    path.StartFigure();
-    path.AddLine(width / 2 - lineWidth / 2, 0.0,
-                 width / 2 + lineWidth / 2, 0.0);
-    path.StartFigure();
-    path.AddLine(width / 2 + lineWidth * 5.5, -lineHeight * 6,
-                 width / 2 + lineWidth * 6.5, -lineHeight * 6);
-    path.StartFigure();
-    path.AddLine(width / 2 - lineWidth * 5.5, lineHeight * 6,
-                 width / 2 - lineWidth * 6.5, lineHeight * 6);
+    MoveToEx(hbdc, width / 2 - lineWidth / 2, 0, NULL);
+    LineTo(hbdc, width / 2 + lineWidth / 2, 0);
+    MoveToEx(hbdc, width / 2 + lineWidth * 5.5, -lineHeight * 6, NULL);
+    LineTo(hbdc, width / 2 + lineWidth * 6.5, -lineHeight * 6);
+    MoveToEx(hbdc, width / 2 - lineWidth * 5.5, lineHeight * 6, NULL);
+    LineTo(hbdc, width / 2 - lineWidth * 6.5, lineHeight * 6);
 
+    // Graphics
     Graphics graphics(hbdc);
-    Pen pen(Color(63, 63, 63), 2);
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
-    graphics.DrawPath(&pen, &path);
 
     // Draw treble clef
-    path.Reset();
+    GraphicsPath path;
     path.AddLine(tc[0][0], tc[0][1], tc[1][0], tc[1][1]);
     for (int i = 1; i < Length(tc) - 1; i += 3)
         path.AddBezier(tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
                        tc[i + 2][0], tc[i + 2][1], tc[i + 3][0], tc[i + 3][1]);
-    pen.SetWidth(1);
     Matrix matrix;
     RectF bounds;
     SizeF sizeF;
+    Pen pen(Color(0, 0, 0));
     SolidBrush brush(Color(0, 0, 0));
     path.GetBounds(&bounds, &matrix, &pen);
     bounds.GetSize(&sizeF);
@@ -3450,8 +3509,8 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     path.Transform(&matrix);
 
     // Calculate transform for note
-    float xBase = lineWidth * 14;
-    float yBase = lineHeight * 14;
+    int xBase = lineWidth * 14;
+    int yBase = lineHeight * 14;
     int note = staff.n;
     int octave = note / OCTAVE;
     int index = (note + OCTAVE) % OCTAVE;
@@ -3473,10 +3532,44 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     float dy = (octave * lineHeight * 3.5) +
         (offset[index] * lineHeight / 2);
 
+    // Draw note
     matrix.Reset();
     matrix.Translate(width / 2 - xBase + dx, yBase - dy);
     path.Transform(&matrix);
     graphics.FillPath(&brush, &path);
+
+    // Flat
+    path.Reset();
+    for (int i = 0; i < 16; i += 3)
+        path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+    for (int i = 15; i < 19; i++)
+        path.AddLine(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1]);
+    path.StartFigure();
+    for (int i = 19; i < 37; i += 3)
+        path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+    path.GetBounds(&bounds, &matrix, &pen);
+    bounds.GetSize(&sizeF);
+    scale = (lineHeight * 3) / sizeF.Height;
+    matrix.Reset();
+    matrix.Scale(scale, -scale);
+    path.Transform(&matrix);
+
+    // Draw sharp/flat
+    // SetBkMode(hbdc, TRANSPARENT);
+    // SetTextAlign(hbdc, TA_CENTER|TA_RIGHT);
+    // TextOutW(hbdc, width / 2 - xBase + dx - lineHeight * 2,
+    //         -yBase + dy - lineHeight * 1.5,
+    //         sharps[index], lstrlenW(sharps[index]));
+
+    // Font music(hbdc, font);
+    // PointF point(width / 2 - xBase + dx, yBase - dy);
+    // graphics.DrawString(sharps[index], lstrlenW(sharps[index]),
+    //                     &music, point, &brush);
+    // PointF point(width / 2, 0);
+    // graphics.DrawString(L"#b#b", lstrlenW(sharps[index]),
+    //                     &music, point, &brush);
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);
