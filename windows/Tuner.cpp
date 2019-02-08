@@ -3351,25 +3351,23 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Flat symbol
     static const float ft[][2] =
         {
-         {20, 86}, // moveto
-         {28, 102.667}, {41.6667, 111}, {61, 111}, // curveto
-         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5}, // curveto
-         {93.6667, 93.5}, {97, 83.6667}, {97, 71}, // curveto
-         {97, 53}, {89, 36.6667}, {73, 22}, // curveto
-         {57, 7.33333}, {35.3333, -1.33333}, {8, -4}, // curveto
-         {8, 195}, // lineto
-         {20, 195}, // lineto
-         {20, 86}, // lineto
-         // closepath
-         {20, 7}, // moveto
-         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // curveto
-         {67.1667, 38.3333}, {72, 51.6667}, {72, 67}, // curveto
-         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87}, // curveto
-         {62.8333, 91.6667}, {57.3333, 94}, {50, 94}, // curveto
-         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83}, // curveto
-         {22.8333, 75.6667}, {20, 64.6667}, {20, 50}, // curveto
-         {20, 7}, // lineto
-         // closepath
+         {20, 86},
+         {28, 102.667}, {41.6667, 111}, {61, 111},
+         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5},
+         {93.6667, 93.5}, {97, 83.6667}, {97, 71},
+         {97, 53}, {89, 36.6667}, {73, 22},
+         {57, 7.33333}, {35.3333, -1.33333}, {8, -4},
+         {8, 195},
+         {20, 195},
+         {20, 86},
+         {20, 7},
+         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27},
+         {67.1667, 38.3333}, {72, 51.6667}, {72, 67},
+         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87},
+         {62.8333, 91.6667}, {57.3333, 94}, {50, 94},
+         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83},
+         {22.8333, 75.6667}, {20, 64.6667}, {20, 50},
+         {20, 7},
         };
 
     // Scale offsets
@@ -3503,7 +3501,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
                        hd[i + 2][0], hd[i + 2][1], hd[i + 3][0], hd[i + 3][1]);
     path.GetBounds(&bounds, &matrix, &pen);
     bounds.GetSize(&sizeF);
-    scale = (lineHeight * 1.75) / sizeF.Height;
+    scale = (lineHeight * 2) / sizeF.Height;
     matrix.Reset();
     matrix.Scale(scale, -scale);
     path.Transform(&matrix);
@@ -3549,27 +3547,13 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     for (int i = 19; i < 37; i += 3)
         path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
                        ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+    path.AddLine(ft[38][0], ft[38][1], ft[39][0], ft[39][1]);
     path.GetBounds(&bounds, &matrix, &pen);
     bounds.GetSize(&sizeF);
     scale = (lineHeight * 3) / sizeF.Height;
     matrix.Reset();
     matrix.Scale(scale, -scale);
     path.Transform(&matrix);
-
-    // Draw sharp/flat
-    // SetBkMode(hbdc, TRANSPARENT);
-    // SetTextAlign(hbdc, TA_CENTER|TA_RIGHT);
-    // TextOutW(hbdc, width / 2 - xBase + dx - lineHeight * 2,
-    //         -yBase + dy - lineHeight * 1.5,
-    //         sharps[index], lstrlenW(sharps[index]));
-
-    // Font music(hbdc, font);
-    // PointF point(width / 2 - xBase + dx, yBase - dy);
-    // graphics.DrawString(sharps[index], lstrlenW(sharps[index]),
-    //                     &music, point, &brush);
-    // PointF point(width / 2, 0);
-    // graphics.DrawString(L"#b#b", lstrlenW(sharps[index]),
-    //                     &music, point, &brush);
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);
