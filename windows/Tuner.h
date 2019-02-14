@@ -105,6 +105,12 @@ enum
 enum
     {OPTIONS_BM};
 
+// Sharps
+enum
+    {NATURAL,
+     SHARP,
+     FLAT};
+
 // Wave in values
 enum
     {SAMPLE_RATE = 11025L,

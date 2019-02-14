@@ -3310,64 +3310,64 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Sharp symbol
     static const float sp[][2] =
         {
-         {35, 35}, // moveto
-         {8, 22}, // lineto
-         {8, 46}, // lineto
-         {35, 59}, // lineto
-         {35, 101}, // lineto
-         {8, 88}, // lineto
-         {8, 111}, // lineto
-         {35, 125}, // lineto
-         {35, 160}, // lineto
-         {44, 160}, // lineto
-         {44, 129}, // lineto
-         {80, 147}, // lineto
-         {80, 183}, // lineto
-         {89, 183}, // lineto
-         {89, 151}, // lineto
-         {116, 165}, // lineto
-         {116, 141}, // lineto
-         {89, 127}, // lineto
-         {89, 86}, // lineto
-         {116, 100}, // lineto
-         {116, 75}, // lineto
-         {89, 62}, // lineto
-         {89, 19}, // lineto
-         {80, 19}, // lineto
-         {80, 57}, // lineto
-         {44, 39}, // lineto
-         {44, -1}, // lineto
-         {35, -1}, // lineto
-         {35, 35}, // lineto
+         {35, 35}, // 0
+         {8, 22}, // 1
+         {8, 46}, // 2
+         {35, 59}, // 3
+         {35, 101}, // 4
+         {8, 88}, // 5
+         {8, 111}, // 6
+         {35, 125}, // 7
+         {35, 160}, // 8
+         {44, 160}, // 9
+         {44, 129}, // 10
+         {80, 147}, // 11
+         {80, 183}, // 12
+         {89, 183}, // 13
+         {89, 151}, // 14
+         {116, 165}, // 15
+         {116, 141}, // 16
+         {89, 127}, // 17
+         {89, 86}, // 18
+         {116, 100}, // 19
+         {116, 75}, // 20
+         {89, 62}, // 21
+         {89, 19}, // 22
+         {80, 19}, // 23
+         {80, 57}, // 23
+         {44, 39}, // 25
+         {44, -1}, // 26
+         {35, -1}, // 27
+         {35, 35}, // 28
          // closepath
-         {44, 64}, // moveto
-         {80, 81}, // lineto
-         {80, 123}, // lineto
-         {44, 105}, // lineto
-         {44, 64}, // lineto
+         {44, 64}, // 29
+         {80, 81}, // 30
+         {80, 123}, // 31
+         {44, 105}, // 32
+         {44, 64}, // 33
          // closepath
         };
 
     // Flat symbol
     static const float ft[][2] =
         {
-         {20, 86},
-         {28, 102.667}, {41.6667, 111}, {61, 111},
-         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5},
-         {93.6667, 93.5}, {97, 83.6667}, {97, 71},
-         {97, 53}, {89, 36.6667}, {73, 22},
-         {57, 7.33333}, {35.3333, -1.33333}, {8, -4},
-         {8, 195},
-         {20, 195},
-         {20, 86},
-         {20, 7},
-         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27},
-         {67.1667, 38.3333}, {72, 51.6667}, {72, 67},
-         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87},
-         {62.8333, 91.6667}, {57.3333, 94}, {50, 94},
-         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83},
-         {22.8333, 75.6667}, {20, 64.6667}, {20, 50},
-         {20, 7},
+         {20, 86}, // 0
+         {28, 102.667}, {41.6667, 111}, {61, 111}, // 3
+         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5}, // 6
+         {93.6667, 93.5}, {97, 83.6667}, {97, 71}, // 9
+         {97, 53}, {89, 36.6667}, {73, 22}, // 12
+         {57, 7.33333}, {35.3333, -1.33333}, {8, -4}, // 15
+         {8, 195}, // 16
+         {20, 195}, // 17
+         {20, 86}, // 18
+         {20, 7}, // 19
+         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // 22
+         {67.1667, 38.3333}, {72, 51.6667}, {72, 67}, // 25
+         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87}, // 28
+         {62.8333, 91.6667}, {57.3333, 94}, {50, 94}, // 31
+         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83}, // 34
+         {22.8333, 75.6667}, {20, 64.6667}, {20, 50}, // 37
+         {20, 7}, // 38
         };
 
     // Scale offsets
@@ -3375,9 +3375,9 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         {0, 0, 1, 2, 2, 3,
          3, 4, 5, 5, 6, 6};
 
-    static const WCHAR *sharps[] =
-	{L"", L"#", L"", L"b", L"", L"",
-	 L"#", L"", L"b", L"", L"b", L""};
+    static const int sharps[] =
+	{NATURAL, SHARP, NATURAL, FLAT, NATURAL, NATURAL,
+	 SHARP, NATURAL, FLAT, NATURAL, FLAT, NATURAL};
 
     // Draw nice etched edge
     DrawEdge(hdc, &rect , EDGE_SUNKEN, BF_ADJUST | BF_RECT);
@@ -3536,24 +3536,65 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     path.Transform(&matrix);
     graphics.FillPath(&brush, &path);
 
-    // Flat
-    path.Reset();
-    for (int i = 0; i < 16; i += 3)
-        path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
-                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
-    for (int i = 15; i < 19; i++)
-        path.AddLine(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1]);
-    path.StartFigure();
-    for (int i = 19; i < 37; i += 3)
-        path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
-                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
-    path.AddLine(ft[38][0], ft[38][1], ft[39][0], ft[39][1]);
-    path.GetBounds(&bounds, &matrix, &pen);
-    bounds.GetSize(&sizeF);
-    scale = (lineHeight * 3) / sizeF.Height;
-    matrix.Reset();
-    matrix.Scale(scale, -scale);
-    path.Transform(&matrix);
+    switch (sharps[index])
+    {
+        // Natural
+    case NATURAL:
+        break;
+
+        // Sharp
+    case SHARP:
+        path.Reset();
+        for (int i = 0; i < 28; i++)
+            path.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
+        path.StartFigure();
+        for (int i = 29; i < 33; i++)
+            path.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
+        matrix.Reset();
+        path.GetBounds(&bounds, &matrix, &pen);
+        matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                         -(bounds.GetTop() + bounds.GetBottom()) / 2);
+        path.Transform(&matrix);
+        matrix.Reset();
+        bounds.GetSize(&sizeF);
+        scale = (lineHeight * 3) / sizeF.Height;
+        matrix.Scale(scale, -scale);
+        path.Transform(&matrix);
+        matrix.Reset();
+        matrix.Translate(width / 2 - lineWidth, 0);
+        path.Transform(&matrix);
+        graphics.FillPath(&brush, &path);
+        break;
+
+        // Flat
+    case FLAT:
+        path.Reset();
+        for (int i = 0; i < 15; i += 3)
+            path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                           ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+        for (int i = 15; i < 19; i++)
+            path.AddLine(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1]);
+        path.StartFigure();
+        for (int i = 19; i < 36; i += 3)
+            path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                           ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+        path.AddLine(ft[37][0], ft[37][1], ft[38][0], ft[38][1]);
+        matrix.Reset();
+        path.GetBounds(&bounds, &matrix, &pen);
+        matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                         -(bounds.GetTop() + bounds.GetBottom()) / 2);
+        path.Transform(&matrix);
+        matrix.Reset();
+        bounds.GetSize(&sizeF);
+        scale = (lineHeight * 3) / sizeF.Height;
+        matrix.Scale(scale, -scale);
+        path.Transform(&matrix);
+        matrix.Reset();
+        matrix.Translate(width / 2 - lineWidth / 2, -lineHeight / 2);
+        path.Transform(&matrix);
+        graphics.FillPath(&brush, &path);
+        break;
+    }
 
     // Move origin back
     SetViewportOrgEx(hbdc, 0, 0, NULL);
