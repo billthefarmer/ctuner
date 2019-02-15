@@ -1073,7 +1073,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(note.hwnd, &note.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&note.rect, 2);
 
-            Button_SetCheck(fund.hwnd,
+            Button_SetCheck(note.hwnd,
                             audio.note? BST_CHECKED: BST_UNCHECKED);
 
             // Add tickbox to tooltip
@@ -1088,7 +1088,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                              WS_VISIBLE | WS_CHILD |
                              BS_GROUPBOX,
                              MARGIN, group.rect.bottom + SPACING,
-                             width - MARGIN * 2, GROUP_HEIGHT,
+                             width - MARGIN * 2, EXPAND_HEIGHT,
                              hWnd, NULL, hInst, NULL);
             GetWindowRect(group.hwnd, &group.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&group.rect, 2);
@@ -1096,11 +1096,10 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             // Create text
             text.hwnd =
                 CreateWindow(WC_STATIC, "Spectrum expand:",
-                             WS_VISIBLE | WS_CHILD |
-                             SS_LEFT,
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
                              group.rect.left + MARGIN,
                              group.rect.top + MARGIN,
-                             CHECK_WIDTH, 24, hWnd,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
                              (HMENU)TEXT_ID, hInst, NULL);
             GetWindowRect(text.hwnd, &text.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
@@ -1111,7 +1110,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                              WS_VISIBLE | WS_CHILD |
                              CBS_DROPDOWNLIST,
                              width / 2 + MARGIN, text.rect.top,
-                             CHECK_WIDTH, 24, hWnd,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
                              (HMENU)EXPAND_ID, hInst, NULL);
             GetWindowRect(expand.hwnd, &expand.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&expand.rect, 2);
@@ -1133,11 +1132,10 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             // Create text
             text.hwnd =
                 CreateWindow(WC_STATIC, "Strobe colours:",
-                             WS_VISIBLE | WS_CHILD |
-                             SS_LEFT,
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
                              group.rect.left + MARGIN,
                              text.rect.bottom + SPACING,
-                             CHECK_WIDTH, 24, hWnd,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
                              (HMENU)TEXT_ID, hInst, NULL);
             GetWindowRect(text.hwnd, &text.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
@@ -1148,8 +1146,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                              WS_VISIBLE | WS_CHILD |
                              CBS_DROPDOWNLIST,
                              width / 2 + MARGIN, text.rect.top,
-                             CHECK_WIDTH, 24, hWnd,
-                             (HMENU)EXPAND_ID, hInst, NULL);
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             (HMENU)COLOURS_ID, hInst, NULL);
             GetWindowRect(colours.hwnd, &colours.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&colours.rect, 2);
 
@@ -1170,11 +1168,10 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             // Create text
             text.hwnd =
                 CreateWindow(WC_STATIC, "Reference:",
-                             WS_VISIBLE | WS_CHILD |
-                             SS_LEFT,
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
                              group.rect.left + MARGIN,
                              text.rect.bottom + SPACING,
-                             CHECK_WIDTH, 20, hWnd,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
                              (HMENU)TEXT_ID, hInst, NULL);
             GetWindowRect(text.hwnd, &text.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
@@ -1187,7 +1184,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                              WS_VISIBLE | WS_CHILD |
                              WS_BORDER,
                              width / 2 + MARGIN, text.rect.top,
-                             CHECK_WIDTH, 20, hWnd,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
                              (HMENU)REFERENCE_ID, hInst, NULL);
             GetWindowRect(reference.hwnd, &reference.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&reference.rect, 2);
@@ -1215,13 +1212,142 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
                         (LPARAM) &tooltip.info);
 
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Transpose:",
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
+                             group.rect.left + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
+
+            // Create combo box
+            transpose.hwnd =
+                CreateWindow(WC_COMBOBOX, "",
+                             WS_VISIBLE | WS_CHILD |
+                             CBS_DROPDOWNLIST,
+                             width / 2 + MARGIN, text.rect.top,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             (HMENU)TRANSPOSE_ID, hInst, NULL);
+            GetWindowRect(transpose.hwnd, &transpose.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&transpose.rect, 2);
+
+            char trans[][12] =
+                {" +6[Key:F#]", " +5[Key:F]", " +4[Key:E]",
+                 " +3[Key:Eb]", " +2[Key:D]",
+                 " +1[Key:C#]", " +0[Key:C]", " -1[Key:B]",
+                 " -2[Key:Bb]", " -3[Key:A]",
+                 " -4[Key:Ab]", " -5[Key:G]",
+                 " -6[Key:F#]"};
+            for (int i = 0; i < Length(trans); i++)
+                ComboBox_AddString(transpose.hwnd, trans[i]);
+
+            // Select +0[Key:C]
+            ComboBox_SelectString(transpose.hwnd, -1, " +0[Key:C]");
+
+            // Add to tooltip
+            tooltip.info.uId = (UINT_PTR)transpose.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Transpose display";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Temperament:",
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
+                             group.rect.left + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
+
+            // Create combo box
+            temperament.hwnd =
+                CreateWindow(WC_COMBOBOX, "",
+                             WS_VISIBLE | WS_CHILD | WS_VSCROLL |
+                             CBS_DROPDOWNLIST,
+                             width / 2 - MARGIN, text.rect.top,
+                             CHECK_WIDTH + MARGIN * 2, CHECK_HEIGHT, hWnd,
+                             (HMENU)TEMPERAMENT_ID, hInst, NULL);
+            GetWindowRect(temperament.hwnd, &temperament.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&temperament.rect, 2);
+
+            char temp[][20] =
+                {" Kirnberger II", " Kirnberger III",
+                 " Werckmeister III", " Werckmeister IV",
+                 " Werckmeister V", " Werckmeister VI",
+                 " Bach (Klais)", " Just (Barbour)",
+                 " Equal Temperament", " Pythagorean",
+                 " Van Zwolle", " Meantone (-1/4)",
+                 " Silbermann (-1/6)", " Salinas (-1/3)",
+                 " Zarlino (-2/7)", " Rossi (-1/5)",
+                 " Rossi (-2/9)", " Rameau (-1/4)",
+                 " Kellner", " Vallotti",
+                 " Young II", " Bendeler III",
+                 " Neidhardt I", " Neidhardt II",
+                 " Neidhardt III", " Bruder 1829",
+                 " Barnes 1977", " Lambert 1774",
+                 " Schlick (H. Vogel)", " Meantone # (-1/4)",
+                 " Meantone b (-1/4)", " Lehman-Bach"};
+            for (int i = 0; i < Length(temp); i++)
+                ComboBox_AddString(temperament.hwnd, temp[i]);
+
+            // Select Equal Temperament
+            ComboBox_SelectString(temperament.hwnd, -1, " Equal Temperament");
+
+            // Add edit to tooltip
+            tooltip.info.uId = (UINT_PTR)temperament.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Temperament";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
+            // Create text
+            text.hwnd =
+                CreateWindow(WC_STATIC, "Key:",
+                             WS_VISIBLE | WS_CHILD | SS_LEFT,
+                             group.rect.left + MARGIN,
+                             text.rect.bottom + SPACING,
+                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             (HMENU)TEXT_ID, hInst, NULL);
+            GetWindowRect(text.hwnd, &text.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&text.rect, 2);
+
+            // Create combo box
+            key.hwnd =
+                CreateWindow(WC_COMBOBOX, "",
+                             WS_VISIBLE | WS_CHILD |
+                             CBS_DROPDOWNLIST,
+                             width / 4, text.rect.top,
+                             MARGIN * 2, CHECK_HEIGHT, hWnd,
+                             (HMENU)KEY_ID, hInst, NULL);
+            GetWindowRect(key.hwnd, &key.rect);
+            MapWindowPoints(NULL, hWnd, (POINT *)&key.rect, 2);
+
+            char keys[][4] =
+                {" C", " C#", " D", " Eb",
+                 " E", " F", " F#", " G",
+                 " Ab", " A", " Bb", " B"};
+            for (int i = 0; i < Length(keys); i++)
+                ComboBox_AddString(key.hwnd, keys[i]);
+
+            // Select Equal Key
+            ComboBox_SelectString(key.hwnd, -1, " C");
+
+            // Add edit to tooltip
+            tooltip.info.uId = (UINT_PTR)key.hwnd;
+            tooltip.info.lpszText = (LPSTR)"Key";
+            SendMessage(tooltip.hwnd, TTM_ADDTOOL, 0,
+                        (LPARAM) &tooltip.info);
+
             // Create filter button
             button.filter.hwnd =
                 CreateWindow(WC_BUTTON, "Filters...",
                              WS_VISIBLE | WS_CHILD |
                              BS_PUSHBUTTON,
-                             group.rect.left + MARGIN,
-                             reference.rect.bottom + SPACING,
+                             width / 2 + MARGIN, text.rect.top,
                              CHECK_WIDTH, BUTTON_HEIGHT,
                              hWnd, (HMENU)FILTERS_ID, hInst, NULL);
 
@@ -1229,14 +1355,14 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             Button_Enable(button.filter.hwnd, audio.note);
 
             // Create close button
-            button.close.hwnd =
-                CreateWindow(WC_BUTTON, "Close",
-                             WS_VISIBLE | WS_CHILD |
-                             BS_PUSHBUTTON,
-                             width / 2 + MARGIN,
-                             text.rect.bottom + SPACING,
-                             CHECK_WIDTH, BUTTON_HEIGHT,
-                             hWnd, (HMENU)CLOSE_ID, hInst, NULL);
+            // button.close.hwnd =
+            //     CreateWindow(WC_BUTTON, "Close",
+            //                  WS_VISIBLE | WS_CHILD |
+            //                  BS_PUSHBUTTON,
+            //                  width / 2 + MARGIN,
+            //                  text.rect.bottom + SPACING,
+            //                  CHECK_WIDTH, BUTTON_HEIGHT,
+            //                  hWnd, (HMENU)CLOSE_ID, hInst, NULL);
         }
 	break;
 
@@ -1337,6 +1463,22 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             // Note filter control
         case NOTE_ID:
             NoteFilterClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+
+            // Expand
+        case EXPAND_ID:
+            ExpandClicked(wParam, lParam);
+
+	    // Set the focus back to the window
+	    SetFocus(hWnd);
+	    break;
+
+            // Colours
+        case COLOURS_ID:
+            ColoursClicked(wParam, lParam);
 
 	    // Set the focus back to the window
 	    SetFocus(hWnd);
@@ -1528,7 +1670,7 @@ BOOL FundamentalClicked(WPARAM wParam, LPARAM lParam)
 	return false;
     }
 
-    if (down.hwnd != NULL)
+    if (fund.hwnd != NULL)
 	Button_SetCheck(fund.hwnd, audio.fund? BST_CHECKED: BST_UNCHECKED);
     return true;
 }
@@ -1582,6 +1724,58 @@ BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
 	    spectrum.expand /= 2;
 
 	break;
+
+    default:
+	return false;
+    }
+
+    return true;
+}
+
+// Colours clicked
+BOOL ColoursClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+
+    default:
+	return false;
+    }
+
+    return true;
+}
+
+// Transpose clicked
+BOOL TransposeClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+
+    default:
+	return false;
+    }
+
+    return true;
+}
+
+// Temperament clicked
+BOOL TemperamentClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
+
+    default:
+	return false;
+    }
+
+    return true;
+}
+
+// Key clicked
+BOOL KeyClicked(WPARAM wParam, LPARAM lParam)
+{
+    switch (HIWORD(wParam))
+    {
 
     default:
 	return false;
@@ -3540,6 +3734,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     {
         // Natural
     case NATURAL:
+        // Do nothing
         break;
 
         // Sharp
@@ -3561,7 +3756,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         matrix.Scale(scale, -scale);
         path.Transform(&matrix);
         matrix.Reset();
-        matrix.Translate(width / 2 - lineWidth, 0);
+        matrix.Translate(width / 2 - xBase + dx - lineWidth / 2, yBase - dy);
         path.Transform(&matrix);
         graphics.FillPath(&brush, &path);
         break;
@@ -3590,7 +3785,8 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         matrix.Scale(scale, -scale);
         path.Transform(&matrix);
         matrix.Reset();
-        matrix.Translate(width / 2 - lineWidth / 2, -lineHeight / 2);
+        matrix.Translate(width / 2 - xBase + dx - lineWidth / 2,
+                         yBase - dy - lineHeight / 2);
         path.Transform(&matrix);
         graphics.FillPath(&brush, &path);
         break;

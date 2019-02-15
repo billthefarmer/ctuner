@@ -66,7 +66,6 @@ enum
      NOTE_ID,
      FILT_ID,
      CLOSE_ID,
-     TEMP_ID,
      TRANS_ID,
      FILTER_ID,
      ENABLE_ID,
@@ -75,7 +74,9 @@ enum
      COLOURS_ID,
      OPTIONS_ID,
      FILTERS_ID,
+     TRANSPOSE_ID,
      REFERENCE_ID,
+     TEMPERAMENT_ID,
 
      // Filters ids
      NOTES_C,
@@ -185,11 +186,12 @@ enum
 // Window sizes
 enum
     {GROUP_WIDTH = (CHECK_WIDTH * 2) + (MARGIN * 4),
-     GROUP_HEIGHT = (CHECK_HEIGHT  * 4) + (MARGIN * 2) + (SPACING * 2),
+     GROUP_HEIGHT = (CHECK_HEIGHT * 4) + (MARGIN * 2) + (SPACING * 2),
+     EXPAND_HEIGHT = (CHECK_HEIGHT * 6) + (MARGIN * 2) + (SPACING * 5),
      FILTER_WIDTH = (CHECK_WIDTH * 2) + (MARGIN * 4),
      FILTER_HEIGHT = (CHECK_HEIGHT * 6) + (MARGIN * 2) + (SPACING * 5),
      OPTIONS_WIDTH = GROUP_WIDTH + (MARGIN * 2) + 4,
-     OPTIONS_HEIGHT = (GROUP_HEIGHT * 2) + (MARGIN * 2) + SPACING,
+     OPTIONS_HEIGHT = GROUP_HEIGHT + EXPAND_HEIGHT + (MARGIN * 2) + SPACING,
      FILTERS_WIDTH = FILTER_WIDTH + (MARGIN * 2) + 4,
      FILTERS_HEIGHT = FILTER_HEIGHT + (MARGIN * 2)};
 
@@ -354,7 +356,7 @@ METER meter;
 
 BUTTON button;
 
-TOOL group;
+TOOL key;
 TOOL zoom;
 TOOL text;
 TOOL lock;
@@ -363,11 +365,14 @@ TOOL mult;
 TOOL fund;
 TOOL note;
 TOOL filt;
+TOOL group;
 TOOL enable;
 TOOL expand;
 TOOL updown;
 TOOL colours;
+TOOL transpose;
 TOOL reference;
+TOOL temperament;
 
 BOXES boxes;
 AUDIO audio;
@@ -385,43 +390,47 @@ LRESULT CALLBACK FilterWProc(HWND, UINT, WPARAM, LPARAM);
 BOOL CALLBACK EnumChildProc(HWND, LPARAM);
 BOOL RegisterMainClass(HINSTANCE);
 VOID GetSavedStatus(VOID);
-BOOL DrawItem(WPARAM, LPARAM);
-BOOL DrawStrobe(HDC, RECT);
-BOOL DrawStaff(HDC, RECT);
-BOOL DrawScope(HDC, RECT);
-BOOL DrawSpectrum(HDC, RECT);
-BOOL DrawDisplay(HDC, RECT);
-BOOL DrawLock(HDC, int, int);
-BOOL DrawMeter(HDC, RECT);
-BOOL DisplayContextMenu(HWND, POINTS);
-BOOL DisplayOptions(WPARAM, LPARAM);
-BOOL DisplayFilters(WPARAM, LPARAM);
-BOOL DisplayOptionsMenu(HWND, POINTS);
-BOOL DisplayClicked(WPARAM, LPARAM);
-BOOL SpectrumClicked(WPARAM, LPARAM);
-BOOL StrobeClicked(WPARAM, LPARAM);
-BOOL StaffClicked(WPARAM, LPARAM);
-BOOL MeterClicked(WPARAM, LPARAM);
-BOOL FilterClicked(WPARAM, LPARAM);
-BOOL FundamentalClicked(WPARAM, LPARAM);
-BOOL NoteFilterClicked(WPARAM, LPARAM);
-BOOL ScopeClicked(WPARAM, LPARAM);
-BOOL LockClicked(WPARAM, LPARAM);
-BOOL ZoomClicked(WPARAM, LPARAM);
-BOOL ExpandClicked(WPARAM, LPARAM);
-BOOL ContractClicked(WPARAM, LPARAM);
-BOOL MultipleClicked(WPARAM, LPARAM);
-BOOL EnableClicked(WPARAM, LPARAM);
-BOOL EditReference(WPARAM, LPARAM);
-BOOL CharPressed(WPARAM, LPARAM);
-BOOL CopyDisplay(WPARAM, LPARAM);
-BOOL DownClicked(WPARAM, LPARAM);
-BOOL BoxClicked(WPARAM, LPARAM);
-BOOL ChangeReference(WPARAM, LPARAM);
-BOOL WindowResize(HWND, WPARAM, LPARAM);
-BOOL WindowResizing(HWND, WPARAM, LPARAM);
 BOOL AddToolbarBitmap(HWND, LPCTSTR);
 BOOL AddToolbarButtons(HWND);
+BOOL BoxClicked(WPARAM, LPARAM);
+BOOL ChangeReference(WPARAM, LPARAM);
+BOOL CharPressed(WPARAM, LPARAM);
+BOOL ColoursClicked(WPARAM, LPARAM);
+BOOL ContractClicked(WPARAM, LPARAM);
+BOOL CopyDisplay(WPARAM, LPARAM);
+BOOL DisplayClicked(WPARAM, LPARAM);
+BOOL DisplayContextMenu(HWND, POINTS);
+BOOL DisplayFilters(WPARAM, LPARAM);
+BOOL DisplayOptions(WPARAM, LPARAM);
+BOOL DisplayOptionsMenu(HWND, POINTS);
+BOOL DownClicked(WPARAM, LPARAM);
+BOOL DrawDisplay(HDC, RECT);
+BOOL DrawItem(WPARAM, LPARAM);
+BOOL DrawLock(HDC, int, int);
+BOOL DrawMeter(HDC, RECT);
+BOOL DrawScope(HDC, RECT);
+BOOL DrawSpectrum(HDC, RECT);
+BOOL DrawStaff(HDC, RECT);
+BOOL DrawStrobe(HDC, RECT);
+BOOL EditReference(WPARAM, LPARAM);
+BOOL EnableClicked(WPARAM, LPARAM);
+BOOL ExpandClicked(WPARAM, LPARAM);
+BOOL FilterClicked(WPARAM, LPARAM);
+BOOL FundamentalClicked(WPARAM, LPARAM);
+BOOL KeyClicked(WPARAM, LPARAM);
+BOOL LockClicked(WPARAM, LPARAM);
+BOOL MeterClicked(WPARAM, LPARAM);
+BOOL MultipleClicked(WPARAM, LPARAM);
+BOOL NoteFilterClicked(WPARAM, LPARAM);
+BOOL ScopeClicked(WPARAM, LPARAM);
+BOOL SpectrumClicked(WPARAM, LPARAM);
+BOOL StaffClicked(WPARAM, LPARAM);
+BOOL StrobeClicked(WPARAM, LPARAM);
+BOOL TemperamentClicked(WPARAM, LPARAM);
+BOOL TransposeClicked(WPARAM, LPARAM);
+BOOL WindowResize(HWND, WPARAM, LPARAM);
+BOOL WindowResizing(HWND, WPARAM, LPARAM);
+BOOL ZoomClicked(WPARAM, LPARAM);
 VOID CALLBACK MeterCallback(PVOID, BOOL);
 VOID CALLBACK StrobeCallback(PVOID, BOOL);
 DWORD WINAPI AudioThread(LPVOID);
