@@ -39,7 +39,6 @@
 #define PCLASS "OptionWClass"
 #define FCLASS "FilterWClass"
 
-#define OCTAVE 12
 #define MIN   0.5
 
 #undef NOISE
@@ -50,30 +49,29 @@ enum
      SPECTRUM_ID,
      DISPLAY_ID,
      STROBE_ID,
-     SCOPE_ID,
      METER_ID,
+     SCOPE_ID,
      STAFF_ID,
      QUIT_ID,
 
      // Options ids
      KEY_ID,
-     ZOOM_ID,
-     TEXT_ID,
      DOWN_ID,
+     FILT_ID,
+     FUND_ID,
      LOCK_ID,
      MULT_ID,
-     FUND_ID,
      NOTE_ID,
-     FILT_ID,
+     TEXT_ID,
+     ZOOM_ID,
      CLOSE_ID,
-     TRANS_ID,
-     FILTER_ID,
      ENABLE_ID,
      EXPAND_ID,
+     FILTER_ID,
      UPDOWN_ID,
      COLOURS_ID,
-     OPTIONS_ID,
      FILTERS_ID,
+     OPTIONS_ID,
      TRANSPOSE_ID,
      REFERENCE_ID,
      TEMPERAMENT_ID,
@@ -130,7 +128,10 @@ enum
 // Tuner reference values
 enum
     {A5_REFNCE = 440,
-     C5_OFFSET = 57};
+     C5_OFFSET = 57,
+     A_OFFSET = 9,
+     OCTAVE = 12,
+     EQUAL = 8};
 
 // Reference values
 enum
@@ -270,6 +271,7 @@ typedef struct
     double c;
     int n;
     int count;
+    int transpose;
     maximum *maxima;
 } DISPLAY, *DISPLAYP;
 
@@ -316,12 +318,14 @@ typedef struct
 typedef struct
 {
     DWORD id;
+    int key;
     BOOL down;
     BOOL fund;
     BOOL note;
     BOOL filter;
     HWAVEIN hwi;
     HANDLE thread;
+    int temperament;
     double reference;
 } AUDIO, *AUDIOP;
 

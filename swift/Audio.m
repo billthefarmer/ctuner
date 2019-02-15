@@ -757,13 +757,13 @@ void (^ProcessAudio)() = ^
 
 	// Temperament ratio
 	double temperRatio = temperamentValues[audioData.temper][n] /
-	  temperamentValues[audioData.temper][a];
+            temperamentValues[audioData.temper][a];
 	// Equal ratio
 	double equalRatio = temperamentValues[kEqual][n] /
-	  temperamentValues[kEqual][a];
+            temperamentValues[kEqual][a];
 
-	    // Temperament adjustment
-	    double temperAdjust = temperRatio / equalRatio;
+        // Temperament adjustment
+        double temperAdjust = temperRatio / equalRatio;
 
 	// Reference note
 	fr = audioData.reference * pow(2.0, round(cf) / 12.0) * temperAdjust;

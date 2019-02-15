@@ -108,11 +108,14 @@ VOID GetSavedStatus()
     int size = sizeof(value);
 
     // Initial values
-    strobe.enable = false;
-    staff.enable = true;
     audio.filter = false;
+    audio.temperament = 8;
+    display.transpose = 6;
     spectrum.expand = 1;
     spectrum.zoom = true;
+    staff.enable = true;
+    strobe.colours = 1;
+    strobe.enable = false;
 
     // Reference initial value
     audio.reference = A5_REFNCE;
@@ -1157,7 +1160,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 ComboBox_AddString(colours.hwnd, strings[i]);
 
             // Select Olive/Aqua
-            ComboBox_SelectString(colours.hwnd, -1, " Olive/Aqua");
+            ComboBox_SetCurSel(colours.hwnd, strobe.colours);
 
             // Add edit to tooltip
             tooltip.info.uId = (UINT_PTR)colours.hwnd;
@@ -1245,7 +1248,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 ComboBox_AddString(transpose.hwnd, trans[i]);
 
             // Select +0[Key:C]
-            ComboBox_SelectString(transpose.hwnd, -1, " +0[Key:C]");
+            ComboBox_SetCurSel(transpose.hwnd, display.transpose);
 
             // Add to tooltip
             tooltip.info.uId = (UINT_PTR)transpose.hwnd;
@@ -1296,7 +1299,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 ComboBox_AddString(temperament.hwnd, temp[i]);
 
             // Select Equal Temperament
-            ComboBox_SelectString(temperament.hwnd, -1, " Equal Temperament");
+            ComboBox_SetCurSel(temperament.hwnd, audio.temperament);
 
             // Add edit to tooltip
             tooltip.info.uId = (UINT_PTR)temperament.hwnd;
@@ -1333,8 +1336,8 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             for (int i = 0; i < Length(keys); i++)
                 ComboBox_AddString(key.hwnd, keys[i]);
 
-            // Select Equal Key
-            ComboBox_SelectString(key.hwnd, -1, " C");
+            // Select C
+            ComboBox_SetCurSel(key.hwnd, audio.key);
 
             // Add edit to tooltip
             tooltip.info.uId = (UINT_PTR)key.hwnd;
@@ -1471,17 +1474,11 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             // Expand
         case EXPAND_ID:
             ExpandClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-	    SetFocus(hWnd);
 	    break;
 
             // Colours
         case COLOURS_ID:
             ColoursClicked(wParam, lParam);
-
-	    // Set the focus back to the window
-	    SetFocus(hWnd);
 	    break;
 
 	    // Reference
@@ -1588,8 +1585,8 @@ BOOL FilterClicked(WPARAM wParam, LPARAM lParam)
     return true;
 }
 
-// Colour clicked
-BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
+// Colours clicked
+BOOL ColoursClicked(WPARAM wParam, LPARAM lParam)
 {
     switch (HIWORD(wParam))
     {
@@ -1603,8 +1600,12 @@ BOOL ColourClicked(WPARAM wParam, LPARAM lParam)
 
 	    strobe.changed = true;
 	}
-
 	break;
+
+    case CBN_SELENDOK:
+        strobe.colours = ComboBox_GetCurSel(colours.hwnd);
+        strobe.changed = true;
+        break;
 
     default:
 	return false;
@@ -1704,8 +1705,11 @@ BOOL ExpandClicked(WPARAM wParam, LPARAM lParam)
     case BN_CLICKED:
 	if (spectrum.expand < 16)
 	    spectrum.expand *= 2;
-
 	break;
+
+    case CBN_SELENDOK:
+        spectrum.expand = round(pow(2, ComboBox_GetCurSel(expand.hwnd)));
+        break;
 
     default:
 	return false;
@@ -1732,24 +1736,14 @@ BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
     return true;
 }
 
-// Colours clicked
-BOOL ColoursClicked(WPARAM wParam, LPARAM lParam)
-{
-    switch (HIWORD(wParam))
-    {
-
-    default:
-	return false;
-    }
-
-    return true;
-}
-
 // Transpose clicked
 BOOL TransposeClicked(WPARAM wParam, LPARAM lParam)
 {
     switch (HIWORD(wParam))
     {
+    case CBN_SELENDOK:
+        display.transpose = ComboBox_GetCurSel(transpose.hwnd);
+        break;
 
     default:
 	return false;
@@ -1763,6 +1757,9 @@ BOOL TemperamentClicked(WPARAM wParam, LPARAM lParam)
 {
     switch (HIWORD(wParam))
     {
+    case CBN_SELENDOK:
+        audio.temperament = ComboBox_GetCurSel(temperament.hwnd);
+        break;
 
     default:
 	return false;
@@ -1776,6 +1773,9 @@ BOOL KeyClicked(WPARAM wParam, LPARAM lParam)
 {
     switch (HIWORD(wParam))
     {
+    case CBN_SELENDOK:
+        audio.key = ComboBox_GetCurSel(key.hwnd);
+        break;
 
     default:
 	return false;
@@ -1870,7 +1870,7 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 	// Colour
     case 'K':
     case 'k':
-	ColourClicked(wParam, lParam);
+	ColoursClicked(wParam, lParam);
 	break;
 
 	// Lock
@@ -3533,13 +3533,11 @@ BOOL DrawStaff(HDC hdc, RECT rect)
          {44, -1}, // 26
          {35, -1}, // 27
          {35, 35}, // 28
-         // closepath
          {44, 64}, // 29
          {80, 81}, // 30
          {80, 123}, // 31
          {44, 105}, // 32
          {44, 64}, // 33
-         // closepath
         };
 
     // Flat symbol
@@ -4413,31 +4411,31 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
         double cf = -12.0 * log2(audio.reference / xf[i]);
 
         // Note number
-        int n = round(cf) + C5_OFFSET;
+        int note = round(cf) + C5_OFFSET;
 
         // Don't use if negative
-        if (n < 0)
+        if (note < 0)
             continue;
 
         // Fundamental filter
         if (audio.fund && (count > 0) &&
-            ((n % OCTAVE) != (maxima[0].n % OCTAVE)))
+            ((note % OCTAVE) != (maxima[0].n % OCTAVE)))
             continue;
 
         // Note filter
         if (audio.note)
         {
             // Get note and octave
-            int note = n % OCTAVE;
-            int octave = n / OCTAVE;
+            int n = note % OCTAVE;
+            int o = note / OCTAVE;
 
             // Ignore too high
-            if (octave >= Length(filter.octave))
+            if (o >= Length(filter.octave))
                 continue;
 
             // Ignore if filtered
-            if (!filter.note[note] ||
-                !filter.octave[octave])
+            if (!filter.note[n] ||
+                !filter.octave[o])
                 continue;
         }
 
@@ -4456,11 +4454,27 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
             // Frequency
 	    maxima[count].f = xf[i];
 
-	    // Reference note
-	    maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
-
 	    // Note number
-	    maxima[count].n = n;
+	    maxima[count].n = note;
+
+	    // Octave note number
+	    int n = (note - audio.key + OCTAVE) % OCTAVE;
+	    // A note number
+	    int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
+
+	    // Temperament ratio
+	    double temperRatio = temperamentValues[audio.temperament][n] /
+	      temperamentValues[audio.temperament][a];
+	    // Equal ratio
+	    double equalRatio = temperamentValues[EQUAL][n] /
+	      temperamentValues[EQUAL][a];
+
+	    // Temperament adjustment
+	    double temperAdjust = temperRatio / equalRatio;
+
+	    // Reference note
+	    maxima[count].fr = audio.reference *
+                pow(2.0, round(cf) / 12.0) * temperAdjust;
 
 	    // Set limit to octave above
 	    if (!audio.down && (limit > i * 2))
@@ -4476,7 +4490,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     double fh = 0.0;
 
     // Note number
-    int n = 0;
+    int note = 0;
 
     // Found flag and cents value
     BOOL found = false;
@@ -4495,18 +4509,42 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	double cf =
 	    -12.0 * log2(audio.reference / f);
 
-	// Reference note
-	fr = audio.reference * pow(2.0, round(cf) / 12.0);
-
-	// Lower and upper freq
-	fl = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
-	fh = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
+        // Don't count silly values
+        if (isnan(cf))
+        {
+            cf = 0.0;
+            found = false;
+        }
 
 	// Note number
-	n = round(cf) + C5_OFFSET;
+	note = round(cf) + C5_OFFSET;
 
-	if (n < 0)
+	if (note < 0)
 	    found = false;
+
+	// Octave note number
+	int n = (note - audio.key + OCTAVE) % OCTAVE;
+	// A note number
+	int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
+
+	// Temperament ratio
+	double temperRatio = temperamentValues[audio.temperament][n] /
+            temperamentValues[audio.temperament][a];
+	// Equal ratio
+	double equalRatio = temperamentValues[EQUAL][n] /
+            temperamentValues[EQUAL][a];
+
+        // Temperament adjustment
+        double temperAdjust = temperRatio / equalRatio;
+
+	// Reference note
+	fr = audio.reference * pow(2.0, round(cf) / 12.0) * temperAdjust;
+
+	// Lower and upper freq
+	fl = audio.reference * pow(2.0, (round(cf) - 0.55) /
+                                   12.0) * temperAdjust;
+	fh = audio.reference * pow(2.0, (round(cf) + 0.55) /
+                                   12.0) * temperAdjust;
 
 	// Find nearest maximum to reference note
 	double df = 1000.0;
@@ -4567,14 +4605,14 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    display.f = f;
 	    display.fr = fr;
 	    display.c = c;
-	    display.n = n;
+	    display.n = note;
 	    display.count = count;
 
 	    // Update strobe
 	    strobe.c = c;
 
 	    // Update staff
-	    staff.n = n;
+	    staff.n = note;
 
 	    // Update meter
 	    meter.c = c;
