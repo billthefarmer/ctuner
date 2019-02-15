@@ -1486,6 +1486,21 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
 	    EditReference(wParam, lParam);
 	    break;
 
+            // Transpose
+        case TRANSPOSE_ID:
+            TransposeClicked(wParam, lParam);
+            break;
+
+            // Temperament
+        case TEMPERAMENT_ID:
+            TemperamentClicked(wParam, lParam);
+            break;
+
+            // Key
+        case KEY_ID:
+            KeyClicked(wParam, lParam);
+            break;
+
 	    // Filters
 	case FILTERS_ID:
 	    DisplayFilters(wParam, lParam);
