@@ -110,7 +110,7 @@ VOID GetSavedStatus()
     // Initial values
     audio.filter = false;
     audio.temperament = 8;
-    display.transpose = 6;
+    display.transpose = 0;
     spectrum.expand = 1;
     spectrum.zoom = true;
     staff.enable = true;
@@ -1148,14 +1148,14 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 CreateWindow(WC_COMBOBOX, "",
                              WS_VISIBLE | WS_CHILD |
                              CBS_DROPDOWNLIST,
-                             width / 2 + MARGIN, text.rect.top,
-                             CHECK_WIDTH, CHECK_HEIGHT, hWnd,
+                             width / 2, text.rect.top,
+                             CHECK_WIDTH + MARGIN, CHECK_HEIGHT, hWnd,
                              (HMENU)COLOURS_ID, hInst, NULL);
             GetWindowRect(colours.hwnd, &colours.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&colours.rect, 2);
 
-            char strings[][14] =
-                {" Blue/Cyan", " Olive/Aqua", " Magenta/Cyan"};
+            char strings[][16] =
+                {" Blue/Cyan", " Olive/Aqua", " Magenta/Yellow"};
             for (int i = 0; i < Length(strings); i++)
                 ComboBox_AddString(colours.hwnd, strings[i]);
 
@@ -1248,7 +1248,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 ComboBox_AddString(transpose.hwnd, trans[i]);
 
             // Select +0[Key:C]
-            ComboBox_SetCurSel(transpose.hwnd, display.transpose);
+            ComboBox_SetCurSel(transpose.hwnd, 6 - display.transpose);
 
             // Add to tooltip
             tooltip.info.uId = (UINT_PTR)transpose.hwnd;
@@ -1606,15 +1606,15 @@ BOOL ColoursClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case BN_CLICKED:
-	if (strobe.enable)
-	{
-	    strobe.colours++;
+        strobe.colours++;
 
-	    if (strobe.colours > MAGENTA)
-		strobe.colours = BLUE;
+        if (strobe.colours > MAGENTA)
+            strobe.colours = BLUE;
 
-	    strobe.changed = true;
-	}
+        if (colours.hwnd != NULL)
+            ComboBox_SetCurSel(colours.hwnd, strobe.colours);
+
+        strobe.changed = true;
 	break;
 
     case CBN_SELENDOK:
@@ -1720,6 +1720,9 @@ BOOL ExpandClicked(WPARAM wParam, LPARAM lParam)
     case BN_CLICKED:
 	if (spectrum.expand < 16)
 	    spectrum.expand *= 2;
+
+        if (expand.hwnd != NULL)
+            ComboBox_SetCurSel(expand.hwnd, round(log2(spectrum.expand)));
 	break;
 
     case CBN_SELENDOK:
@@ -1742,6 +1745,8 @@ BOOL ContractClicked(WPARAM wParam, LPARAM lParam)
 	if (spectrum.expand > 1)
 	    spectrum.expand /= 2;
 
+        if (expand.hwnd != NULL)
+            ComboBox_SetCurSel(expand.hwnd, round(log2(spectrum.expand)));
 	break;
 
     default:
@@ -1757,7 +1762,8 @@ BOOL TransposeClicked(WPARAM wParam, LPARAM lParam)
     switch (HIWORD(wParam))
     {
     case CBN_SELENDOK:
-        display.transpose = ComboBox_GetCurSel(transpose.hwnd);
+        display.transpose = 6 - ComboBox_GetCurSel(transpose.hwnd);
+        staff.transpose = display.transpose;
         break;
 
     default:
@@ -2849,8 +2855,10 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             int x = 4;
 
 	    // Display note
-	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
-		    sharps[display.n % Length(notes)], display.n / 12);
+	    sprintf(s, "%s%s%d", notes[(display.n - display.transpose +
+                                        OCTAVE) % OCTAVE],
+                sharps[(display.n - display.transpose +
+                                        OCTAVE) % OCTAVE], display.n / 12);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
@@ -2905,8 +2913,10 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
             int x = 4;
 
 	    // Display note
-	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
-		    sharps[n % Length(notes)], n / 12);
+	    sprintf(s, "%s%s%d", notes[(n - display.transpose +
+                                        OCTAVE) % OCTAVE],
+		    sharps[(n  - display.transpose +
+                            OCTAVE) % OCTAVE], n / 12);
 	    TextOut(hbdc, x, y, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
@@ -2955,7 +2965,8 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	SetBkMode(hbdc, TRANSPARENT);
 
 	// Display note
-	sprintf(s, "%s", notes[display.n % Length(notes)]);
+	sprintf(s, "%s", notes[(display.n  - display.transpose +
+                                OCTAVE) % OCTAVE]);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 
         int y = size.cy;
@@ -2972,7 +2983,8 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	// Select music font
 	SelectObject(hbdc, music);
 
-	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
+	sprintf(s, "%s", sharps[(display.n  - display.transpose +
+                                 OCTAVE) % OCTAVE]);
 	GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);
 	TextOut(hbdc, x, y - size.cy, s, lstrlen(s));
 
@@ -3716,7 +3728,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Calculate transform for note
     int xBase = lineWidth * 14;
     int yBase = lineHeight * 14;
-    int note = staff.n;
+    int note = staff.n - staff.transpose;
     int octave = note / OCTAVE;
     int index = (note + OCTAVE) % OCTAVE;
 
