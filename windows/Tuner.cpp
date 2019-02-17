@@ -3454,21 +3454,8 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     using Gdiplus::Pen;
 
     static HBITMAP bitmap;
-    static HFONT font;
     static SIZE size;
     static HDC hbdc;
-
-    // Music font
-    static LOGFONTW lf =
-	{0, 0, 0, 0,
-	 FW_BOLD,
-	 false, false, false,
-	 DEFAULT_CHARSET,
-	 OUT_DEFAULT_PRECIS,
-	 CLIP_DEFAULT_PRECIS,
-	 ANTIALIASED_QUALITY,
-	 DEFAULT_PITCH | FF_DONTCARE,
-         L"Musica"};
 
     // Treble clef
     static const float tc[][2] =
@@ -3616,16 +3603,9 @@ BOOL DrawStaff(HDC hdc, RECT rect)
 	hbdc = CreateCompatibleDC(hdc);
     }
 
-    // Create new font and bitmap if resized
+    // Create new bitmap if resized
     if (width != size.cx || height != size.cy)
     {
-        if (font != NULL)
-            DeleteObject(font);
-
-        lf.lfHeight = lineHeight * 4;
-	font = CreateFontIndirectW(&lf);
-	// SelectObject(hbdc, font);
-
 	// Delete old bitmap
 	if (bitmap != NULL)
 	    DeleteObject(bitmap);
@@ -3668,62 +3648,111 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
 
     // Draw treble clef
-    GraphicsPath path;
-    path.AddLine(tc[0][0], tc[0][1], tc[1][0], tc[1][1]);
+    GraphicsPath tclef;
+    tclef.AddLine(tc[0][0], tc[0][1], tc[1][0], tc[1][1]);
     for (int i = 1; i < Length(tc) - 1; i += 3)
-        path.AddBezier(tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
-                       tc[i + 2][0], tc[i + 2][1], tc[i + 3][0], tc[i + 3][1]);
+        tclef.AddBezier(tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
+                        tc[i + 2][0], tc[i + 2][1], tc[i + 3][0], tc[i + 3][1]);
     Matrix matrix;
     RectF bounds;
     SizeF sizeF;
     Pen pen(Color(0, 0, 0));
     SolidBrush brush(Color(0, 0, 0));
-    path.GetBounds(&bounds, &matrix, &pen);
+
+    tclef.GetBounds(&bounds, &matrix, &pen);
+    matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                     -(bounds.GetTop() + bounds.GetBottom()) / 2);
+    tclef.Transform(&matrix);
     bounds.GetSize(&sizeF);
     float scale = (height / 2) / sizeF.Height;
-    matrix.Scale(scale, -scale);
-    path.Transform(&matrix);
     matrix.Reset();
-    matrix.Translate(margin + lineWidth / 2, -lineHeight);
-    path.Transform(&matrix);
-    graphics.FillPath(&brush, &path);
+    matrix.Scale(scale, -scale);
+    tclef.Transform(&matrix);
+    matrix.Reset();
+    matrix.Translate(margin + lineWidth / 2, -lineHeight * 3);
+    tclef.Transform(&matrix);
+    graphics.FillPath(&brush, &tclef);
 
     // Draw bass clef
-    path.Reset();
+    GraphicsPath bclef;
     for (int i = 0; i < 27; i += 3)
-        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
-                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
-    path.StartFigure();
+        bclef.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                        bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+    bclef.StartFigure();
     for (int i = 28; i < 34; i += 3)
-        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
-                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
-    path.StartFigure();
+        bclef.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                        bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+    bclef.StartFigure();
     for (int i = 35; i < Length(bc) - 1; i += 3)
-        path.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
-                       bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
+        bclef.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                        bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
 
-    path.GetBounds(&bounds, &matrix, &pen);
+    bclef.GetBounds(&bounds, &matrix, &pen);
+    matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                     -(bounds.GetTop() + bounds.GetBottom()) / 2);
+    bclef.Transform(&matrix);
     bounds.GetSize(&sizeF);
     scale = (lineHeight * 4.5) / sizeF.Height;
     matrix.Reset();
     matrix.Scale(scale, -scale);
-    path.Transform(&matrix);
+    bclef.Transform(&matrix);
     matrix.Reset();
-    matrix.Translate(margin + lineWidth / 4, lineHeight * 5.35);
-    path.Transform(&matrix);
-    graphics.FillPath(&brush, &path);
+    matrix.Translate(margin + lineWidth / 2, lineHeight * 2.8);
+    bclef.Transform(&matrix);
+    graphics.FillPath(&brush, &bclef);
 
     // Note head
-    path.Reset();
+    GraphicsPath head;
     for (int i = 0; i < Length(hd) - 1; i += 3)
-        path.AddBezier(hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
+        head.AddBezier(hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
                        hd[i + 2][0], hd[i + 2][1], hd[i + 3][0], hd[i + 3][1]);
-    path.GetBounds(&bounds, &matrix, &pen);
+    head.GetBounds(&bounds, &matrix, &pen);
     bounds.GetSize(&sizeF);
     scale = (lineHeight * 2) / sizeF.Height;
     matrix.Reset();
     matrix.Scale(scale, -scale);
-    path.Transform(&matrix);
+    head.Transform(&matrix);
+
+    // Sharp
+    GraphicsPath sharp;
+    for (int i = 0; i < 28; i++)
+        sharp.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
+    sharp.StartFigure();
+    for (int i = 29; i < 33; i++)
+        sharp.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
+    matrix.Reset();
+    sharp.GetBounds(&bounds, &matrix, &pen);
+    matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                     -(bounds.GetTop() + bounds.GetBottom()) / 2);
+    sharp.Transform(&matrix);
+    matrix.Reset();
+    bounds.GetSize(&sizeF);
+    scale = (lineHeight * 3) / sizeF.Height;
+    matrix.Scale(scale, -scale);
+    sharp.Transform(&matrix);
+
+    // Flat
+    GraphicsPath flat;
+    for (int i = 0; i < 15; i += 3)
+        flat.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+    for (int i = 15; i < 19; i++)
+        flat.AddLine(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1]);
+    flat.StartFigure();
+    for (int i = 19; i < 36; i += 3)
+        flat.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
+    flat.AddLine(ft[37][0], ft[37][1], ft[38][0], ft[38][1]);
+    matrix.Reset();
+    flat.GetBounds(&bounds, &matrix, &pen);
+    matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
+                     -(bounds.GetTop() + bounds.GetBottom()) / 2);
+    flat.Transform(&matrix);
+    matrix.Reset();
+    bounds.GetSize(&sizeF);
+    scale = (lineHeight * 3) / sizeF.Height;
+    matrix.Scale(scale, -scale);
+    flat.Transform(&matrix);
 
     // Calculate transform for note
     int xBase = lineWidth * 14;
@@ -3752,9 +3781,10 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Draw note
     matrix.Reset();
     matrix.Translate(width / 2 - xBase + dx, yBase - dy);
-    path.Transform(&matrix);
-    graphics.FillPath(&brush, &path);
+    head.Transform(&matrix);
+    graphics.FillPath(&brush, &head);
 
+    // Accidentals
     switch (sharps[index])
     {
         // Natural
@@ -3762,58 +3792,21 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         // Do nothing
         break;
 
-        // Sharp
+        // Draw sharp
     case SHARP:
-        path.Reset();
-        for (int i = 0; i < 28; i++)
-            path.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
-        path.StartFigure();
-        for (int i = 29; i < 33; i++)
-            path.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
-        matrix.Reset();
-        path.GetBounds(&bounds, &matrix, &pen);
-        matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
-                         -(bounds.GetTop() + bounds.GetBottom()) / 2);
-        path.Transform(&matrix);
-        matrix.Reset();
-        bounds.GetSize(&sizeF);
-        scale = (lineHeight * 3) / sizeF.Height;
-        matrix.Scale(scale, -scale);
-        path.Transform(&matrix);
         matrix.Reset();
         matrix.Translate(width / 2 - xBase + dx - lineWidth / 2, yBase - dy);
-        path.Transform(&matrix);
-        graphics.FillPath(&brush, &path);
+        sharp.Transform(&matrix);
+        graphics.FillPath(&brush, &sharp);
         break;
 
-        // Flat
+        // Draw flat
     case FLAT:
-        path.Reset();
-        for (int i = 0; i < 15; i += 3)
-            path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
-                           ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
-        for (int i = 15; i < 19; i++)
-            path.AddLine(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1]);
-        path.StartFigure();
-        for (int i = 19; i < 36; i += 3)
-            path.AddBezier(ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
-                           ft[i + 2][0], ft[i + 2][1], ft[i + 3][0], ft[i + 3][1]);
-        path.AddLine(ft[37][0], ft[37][1], ft[38][0], ft[38][1]);
-        matrix.Reset();
-        path.GetBounds(&bounds, &matrix, &pen);
-        matrix.Translate(-(bounds.GetLeft() + bounds.GetRight()) / 2,
-                         -(bounds.GetTop() + bounds.GetBottom()) / 2);
-        path.Transform(&matrix);
-        matrix.Reset();
-        bounds.GetSize(&sizeF);
-        scale = (lineHeight * 3) / sizeF.Height;
-        matrix.Scale(scale, -scale);
-        path.Transform(&matrix);
         matrix.Reset();
         matrix.Translate(width / 2 - xBase + dx - lineWidth / 2,
                          yBase - dy - lineHeight / 2);
-        path.Transform(&matrix);
-        graphics.FillPath(&brush, &path);
+        flat.Transform(&matrix);
+        graphics.FillPath(&brush, &flat);
         break;
     }
 
