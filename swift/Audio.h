@@ -91,6 +91,12 @@ enum
      kTemp  = 'Temp',
      kKey   = 'Key '};
 
+// Accidentals
+enum
+  {kNatural = 'Nat ',
+   kSharp   = 'Shrp',
+   kFlat    = 'Flat'};
+
 // Maximum
 typedef struct
 {

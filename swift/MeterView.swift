@@ -73,8 +73,8 @@ class MeterView: TunerView
         NSEraseRect(rect)
 
         // Move the origin
-        var transform = AffineTransform(translationByX: NSMidX(rect),
-                                        byY: NSMaxY(rect) - textSize -
+        var transform = AffineTransform(translationByX: rect.midX,
+                                        byY: rect.maxY - textSize -
                                           tickSize2)
         (transform as NSAffineTransform).concat()
 

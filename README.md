@@ -11,6 +11,7 @@ available, also on
 |     |     |
 | --- | --- |
 | ![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png) | ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png) |
+|     | ![Filters](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Filters.png) |
 
 
 ## Using
@@ -70,8 +71,8 @@ dismisses the window.
     * S - Switch strobe display off and on
     * T - Display multiple sets of values
     * Z - Zoom spectrum display
-    * + - Expand spectrum display
-    * - - Contract spectrum display
+    * &plus; - Expand spectrum display
+    * &minus; - Contract spectrum display
 
 ## How it works
 

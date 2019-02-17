@@ -54,16 +54,16 @@ class SpectrumView: TunerView
         darkGreen.set()
         context.shouldAntialias = false;
 
-        for x in stride(from: NSMinX(rect), to: NSMaxX(rect), by: 6)
+        for x in stride(from: rect.minX, to: rect.maxX, by: 6)
         {
-            NSBezierPath.strokeLine(from: NSMakePoint(x, NSMinY(rect)),
-                                    to: NSMakePoint(x, NSMaxY(rect)))
+            NSBezierPath.strokeLine(from: NSMakePoint(x, rect.minY),
+                                    to: NSMakePoint(x, rect.maxY))
         }
 
-        for y in stride(from: NSMinY(rect), to: NSMaxY(rect), by: 6)
+        for y in stride(from: rect.minY, to: rect.maxY, by: 6)
         {
-            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), y),
-                                    to: NSMakePoint(NSMaxX(rect), y))
+            NSBezierPath.strokeLine(from: NSMakePoint(rect.minX, y),
+                                    to: NSMakePoint(rect.maxX, y))
         }
 
         if (spectrumData.data == nil)
@@ -101,10 +101,10 @@ class SpectrumView: TunerView
                                              spectrumData.l)) / 2.0
 
             // Draw vertical centre line
-            NSBezierPath.strokeLine(from: NSMakePoint(NSMidX(rect),
-                                                      NSMinY(rect)),
-                                    to: NSMakePoint(NSMidX(rect),
-                                                    NSMaxY(rect)))
+            NSBezierPath.strokeLine(from: NSMakePoint(rect.midX,
+                                                      rect.minY),
+                                    to: NSMakePoint(rect.midX,
+                                                    rect.maxY))
             // Draw the spectrum
             let path = NSBezierPath()
             path.move(to: .zero)
@@ -124,8 +124,8 @@ class SpectrumView: TunerView
 		        max = value
                     }
 
-		    let y = NSMinY(rect) + CGFloat(value * yscale)
-		    let x = NSMinX(rect) + CGFloat((Double(i) -
+		    let y = rect.minY + CGFloat(value * yscale)
+		    let x = rect.minX + CGFloat((Double(i) -
                                                       spectrumData.l) * xscale)
 
 		    path.line(to: NSMakePoint(x, y))
@@ -133,7 +133,7 @@ class SpectrumView: TunerView
 	    }
 
             // Complete path
-            path.line(to: NSMakePoint(NSMaxX(rect), 0))
+            path.line(to: NSMakePoint(rect.maxX, 0))
             path.close()
 
             // Fill colour
@@ -156,11 +156,11 @@ class SpectrumView: TunerView
 	        if (spectrumData.values[i] > spectrumData.l &&
 		      spectrumData.values[i] < spectrumData.h)
 	        {
-		    let x = NSMinX(rect) +
+		    let x = rect.minX +
                       CGFloat((spectrumData.values[i] -
                                  spectrumData.l) * xscale)
-		    NSBezierPath.strokeLine(from: NSMakePoint(x, NSMinY(rect)),
-		                            to: NSMakePoint(x, NSMaxY(rect)))
+		    NSBezierPath.strokeLine(from: NSMakePoint(x, rect.minY),
+		                            to: NSMakePoint(x, rect.maxY))
 	        }
 	    }
 
@@ -190,12 +190,12 @@ class SpectrumView: TunerView
 		        continue
                     }
 
-		    let x = NSMinX(rect) +
+		    let x = rect.minX +
                       CGFloat((spectrumData.values[i] -
                                  spectrumData.l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
-		    s.draw(at: NSMakePoint(x, NSMinY(rect) - 2),
+		    s.draw(at: NSMakePoint(x, rect.minY - 2),
                            withAttributes: attribs)
 	        }
 	    }
@@ -244,12 +244,12 @@ class SpectrumView: TunerView
                 }
 
 	        let y = value * yscale
-                path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
-                                          NSMinY(rect) + CGFloat(y)))
+                path.line(to: NSMakePoint(rect.minX + CGFloat(x),
+                                          rect.minY + CGFloat(y)))
 	    }
 
             // Complete path
-            path.line(to: NSMakePoint(NSMaxX(rect), 0))
+            path.line(to: NSMakePoint(rect.maxX, 0))
             path.close()
 
             // Fill colour
@@ -270,10 +270,10 @@ class SpectrumView: TunerView
 	        // Draw line for values
 
 	        let x = spectrumData.values[i] / xscale
-	        path.move(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
-                                          NSMinY(rect)))
-	        path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(x),
-                                          NSMaxY(rect)))
+	        path.move(to: NSMakePoint(rect.minX + CGFloat(x),
+                                          rect.minY))
+	        path.line(to: NSMakePoint(rect.minX + CGFloat(x),
+                                          rect.maxY))
 	    }
 
 	    path.stroke()
@@ -306,8 +306,8 @@ class SpectrumView: TunerView
 
 	        let x = spectrumData.values[i] / xscale
 	        let s = String(format: "%+0.0f", c * 100.0)
-	        s.draw(at: NSMakePoint(NSMinX(rect) + CGFloat(x),
-                                       NSMinY(rect) - 2),
+	        s.draw(at: NSMakePoint(rect.minX + CGFloat(x),
+                                       rect.minY - 2),
                        withAttributes: attribs)
 	    }
 
@@ -315,8 +315,8 @@ class SpectrumView: TunerView
 	    {
 	        let s = String(format: "x %d", spectrumData.expand)
                 let dx = s.size(withAttributes: attribs).width
-	        s.draw(at: NSMakePoint(NSMaxX(rect) - dx - 2,
-                                       NSMinY(rect)),
+	        s.draw(at: NSMakePoint(rect.maxX - dx - 2,
+                                       rect.minY),
                        withAttributes: attribs)
 	    }
         }
@@ -328,14 +328,14 @@ class SpectrumView: TunerView
 
         if (audioData.down)
         {
-	    "D".draw(at: NSMakePoint(NSMinX(rect) + 2,
-                                     NSMaxY(rect) - kTextSize - 3),
+	    "D".draw(at: NSMakePoint(rect.minX + 2,
+                                     rect.maxY - kTextSize - 3),
                      withAttributes: attribs)
         }
 
         if (audioData.note)
         {
-	    "NF".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
+	    "NF".draw(at: NSMakePoint(rect.minX + 2, rect.minY),
                      withAttributes: attribs)
         }
     }    
