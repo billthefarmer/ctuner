@@ -11,6 +11,7 @@ available, also on
 |     |     |
 | --- | --- |
 | ![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png) | ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png) |
+|     | ![Filters](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Filters.png) |
 
 
 ## Using
