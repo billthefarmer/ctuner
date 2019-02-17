@@ -150,6 +150,13 @@ class StaffView: TunerView
         3, 4, 5, 5, 6, 6
       ]
 
+    // Accidentals
+    let accidentals =
+      [
+        kNatural, kSharp, kNatural, kFlat, kNatural, kNatural,
+        kSharp, kNatural, kFlat, kNatural, kFlat, kNatural
+      ]
+
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
@@ -243,7 +250,7 @@ class StaffView: TunerView
         }
 
         // Flat
-        flat.move(to: NSMakePoint(sp[0][0], sp[0][1]))
+        flat.move(to: NSMakePoint(ft[0][0], ft[0][1]))
         for i in stride(from: 1, to: 15, by: 3)
         {
             flat.curve(to: NSMakePoint(ft[i + 2][0], ft[i + 2][1]),
@@ -258,7 +265,7 @@ class StaffView: TunerView
         }
 
         flat.move(to: NSMakePoint(ft[19][0], ft[19][1]))
-        for i in stride(from: 20, to: 37, by: 3)
+        for i in stride(from: 19, to: 36, by: 3)
         {
             flat.curve(to: NSMakePoint(ft[i + 2][0], ft[i + 2][1]),
                        controlPoint1: NSMakePoint(ft[i][0], ft[i][1]),
@@ -272,44 +279,45 @@ class StaffView: TunerView
 
         // Move the origin
         var transform = AffineTransform(translationByX: 0,
-                                        byY: NSMidY(rect))
+                                        byY: rect.midY)
         (transform as NSAffineTransform).concat()
 
         let lineHeight = Int(height / 14)
         let lineWidth = Int(width / 16)
         let margin = width / 32
 
-        let path = NSBezierPath()
-
         // Draw staff
         for i in 1 ... 5
         {
             let y = CGFloat(i * lineHeight)
-            path.move(to: NSMakePoint(margin, y))
-	    path.line(to: NSMakePoint(width - margin, y))
-            path.move(to: NSMakePoint(margin, -y))
-	    path.line(to: NSMakePoint(width - margin, -y))
+            NSBezierPath.strokeLine(from: NSMakePoint(margin, y),
+                                    to: NSMakePoint(width - margin, y))
+            NSBezierPath.strokeLine(from: NSMakePoint(margin, -y),
+                                    to: NSMakePoint(width - margin, -y))
         }
 
         // Draw leger lines
-        path.move(to: NSMakePoint(width / 2 - CGFloat(lineWidth) / 2, 0))
-	path.line(to: NSMakePoint(width / 2 + CGFloat(lineWidth) / 2, 0))
-        path.move(to: NSMakePoint(width / 2 + CGFloat(lineWidth) * 5.5,
-                                  CGFloat(lineHeight) * 6))
-        path.line(to: NSMakePoint(width / 2 + CGFloat(lineWidth) * 6.5,
-                                  CGFloat(lineHeight) * 6))
-        path.move(to: NSMakePoint(width / 2 - CGFloat(lineWidth) * 5.5,
-                                  -CGFloat(lineHeight) * 6))
-        path.line(to: NSMakePoint(width / 2 - CGFloat(lineWidth) * 6.5,
-                                  -CGFloat(lineHeight) * 6))
-        path.stroke()
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 - CGFloat(lineWidth) / 2, 0),
+                      to: NSMakePoint(width / 2 + CGFloat(lineWidth) / 2, 0))
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 + CGFloat(lineWidth) * 5.5,
+                                        CGFloat(lineHeight) * 6),
+                      to: NSMakePoint(width / 2 + CGFloat(lineWidth) * 6.5,
+                                      CGFloat(lineHeight) * 6))
+        NSBezierPath
+          .strokeLine(from: NSMakePoint(width / 2 - CGFloat(lineWidth) * 5.5,
+                                        -CGFloat(lineHeight) * 6),
+                      to: NSMakePoint(width / 2 - CGFloat(lineWidth) * 6.5,
+                                      -CGFloat(lineHeight) * 6))
 
         // Scale treble clef
         var bounds = treble.bounds
         var scale = (height / 2) / (bounds.height)
         transform = AffineTransform(scale: scale)
         treble.transform(using: transform)
-        transform = AffineTransform(translationByX: margin + CGFloat(lineWidth) / 2,
+        transform = AffineTransform(translationByX:
+                                      margin + CGFloat(lineWidth) / 2,
                                     byY: CGFloat(lineHeight))
         treble.transform(using: transform)
         treble.fill()
@@ -319,7 +327,8 @@ class StaffView: TunerView
         scale = (CGFloat(lineHeight) * 4) / (bounds.height)
         transform = AffineTransform(scale: scale)
         bass.transform(using: transform)
-        transform = AffineTransform(translationByX: margin + CGFloat(lineWidth) / 4,
+        transform = AffineTransform(translationByX:
+                                      margin + CGFloat(lineWidth) / 4,
                                     byY: -CGFloat(lineHeight) * 5.4)
         bass.transform(using: transform)
         bass.fill()
@@ -366,12 +375,53 @@ class StaffView: TunerView
         head.transform(using: transform)
         head.fill()
 
-        // Draw sharp/flat
-        let font = NSFont.boldSystemFont(ofSize: CGFloat(lineHeight) * 3)
-        let attribs: [NSAttributedString.Key: Any] = [.font: font]
-        sharps[Int(index)]
-          .draw(at: NSMakePoint(width / 2 - xBase + dx - CGFloat(lineWidth),
-                                -yBase + dy - CGFloat(lineHeight) * 1.5),
-                withAttributes: attribs)
+        switch accidentals[Int(index)]
+        {
+        case kNatural:
+            // Do nothing
+            break
+
+        case kSharp:
+            // Scale sharp
+            bounds = sharp.bounds
+            transform = AffineTransform(translationByX:
+                                          -(bounds.minX + bounds.maxX) / 2,
+                                        byY: -(bounds.minY + bounds.maxY) / 2)
+            sharp.transform(using: transform)
+            scale = (CGFloat(lineHeight) * 3) / (bounds.height)
+            transform = AffineTransform(scale: scale)
+            sharp.transform(using: transform)
+
+            // Draw sharp
+            transform =
+              AffineTransform(translationByX:
+                                width / 2 - xBase + dx - CGFloat(lineWidth / 2),
+                              byY: -yBase + dy)
+            sharp.transform(using: transform)
+            sharp.fill()
+
+        case kFlat:
+            // Scale flat
+            bounds = flat.bounds
+            transform = AffineTransform(translationByX:
+                                          -(bounds.minX + bounds.maxX) / 2,
+                                        byY: -(bounds.minY + bounds.maxY) / 2)
+            flat.transform(using: transform)
+            scale = (CGFloat(lineHeight) * 3) / (bounds.height)
+            transform = AffineTransform(scale: scale)
+            flat.transform(using: transform)
+
+            // Draw flat
+            transform =
+              AffineTransform(translationByX:
+                                width / 2 - xBase + dx - CGFloat(lineWidth / 2),
+                              byY: -yBase + dy + CGFloat(lineHeight / 2))
+            flat.transform(using: transform)
+            flat.fill()
+
+        default:
+            // Do nothing
+            break
+        }
     }
 }

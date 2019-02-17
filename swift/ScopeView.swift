@@ -50,24 +50,24 @@ class ScopeView: TunerView
         darkGreen.set()
 
         // Move the origin
-        let transform = AffineTransform(translationByX: 0, byY: NSMidY(rect))
+        let transform = AffineTransform(translationByX: 0, byY: rect.midY)
         (transform as NSAffineTransform).concat()
         let context = NSGraphicsContext.current!
         context.shouldAntialias = false;
 
         // Draw graticule
-        for x in stride(from: NSMinX(rect), to: NSMaxX(rect), by: 6)
+        for x in stride(from: rect.minX, to: rect.maxX, by: 6)
         {
-            NSBezierPath.strokeLine(from: NSMakePoint(x, NSMaxY(rect) / 2),
-                                    to: NSMakePoint(x, -NSMaxY(rect) / 2))
+            NSBezierPath.strokeLine(from: NSMakePoint(x, rect.maxY / 2),
+                                    to: NSMakePoint(x, -rect.maxY / 2))
         }
 
-        for y in stride(from: 0, to: NSHeight(rect) / 2, by: 6)
+        for y in stride(from: 0, to: height / 2, by: 6)
         {
-            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), y),
-                                    to: NSMakePoint(NSMaxX(rect), y))
-            NSBezierPath.strokeLine(from: NSMakePoint(NSMinX(rect), -y),
-                                    to: NSMakePoint(NSMaxX(rect), -y))
+            NSBezierPath.strokeLine(from: NSMakePoint(rect.minX, y),
+                                    to: NSMakePoint(rect.maxX, y))
+            NSBezierPath.strokeLine(from: NSMakePoint(rect.minX, -y),
+                                    to: NSMakePoint(rect.maxX, -y))
         }
 
         if (scopeData.data == nil)
@@ -125,7 +125,7 @@ class ScopeView: TunerView
             }
 
 	    let y = scopeData.data[n + i] / yscale
-	    path.line(to: NSMakePoint(NSMinX(rect) + CGFloat(i), CGFloat(y)))
+	    path.line(to: NSMakePoint(rect.minX + CGFloat(i), CGFloat(y)))
         }
 
         path.stroke()
@@ -139,15 +139,15 @@ class ScopeView: TunerView
         // Show F if filtered
         if (audioData.filt)
         {
-            "F".draw(at: NSMakePoint(NSMinX(rect) + 2,
-                                     NSMidY(rect) - kTextSize - 5),
+            "F".draw(at: NSMakePoint(rect.minX + 2,
+                                     rect.midY - kTextSize - 5),
                      withAttributes: attribs)
         }
 
         // Show FF if fundamental filter
         if (audioData.fund)
         {
-            "FF".draw(at: NSMakePoint(NSMinX(rect) + 2, -NSMidY(rect) + 2),
+            "FF".draw(at: NSMakePoint(rect.minX + 2, -rect.midY + 2),
                      withAttributes: attribs)
         }
     }

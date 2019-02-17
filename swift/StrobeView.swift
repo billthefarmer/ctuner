@@ -104,7 +104,7 @@ class StrobeView: TunerView
 	if (abs(mc) > 0.4)
 	{
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(NSMinX(rect), NSMinY(rect),
+	    NSBezierPath.fill(NSMakeRect(rect.minX, rect.minY,
                                          width, size))
 	}
 
@@ -113,7 +113,7 @@ class StrobeView: TunerView
 	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 2),
                             to: width + size * 2, by: size * 2)
             {
-	        gradient.draw(in: NSMakeRect(x - size, NSMinY(rect),
+	        gradient.draw(in: NSMakeRect(x - size, rect.minY,
                                              size * 2, size), angle: 0)
 	    }
 	}
@@ -124,10 +124,10 @@ class StrobeView: TunerView
                             to: width + size * 2, by: size * 2)
 	    {
 		foreground.set()
-		NSBezierPath.fill(NSMakeRect(x, NSMinY(rect), size, size))
+		NSBezierPath.fill(NSMakeRect(x, rect.minY, size, size))
 
 		background.set()
-		NSBezierPath.fill(NSMakeRect(x - size, NSMinY(rect),
+		NSBezierPath.fill(NSMakeRect(x - size, rect.minY,
                                              size, size))
 	    }
 	}
@@ -137,7 +137,7 @@ class StrobeView: TunerView
 	    for x in stride(from: CGFloat(rx).remainder(dividingBy: size * 2),
                             to: width + size * 4, by: size * 4)
             {
-	        gradient.draw(in: NSMakeRect(x, NSMinY(rect) + size, size * 4,
+	        gradient.draw(in: NSMakeRect(x, rect.minY + size, size * 4,
                                              size), angle: 0)
 	    }
         }
@@ -148,11 +148,11 @@ class StrobeView: TunerView
                             to: width + size * 4, by: size * 4)
 	    {
 		foreground.set()
-		NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size,
+		NSBezierPath.fill(NSMakeRect(x, rect.minY + size,
                                              size * 2, size))
 
 		background.set()
-		NSBezierPath.fill(NSMakeRect(x - size * 2, NSMinY(rect) + size,
+		NSBezierPath.fill(NSMakeRect(x - size * 2, rect.minY + size,
                                              size * 2, size))
 	    }
 	}
@@ -161,11 +161,11 @@ class StrobeView: TunerView
                         to: width + size * 8, by: size * 8)
 	{
 	    foreground.set()
-	    NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size * 2, size * 4,
+	    NSBezierPath.fill(NSMakeRect(x, rect.minY + size * 2, size * 4,
                                          size))
 
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(x - size * 4, NSMinY(rect) + size * 2,
+	    NSBezierPath.fill(NSMakeRect(x - size * 4, rect.minY + size * 2,
                                          size * 4, size))
 	}
 
@@ -173,11 +173,11 @@ class StrobeView: TunerView
                         to: width + size * 16, by: size * 16)
 	{
 	    foreground.set()
-	    NSBezierPath.fill(NSMakeRect(x, NSMinY(rect) + size * 3, size * 8,
+	    NSBezierPath.fill(NSMakeRect(x, rect.minY + size * 3, size * 8,
                                          size))
 
 	    background.set()
-	    NSBezierPath.fill(NSMakeRect(x - size * 8, NSMinY(rect) + size * 3,
+	    NSBezierPath.fill(NSMakeRect(x - size * 8, rect.minY + size * 3,
                                          size * 8, size))
 	}
     }

@@ -60,8 +60,8 @@ class DisplayView: TunerView
             let attribs: [NSAttributedString.Key: Any] = [.font: font]
 
             var s = ""
-            var x = NSMinX(rect) + 2
-            var y = NSMaxY(rect) - textSizeSmall - 2
+            var x = rect.minX + 2
+            var y = rect.maxY - textSizeSmall - 2
 
             // No data, probably
 	    if (displayData.count == 0)
@@ -167,8 +167,8 @@ class DisplayView: TunerView
         else
         {
             var s = ""
-            var x = NSMinX(rect) + 2
-            var y = NSMaxY(rect) - textSizeLarger - 2
+            var x = rect.minX + 2
+            var y = rect.maxY - textSizeLarger - 2
 
 	    // Select font
             var font = NSFont.boldSystemFont(ofSize: textSizeLarger)
@@ -211,7 +211,7 @@ class DisplayView: TunerView
 
             // Right justify
 	    s = String(format: "%+4.2f\u{00A2}", displayData.c * 100.0)
-            x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
+            x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    // Select font
@@ -219,18 +219,18 @@ class DisplayView: TunerView
             attribs = [.font: font]
 
 	    y -= textSizeMedium + 4
-            x = NSMinX(rect) + 2
+            x = rect.minX + 2
 
 	    s = String(format: "%4.2lfHz", displayData.fr)
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
             // Right justify
 	    s = String(format: "%4.2lfHz", displayData.f)
-            x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
+            x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    y -= textSizeMedium
-            x = NSMinX(rect) + 2
+            x = rect.minX + 2
 
 	    s = String(format: "%4.2lfHz", (audioData.reference == 0) ?
 		    kA5Reference : audioData.reference)
@@ -238,7 +238,7 @@ class DisplayView: TunerView
 
             // Right justify
 	    s = String(format: "%+4.2lfHz", displayData.f - displayData.fr)
-            x = NSMaxX(rect) - s.size(withAttributes: attribs).width - 2
+            x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
         }
 
@@ -248,7 +248,7 @@ class DisplayView: TunerView
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedString.Key: Any] = [.font: font]
 
-            "L".draw(at: NSMakePoint(NSMinX(rect) + 2, NSMinY(rect)),
+            "L".draw(at: NSMakePoint(rect.minX + 2, rect.minY),
                      withAttributes: attribs)
         }
     }
