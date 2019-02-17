@@ -71,8 +71,8 @@ dismisses the window.
     * S - Switch strobe display off and on
     * T - Display multiple sets of values
     * Z - Zoom spectrum display
-    * + - Expand spectrum display
-    * - - Contract spectrum display
+    * &plus; - Expand spectrum display
+    * &minus; - Contract spectrum display
 
 ## How it works
 
