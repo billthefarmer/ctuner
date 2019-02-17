@@ -304,6 +304,7 @@ typedef struct
     HWND hwnd;
     RECT rect;
     int n;
+    int transpose;
     BOOL enable;
 } STAFF, *STAFFP;
 

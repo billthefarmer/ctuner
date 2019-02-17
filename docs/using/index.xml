@@ -23,5 +23,26 @@
  + - Expand the spectrum display &amp;ndash; - Contract the spectrum display  </description>
     </item>
     
+    <item>
+      <title>Temperaments</title>
+      <link>https://billthefarmer.github.io/ctuner/using/temperaments/</link>
+      <pubDate>Mon, 04 Feb 2019 16:35:44 +0000</pubDate>
+      
+      <guid>https://billthefarmer.github.io/ctuner/using/temperaments/</guid>
+      <description>There is a choice of 32 temperaments including Just, Equal, Meantone. If you choose a temperament other than Equal, you will need to choose a key, as the scale will change according to the key.
+           Kirnberger II Kirnberger III Werckmeister III Werckmeister IV   Werckmeister V Werckmeister VI Bach (Klais) Just (Barbour)   Equal Temperament &amp;nbsp; Pythagorean Van Zwolle Meantone (-1&amp;frasl;4)   Silbermann (-1&amp;frasl;6) Salinas (-1&amp;frasl;3) Zarlino (-2&amp;frasl;7) Rossi (-1&amp;frasl;5)   Rossi (-2&amp;frasl;9) Rameau (-1&amp;frasl;4) Kellner Vallotti   Young II Bendeler III Neidhardt I Neidhardt II   Neidhardt III Bruder 1829 Barnes 1977 Lambert 1774   Schlick (H.</description>
+    </item>
+    
+    <item>
+      <title>Custom Temperaments</title>
+      <link>https://billthefarmer.github.io/ctuner/using/custom/</link>
+      <pubDate>Mon, 04 Feb 2019 15:18:50 +0000</pubDate>
+      
+      <guid>https://billthefarmer.github.io/ctuner/using/custom/</guid>
+      <description>Some versions have the option of custom temperaments, loaded from a file or the app defaults.
+Android Use a text editor to create a file in Tuner/Custom.txt in the user area. The file should contain one or more entries formatted as property entries. The format is documented in Android Java Properties.
+# Custom Temperaments Custom: 1.000000000, 1.067871094, 1.125000000, 1.185185185, \  1.265625000, 1.333333333, 1.423828125, 1.500000000, \  1.601806641, 1.687500000, 1.</description>
+    </item>
+    
   </channel>
 </rss>

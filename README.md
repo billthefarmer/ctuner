@@ -6,10 +6,12 @@ melodeons. The strobe display may be replaced with the staff, if
 required. Windows and [Mac](swift) versions are available. An
 [Android](https://github.com/billthefarmer/tuner) version is
 available, also on
-[F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner). [Tuner
-website](http://billthefarmer.github.io/ctuner).
+[F-Droid](https://f-droid.org/packages/org.billthefarmer.tuner).
 
-![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
+|     |     |
+| --- | --- |
+| ![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png) | ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png) |
+|     | ![Filters](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Filters.png) |
 
 
 ## Using
