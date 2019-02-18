@@ -339,6 +339,26 @@ class StaffView: TunerView
         transform = AffineTransform(scale: scale)
         head.transform(using: transform)
 
+        // Scale sharp
+        bounds = sharp.bounds
+        transform = AffineTransform(translationByX:
+                                      -(bounds.minX + bounds.maxX) / 2,
+                                    byY: -(bounds.minY + bounds.maxY) / 2)
+        sharp.transform(using: transform)
+        scale = (CGFloat(lineHeight) * 3) / (bounds.height)
+        transform = AffineTransform(scale: scale)
+        sharp.transform(using: transform)
+
+        // Scale flat
+        bounds = flat.bounds
+        transform = AffineTransform(translationByX:
+                                      -(bounds.minX + bounds.maxX) / 2,
+                                    byY: -(bounds.minY + bounds.maxY) / 2)
+        flat.transform(using: transform)
+        scale = (CGFloat(lineHeight) * 3) / (bounds.height)
+        transform = AffineTransform(scale: scale)
+        flat.transform(using: transform)
+
         // Calculate transform for note
         let xBase = CGFloat(lineWidth) * 14;
         let yBase = CGFloat(lineHeight) * 14;
@@ -382,16 +402,6 @@ class StaffView: TunerView
             break
 
         case kSharp:
-            // Scale sharp
-            bounds = sharp.bounds
-            transform = AffineTransform(translationByX:
-                                          -(bounds.minX + bounds.maxX) / 2,
-                                        byY: -(bounds.minY + bounds.maxY) / 2)
-            sharp.transform(using: transform)
-            scale = (CGFloat(lineHeight) * 3) / (bounds.height)
-            transform = AffineTransform(scale: scale)
-            sharp.transform(using: transform)
-
             // Draw sharp
             transform =
               AffineTransform(translationByX:
@@ -401,16 +411,6 @@ class StaffView: TunerView
             sharp.fill()
 
         case kFlat:
-            // Scale flat
-            bounds = flat.bounds
-            transform = AffineTransform(translationByX:
-                                          -(bounds.minX + bounds.maxX) / 2,
-                                        byY: -(bounds.minY + bounds.maxY) / 2)
-            flat.transform(using: transform)
-            scale = (CGFloat(lineHeight) * 3) / (bounds.height)
-            transform = AffineTransform(scale: scale)
-            flat.transform(using: transform)
-
             // Draw flat
             transform =
               AffineTransform(translationByX:
