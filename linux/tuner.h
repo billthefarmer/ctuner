@@ -217,8 +217,9 @@ gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 
 gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
 gboolean button_press(GtkWidget*, GdkEventButton*, gpointer);
+gboolean widget_queue_draw(void *);
 
-void activate(GtkApplication *, gpointer)
+void activate(GtkApplication *, gpointer);
 void options_clicked(GtkWidget *, GtkWindow *);
 void save_clicked(GtkWidget *, GtkWindow *);
 
