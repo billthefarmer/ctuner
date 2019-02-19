@@ -2,7 +2,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "Tuner"
-!define PRODUCT_VERSION "1.05"
+!define PRODUCT_VERSION "1.06"
 !define PRODUCT_PUBLISHER "Bill Farmer"
 !define PRODUCT_WEB_SITE "https://github.com/billthefarmer/c-tuner"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\Tuner.exe"
