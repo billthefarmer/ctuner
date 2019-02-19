@@ -5,7 +5,8 @@
 ################################################################################
 
 GCC	= gcc
-CFLAGS  = -O -fPIC -std=gnu99 -Wl,-z,relro
+GXX     = g++
+CFLAGS  = -O -fPIC -Wl,-z,relro -Wall
 LIBS    = -lX11 -lasound -lm
 
 all:	tuner
@@ -13,6 +14,8 @@ all:	tuner
 clean:
 	rm tuner
 
-%:	%.c
-	$(GCC) $< -o $@ $(CFLAGS) $(LIBS) \
-		`pkg-config --cflags --libs gtk+-2.0`
+tuner:	tuner.cpp tuner.h Makefile
+
+%:	%.cpp
+	$(GXX) $< -o $@ $(CFLAGS) $(LIBS) \
+		`pkg-config --cflags --libs gtk+-3.0`

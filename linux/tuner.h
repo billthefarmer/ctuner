@@ -45,13 +45,14 @@
 
 // Layout values
 enum
-    {MARGIN          = 8,
-     DISPLAY_WIDTH   = 300,
-     SCOPE_HEIGHT    = 32,
-     SPECTRUM_HEIGHT = 32,
-     DISPLAY_HEIGHT  = 100,
-     STROBE_HEIGHT   = 44,
-     METER_HEIGHT    = 52};
+    {MARGIN          = 20,
+     SPACING         = 8,
+     DISPLAY_WIDTH   = 340,
+     SCOPE_HEIGHT    = 48,
+     SPECTRUM_HEIGHT = 48,
+     DISPLAY_HEIGHT  = 150,
+     STROBE_HEIGHT   = 66,
+     METER_HEIGHT    = 78};
 
 // PCM values
 enum
@@ -208,14 +209,14 @@ void restoreOptions(void);
 void initAudio(void);
 void *readAudio(void *);
 
-gboolean scope_draw_callback(GtkWidget *, GdkEventExpose *, void *);
-gboolean spectrum_draw_callback(GtkWidget *, GdkEventExpose *, void *);
-gboolean display_draw_callback(GtkWidget *, GdkEventExpose *, void *);
-gboolean strobe_draw_callback(GtkWidget *, GdkEventExpose *, void *);
-gboolean meter_draw_callback(GtkWidget *, GdkEventExpose *, void *);
+gboolean scope_draw_callback(GtkWidget *, cairo_t *, gpointer);
+gboolean spectrum_draw_callback(GtkWidget *, cairo_t *, gpointer);
+gboolean display_draw_callback(GtkWidget *, cairo_t *, gpointer);
+gboolean strobe_draw_callback(GtkWidget *, cairo_t *, gpointer);
+gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 
-gboolean key_press(GtkWidget*, GdkEventKey*, void *);
-gboolean button_press(GtkWidget*, GdkEventButton*, void *);
+gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
+gboolean button_press(GtkWidget*, GdkEventButton*, gpointer);
 
 void options_clicked(GtkWidget *, GtkWindow *);
 void save_clicked(GtkWidget *, GtkWindow *);
