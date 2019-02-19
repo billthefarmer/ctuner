@@ -40,8 +40,9 @@
 // Macros
 #define Length(a) (sizeof(a) / sizeof(a[0]))
 
-#define OCTAVE    12
-#define MINIMUM   0.5
+#define APP_ID "org.billthefarmer.tuner"
+#define OCTAVE  12
+#define MINIMUM 0.5
 
 // Layout values
 enum
@@ -205,7 +206,6 @@ Filters filters;
 Audio audio;
 
 // Functions
-void restoreOptions(void);
 void initAudio(void);
 void *readAudio(void *);
 
@@ -218,10 +218,11 @@ gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
 gboolean button_press(GtkWidget*, GdkEventButton*, gpointer);
 
+void activate(GtkApplication *, gpointer)
 void options_clicked(GtkWidget *, GtkWindow *);
 void save_clicked(GtkWidget *, GtkWindow *);
 
-void saveOptions();
-void restoreOptions();
+void saveOptions(void);
+void restoreOptions(void);
 
 void fftr(complex[], int);
