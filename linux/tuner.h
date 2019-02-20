@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Tuner - A tuner written in C.
+//  Tuner - A tuner written in C++.
 //
-//  Copyright (C) 2014  Bill Farmer
+//  Copyright (C) 2019  Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -217,8 +217,8 @@ gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 
 gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
 gboolean button_press(GtkWidget*, GdkEventButton*, gpointer);
-gboolean widget_queue_draw(void *);
 
+void widget_queue_draw(gpointer);
 void activate(GtkApplication *, gpointer);
 void options_clicked(GtkWidget *, GtkWindow *);
 void save_clicked(GtkWidget *, GtkWindow *);

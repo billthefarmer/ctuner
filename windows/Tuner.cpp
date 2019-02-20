@@ -3147,8 +3147,8 @@ BOOL DrawMeter(HDC hdc, RECT rect)
     // Draw the meter scale
     for (int i = 0; i < 6; i++)
     {
-	int x = width / 11 * i;
 	static TCHAR s[16];
+	int x = width / 11 * i;
 
 	sprintf(s, "%d", i * 10);
 	TextOut(hbdc, x + 1, 0, s, lstrlen(s));

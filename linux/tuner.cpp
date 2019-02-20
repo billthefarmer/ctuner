@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Tuner - A tuner written in C.
+//  Tuner - A tuner written in C++.
 //
-//  Copyright (C) 2014  Bill Farmer
+//  Copyright (C) 2019  Bill Farmer
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -56,19 +56,19 @@ void activate(GtkApplication *app, gpointer data)
     GtkWidget *hbox;
     GtkWidget *quit;
     GtkWidget *options;
-
-    // Initialise threads
-    // gdk_threads_init();
-    // gdk_threads_enter();
-
-    // Initialise GTK
-    // gtk_init(&argc, &argv);
+    
+    GdkGeometry geometry =
+        {
+            -1, -1, -1, -1, -1, -1, 1, 1,
+            380.0/510.0, 380.0/510.0
+        };
 
     // Create main window
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Tuner");
     gtk_window_set_resizable(GTK_WINDOW(window), true);
-
+    gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geometry,
+                                  GDK_HINT_ASPECT);
     // V box
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
     gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -153,7 +153,7 @@ void activate(GtkApplication *app, gpointer data)
 
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_end(GTK_BOX(vbox), hbox, true, true, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Options button
     options = gtk_button_new_with_label(" Options... ");
@@ -164,7 +164,7 @@ void activate(GtkApplication *app, gpointer data)
 		     G_CALLBACK(options_clicked), window);
 
     // Quit button
-    quit = gtk_button_new_with_label("  Quit  ");
+    quit = gtk_button_new_with_label("    Quit    ");
     gtk_box_pack_end(GTK_BOX(hbox), quit, false, false, 0);
 
     // Quit clicked
@@ -176,27 +176,16 @@ void activate(GtkApplication *app, gpointer data)
 		     G_CALLBACK(key_press), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(window), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
     gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-
-    // Destroy window callback
-    // g_signal_connect(G_OBJECT(window), "destroy",
-    // 		     G_CALLBACK(gtk_main_quit), NULL);
 
     // Show the window
     gtk_widget_show_all(window);
 
     // Start audio
     initAudio();
-
-    // Interact with user
-    // gtk_main();
-
-    // Exit
-    // return 0;
 }
 
 // Restore options
@@ -392,7 +381,7 @@ void initAudio(void)
 }
 
 // Read audio
-void *readAudio(void *dummy)
+void *readAudio(void *)
 {
     enum
     {TIMER_COUNT = 16};
@@ -699,7 +688,7 @@ void *readAudio(void *dummy)
 	if (!display.lock)
 	{
 	    // Update scope window
-	    gdk_threads_add_idle(widget_queue_draw, scope.widget);
+	    widget_queue_draw(scope.widget);
 
 	    // Update spectrum window
 	    for (unsigned int i = 0; i < count; i++)
@@ -716,7 +705,7 @@ void *readAudio(void *dummy)
 	    }
 
 	    // Update spectrum
-	    gdk_threads_add_idle(widget_queue_draw, spectrum.widget);
+	    widget_queue_draw(spectrum.widget);
 	}
 
 	static long timer;
@@ -741,7 +730,7 @@ void *readAudio(void *dummy)
 	    }
 
 	    // Update display
-	    gtk_widget_queue_draw(display.widget);
+	    widget_queue_draw(display.widget);
 
 	    // Reset count;
 	    timer = 0;
@@ -775,13 +764,12 @@ void *readAudio(void *dummy)
 		}
 
 		// Update display
-		gtk_widget_queue_draw(display.widget);
+		widget_queue_draw(display.widget);
 	    }
 	}
 
-	gtk_widget_queue_draw(strobe.widget);
-	gtk_widget_queue_draw(meter.widget);
-	// gdk_threads_leave();
+	widget_queue_draw(strobe.widget);
+	widget_queue_draw(meter.widget);
 
 	timer++;
     }
@@ -796,14 +784,6 @@ void *readAudio(void *dummy)
     }
 
     return NULL;
-}
-
-// Draw widget
-gboolean widget_queue_draw(void *widget)
-{
-    gtk_widget_queue_draw(GTK_WIDGET(widget));
-
-    return G_SOURCE_REMOVE;
 }
 
 // Real to complex FFT, ignores imaginary values in input array
@@ -857,6 +837,16 @@ void fftr(complex a[], int n)
     }
 }
 
+// Draw widget
+void widget_queue_draw(gpointer widget)
+{
+    gdk_threads_add_idle([](gpointer widget) -> gboolean
+    {
+        gtk_widget_queue_draw(GTK_WIDGET(widget));
+        return G_SOURCE_REMOVE;
+    }, widget);
+}
+
 // Round rect
 void cairo_round_rect(cairo_t *cr, double x, double y,
 		      double w, double h, double r)
@@ -876,10 +866,11 @@ void cairo_round_rect(cairo_t *cr, double x, double y,
 void cairo_edge(cairo_t *cr, int w, int h)
 {
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
+    cairo_set_line_width(cr, 3);
     cairo_round_rect(cr, 0, 0, w, h, 5);
     cairo_stroke(cr);
 
-    cairo_rectangle(cr, 2, 2, w - 4, h - 4);
+    cairo_round_rect(cr, 2, 2, w - 4, h - 4, 5);
     cairo_clip(cr);
 
     cairo_translate(cr, 2, 2);
@@ -925,6 +916,7 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     cairo_translate(cr, 0, height / 2);
     cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_set_line_width(cr, 1);
 
     for (int x = 0; x < width; x += 5)
@@ -970,12 +962,12 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     if (max < 4096)
 	max = 4096;
 
-    int yscale = max / (height / 2);
+    double yscale = (double) max / (height / 2);
 
     max = 0;
 
     cairo_set_source_rgb(cr, 0, 1, 0);
-    cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 
     cairo_move_to(cr, 0, 0);
     for (int i = 0; i < width; i++)
@@ -983,7 +975,7 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	if (max < abs(scope.data[n + i]))
 	    max = abs(scope.data[n + i]);
 
-	int y = -scope.data[n + i] / yscale;
+	double y = -scope.data[n + i] / yscale;
 	cairo_line_to(cr, i, y);
     }
 
@@ -1021,6 +1013,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     cairo_translate(cr, 0, height - 1);
     cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_set_line_width(cr, 1);
 
     for (int x = 0; x < width; x += 5)
@@ -1043,14 +1036,15 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     // Green pen for spectrum trace
     cairo_set_source_rgb(cr, 0, 1, 0);
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 
-    static float max;
+    static double max;
 
     if (max < 1.0)
 	max = 1.0;
 
     // Calculate the scaling
-    float yscale = (float)height / max;
+    double yscale = height / max;
 
     max = 0.0;
 
@@ -1060,27 +1054,35 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     if (spectrum.zoom)
     {
 	// Calculate scale
-	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
+	double xscale = ((double) width / (spectrum.r - spectrum.l)) / 2.0;
 
 	for (int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
-		float value = spectrum.data[i];
+		double value = spectrum.data[i];
 
 		if (max < value)
 		    max = value;
 
-		int y = -round(value * yscale);
-		int x = round(((float)i - spectrum.l) * xscale); 
+		double y = -value * yscale;
+		double x = ((double) i - spectrum.l) * xscale; 
 
 		cairo_line_to(cr, x, y);
 	    }
 	}
 
+        cairo_stroke_preserve(cr);
+
+        cairo_line_to(cr, width, 0);
+        cairo_close_path(cr);
+        cairo_set_source_rgba(cr, 0, 1, 0, 0.25);
+        cairo_fill(cr);
+
 	cairo_move_to(cr, width / 2, 0);
 	cairo_line_to(cr, width / 2, -height);
 
+        cairo_set_source_rgb(cr, 0, 1, 0);
 	cairo_stroke(cr);
 
 	// Yellow pen for frequency trace
@@ -1093,7 +1095,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    if (spectrum.values[i].f > spectrum.l &&
 		spectrum.values[i].f < spectrum.h)
 	    {
-		int x = round((spectrum.values[i].f - spectrum.l) * xscale);
+		double x = (spectrum.values[i].f - spectrum.l) * xscale;
 		cairo_move_to(cr, x, 0);
 		cairo_line_to(cr, x, -height);
 
@@ -1116,12 +1118,12 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     else
     {
-	float xscale = ((float)spectrum.length /
-			(float)spectrum.expand) / (float)width;
+	double xscale = ((double) spectrum.length /
+                         (double) spectrum.expand) / (double) width;
 
 	for (int x = 0; x < width; x++)
 	{
-	    float value = 0.0;
+	    double value = 0.0;
 
 	    // Don't show DC component
 	    if (x > 0)
@@ -1138,12 +1140,17 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    if (max < value)
 		max = value;
 
-	    int y = -round(value * yscale);
+	    double y = -value * yscale;
 
 	    cairo_line_to(cr, x, y);
 	}
 
-	cairo_stroke(cr);
+	cairo_stroke_preserve(cr);
+
+        cairo_line_to(cr, width, 0);
+        cairo_close_path(cr);
+        cairo_set_source_rgba(cr, 0, 1, 0, 0.25);
+        cairo_fill(cr);
 
 	// Yellow pen for frequency trace
 	cairo_set_source_rgb(cr, 1, 1, 0);
@@ -1152,7 +1159,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each
-	    int x = round(spectrum.values[i].f / xscale);
+	    double x = spectrum.values[i].f / xscale;
 	    cairo_move_to(cr, x, 0);
 	    cairo_line_to(cr, x, -height);
 
@@ -1196,17 +1203,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 // Display draw callback
 gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 {
-    // static FT_Library library;
-    // static FT_Face face;
-    // static cairo_font_face_t *musica;
     static char s[16];
-
-    enum
-    {FONT_HEIGHT   = 12,
-     MUSIC_HEIGHT  = 26,
-     LARGE_HEIGHT  = 36,
-     LARGER_HEIGHT = 48,
-     MEDIUM_HEIGHT = 24};
 
     static const char *notes[] =
 	{"C", "C", "D", "E", "E", "F",
@@ -1216,23 +1213,17 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	{"", "\u266F", "", "\u266D", "", "",
 	 "\u266F", "", "\u266D", "", "\u266D", ""};
 
-    // if (library == NULL)
-    // {
-    // 	int err;
-
-	// err = FT_Init_FreeType(&library);
-
-	// err = FT_New_Face(library, "/usr/share/fonts/truetype/musica.ttf",
-	// 		  0, &face);
-	// err = FT_New_Face(library, "Musica.ttf", 0, &face);
-
-	// musica = cairo_ft_font_face_create_for_ft_face(face, 0);
-    // }
-
     cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
 	       gtk_widget_get_allocated_height(widget));
 
-    int width = gtk_widget_get_allocated_width(widget) - 4;
+    const int width = gtk_widget_get_allocated_width(widget) - 4;
+    const int height = gtk_widget_get_allocated_height(widget) - 4;
+
+    const int large = height / 3;
+    const int xlarge = height / 2;
+    const int medium = height / 5;
+    const int small = height / 8;
+    const int half = height / 4;
 
     cairo_set_source_rgb(cr, 0, 0, 0);
 
@@ -1242,7 +1233,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size(cr, FONT_HEIGHT);
+	cairo_set_font_size(cr, small);
 
 	// Set text align
 	if (display.count == 0)
@@ -1250,27 +1241,23 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    // Display note
 	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
 		    sharps[display.n % Length(notes)], display.n / 12);
-	    cairo_move_to(cr, 8, FONT_HEIGHT);
+	    cairo_move_to(cr, 8, small);
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-	    sprintf(s, "%+4.2lf¢", display.c * 100.0);
-	    cairo_move_to(cr, 36, FONT_HEIGHT);
+	    sprintf(s, " %+4.2lf¢", display.c * 100.0);
 	    cairo_show_text(cr, s);
 
 	    // Display reference
-	    sprintf(s, "%4.2lfHz", display.fr);
-	    cairo_move_to(cr, 90, FONT_HEIGHT);
+	    sprintf(s, " %4.2lfHz", display.fr);
 	    cairo_show_text(cr, s);
 
 	    // Display frequency
-	    sprintf(s, "%4.2lfHz", display.f);
-	    cairo_move_to(cr, 162, FONT_HEIGHT);
+	    sprintf(s, " %4.2lfHz", display.f);
 	    cairo_show_text(cr, s);
 
 	    // Display difference
-	    sprintf(s, "%+4.2lfHz", display.f - display.fr);
-	    cairo_move_to(cr, 234, FONT_HEIGHT);
+	    sprintf(s, " %+4.2lfHz", display.f - display.fr);
 	    cairo_show_text(cr, s);
 	}
 
@@ -1295,27 +1282,23 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    // Display note
 	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
 		    sharps[n % Length(notes)], n / 12);
-	    cairo_move_to(cr, 8, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    cairo_move_to(cr, 8, small + (small * i));
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-	    sprintf(s, "%+4.2lf¢", c * 100.0);
-	    cairo_move_to(cr, 36, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    sprintf(s, " %+4.2lf¢", c * 100.0);
 	    cairo_show_text(cr, s);
 
 	    // Display reference
-	    sprintf(s, "%4.2lfHz", fr);
-	    cairo_move_to(cr, 90, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    sprintf(s, " %4.2lfHz", fr);
 	    cairo_show_text(cr, s);
 
 	    // Display frequency
-	    sprintf(s, "%4.2lfHz", f);
-	    cairo_move_to(cr, 162, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    sprintf(s, " %4.2lfHz", f);
 	    cairo_show_text(cr, s);
 
 	    // Display difference
-	    sprintf(s, "%+4.2lfHz", f - fr);
-	    cairo_move_to(cr, 234, FONT_HEIGHT + (FONT_HEIGHT * i));
+	    sprintf(s, " %+4.2lfHz", f - fr);
 	    cairo_show_text(cr, s);
 
 	    if (i == 5)
@@ -1328,52 +1311,50 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	double x, y;
 	cairo_matrix_t matrix;
 
-	// Select larger font
+	// Select xlarge font
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_BOLD);
 	cairo_matrix_init_scale(&matrix, 0.8, 1.0);
 	cairo_set_font_matrix(cr, &matrix);
-	cairo_set_font_size(cr, LARGER_HEIGHT);
+	cairo_set_font_size(cr, xlarge);
 
 	// Display note
 	sprintf(s, "%s", notes[display.n % Length(notes)]);
-	cairo_move_to(cr, 8, LARGE_HEIGHT);
+	cairo_move_to(cr, 8, xlarge);
 	cairo_show_text(cr, s);
 
 	cairo_get_current_point(cr, &x, &y);
 
 	// Select medium font
-	cairo_set_font_size(cr, LARGER_HEIGHT / 2);
+	cairo_set_font_size(cr, half);
 
 	sprintf(s, "%d", display.n / 12);
 	cairo_show_text(cr, s);
 
-	// Select musica font
+        // Save context
 	cairo_save(cr);
-	// cairo_set_font_face(cr, musica);
-	// cairo_set_font_size(cr, MEDIUM_HEIGHT);
 
 	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
-	cairo_move_to(cr, x, LARGER_HEIGHT / 2);
+	cairo_move_to(cr, x, half);
 	cairo_show_text(cr, s);
 
 	// Select large font
 	cairo_restore(cr);
-	cairo_set_font_size(cr, LARGE_HEIGHT);
+	cairo_set_font_size(cr, large);
 
 	// Display cents
 	sprintf(s, "%+4.2f¢", display.c * 100.0);
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
 
-	y += MEDIUM_HEIGHT;
+	y += medium;
 
 	// Select medium font
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size(cr, MEDIUM_HEIGHT);
+	cairo_set_font_size(cr, medium);
 
 	// Display reference frequency
 	sprintf(s, "%4.2fHz", display.fr);
@@ -1385,7 +1366,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
 
-	y += 24;
+	y += medium;
 
 	// Display reference
 	sprintf(s, "%4.2fHz", audio.reference);
@@ -1423,12 +1404,9 @@ gboolean strobe_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	       gtk_widget_get_allocated_height(widget));
 
     if (!strobe.enable)
-    {
-	// cairo_destroy(cr);
 	return true;
-    }
 
-  int height = gtk_widget_get_allocated_height(widget) - 4;
+    int height = gtk_widget_get_allocated_height(widget) - 4;
 
     if (cp == NULL || strobe.changed)
     {
@@ -1507,64 +1485,63 @@ gboolean strobe_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 // Meter draw callback
 gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 {
-  enum
-  {FONT_HEIGHT = 16};
+    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
+               gtk_widget_get_allocated_height(widget));
 
-  // cairo_t *cr = gdk_cairo_create(event->window);
-
-  cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-	     gtk_widget_get_allocated_height(widget));
-
-  int width = gtk_widget_get_allocated_width(widget) - 4;
+    int width = gtk_widget_get_allocated_width(widget) - 4;
+    int height = gtk_widget_get_allocated_height(widget) - 4;
 
     // Select font
     cairo_select_font_face(cr, "sans-serif",
-			   CAIRO_FONT_SLANT_NORMAL,
-			   CAIRO_FONT_WEIGHT_NORMAL);
-    cairo_set_font_size(cr, FONT_HEIGHT);
+                           CAIRO_FONT_SLANT_NORMAL,
+                           CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, height / 3);
 
     // Move origin
     cairo_translate(cr, width / 2, 0);
     cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_set_line_width(cr, 1);
 
     // Draw the meter scale
     for (int i = 0; i < 6; i++)
     {
-	int x = width / 11 * i;
 	static char s[16];
+	int x = width / 11 * i;
 
+        cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 	sprintf(s, "%d", i * 10);
-	cairo_move_to(cr, x, FONT_HEIGHT);
+	cairo_move_to(cr, x, height / 3);
 	cairo_centre_text(cr, s);
-	cairo_move_to(cr, -x, FONT_HEIGHT);
+	cairo_move_to(cr, -x, height / 3);
 	cairo_centre_text(cr, s);
 
-	cairo_move_to(cr, x, 18);
-	cairo_line_to(cr, x, 28);
-	cairo_move_to(cr, -x, 18);
-	cairo_line_to(cr, -x, 28);
+	cairo_move_to(cr, x, height / 3);
+	cairo_line_to(cr, x, height / 2);
+	cairo_move_to(cr, -x, height / 3);
+	cairo_line_to(cr, -x, height / 2);
 
 	for (int j = 1; j < 5; j++)
 	{
 	    if (i < 5)
 	    {
-		cairo_move_to(cr, x + j * width / 55, 20);
-		cairo_line_to(cr, x + j * width / 55, 28);
+		cairo_move_to(cr, x + j * width / 55, height * 3 / 8);
+		cairo_line_to(cr, x + j * width / 55, height / 2);
 	    }
 
-	    cairo_move_to(cr, -x + j * width / 55, 20);
-	    cairo_line_to(cr, -x + j * width / 55, 28);
+	    cairo_move_to(cr, -x + j * width / 55, height * 3 / 8);
+	    cairo_line_to(cr, -x + j * width / 55, height / 2);
 	}
     }
 
     cairo_stroke(cr);
 
-    cairo_pattern_t *linear = cairo_pattern_create_linear(0, 38, 0, 42);
+    cairo_pattern_t *linear =
+        cairo_pattern_create_linear(0, height * 3 / 4, 0, height * 3 / 4 + 4);
     cairo_pattern_add_color_stop_rgb(linear, 0, 0.5, 0.5, 0.5);
     cairo_pattern_add_color_stop_rgb(linear, 4, 1, 1, 1);
 
     cairo_set_source(cr, linear);
-    cairo_rectangle(cr, -(width - 20) / 2, 40, width - 20, 2);
+    cairo_rectangle(cr, -(width - 20) / 2, height * 3 / 4, width - 20, 2);
 
     cairo_stroke(cr);
 
@@ -1574,8 +1551,8 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     mc = ((mc * 3.0) + meter.c) / 4.0;
 
     // Calculate x
-    float x = width / 11 * mc * 10;
-    cairo_translate(cr, x, 40);
+    double x = width / 11 * mc * 10;
+    cairo_translate(cr, x, height * 3 / 4);
 
     linear = cairo_pattern_create_linear(0, 0, 0, 12);
     cairo_pattern_add_color_stop_rgb(linear, 0, 1, 1, 1);
