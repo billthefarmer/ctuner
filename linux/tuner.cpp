@@ -1564,15 +1564,12 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_rel_line_to(cr, 0, -13);
     cairo_rel_line_to(cr, -5, -5);
 
-    cairo_path_t *path = cairo_copy_path(cr);
-
-    cairo_fill(cr);
+    cairo_scale(cr, height / 24, height / 24);
+    cairo_fill_preserve(cr);
 
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
     cairo_set_line_width(cr, 1);
 
-    cairo_append_path(cr, path);
-    cairo_path_destroy(path);
     cairo_stroke(cr);
 
     return true;
