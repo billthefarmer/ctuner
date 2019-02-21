@@ -41,7 +41,6 @@ int main(int argc, char *argv[])
     // Stop audio
     audio.done = true;
     snd_pcm_close(audio.handle);
-    // gdk_threads_leave();
     saveOptions();
 
     return status;
@@ -156,7 +155,7 @@ void activate(GtkApplication *app, gpointer data)
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Options button
-    options = gtk_button_new_with_label(" Options... ");
+    options = gtk_button_new_with_label(" Options\u2026 ");
     gtk_box_pack_start(GTK_BOX(hbox), options, false, false, 0);
 
     // Options clicked
@@ -683,8 +682,6 @@ void *readAudio(void *)
 	}
 
 	// If display not locked
-	// gdk_threads_enter();
-
 	if (!display.lock)
 	{
 	    // Update scope window
@@ -840,6 +837,7 @@ void fftr(complex a[], int n)
 // Draw widget
 void widget_queue_draw(gpointer widget)
 {
+    // Must have at least one lambda expression
     gdk_threads_add_idle([](gpointer widget) -> gboolean
     {
         gtk_widget_queue_draw(GTK_WIDGET(widget));
@@ -988,8 +986,6 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_move_to(cr, 2, -(height / 2) + 10);
 	cairo_show_text(cr, "F");
     }
-
-    // cairo_destroy(cr);
 
     return true;
 }
@@ -1245,7 +1241,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-	    sprintf(s, " %+4.2lf¢", display.c * 100.0);
+	    sprintf(s, " %+4.2lf\u00A2", display.c * 100.0);
 	    cairo_show_text(cr, s);
 
 	    // Display reference
@@ -1286,7 +1282,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	    cairo_show_text(cr, s);
 
 	    // Display cents
-	    sprintf(s, " %+4.2lf¢", c * 100.0);
+	    sprintf(s, " %+4.2lf\u00A2", c * 100.0);
 	    cairo_show_text(cr, s);
 
 	    // Display reference
@@ -1344,7 +1340,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_set_font_size(cr, large);
 
 	// Display cents
-	sprintf(s, "%+4.2f¢", display.c * 100.0);
+	sprintf(s, "%+4.2f\u00A2", display.c * 100.0);
 	cairo_move_to(cr, width - 8, y);
 	cairo_right_justify_text(cr, s);
 
@@ -1579,8 +1575,6 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_path_destroy(path);
     cairo_stroke(cr);
 
-    // cairo_destroy(cr);
-
     return true;
 }
 
@@ -1681,7 +1675,8 @@ gboolean key_press(GtkWidget *window, GdkEventKey *event, gpointer data)
 // Reference changed
 void reference_changed(GtkWidget widget, gpointer data)
 {
-    audio.reference = gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.reference));
+    audio.reference =
+        gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.reference));
 }
 
 // Filter clicked
@@ -1729,7 +1724,8 @@ void zoom_clicked(GtkWidget widget, gpointer data)
 // Correction changed
 void correction_changed(GtkWidget widget, gpointer data)
 {
-    audio.correction = gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.correction));
+    audio.correction =
+        gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.correction));
 }
 
 // Widget clicked
@@ -1750,6 +1746,9 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
 
     if (strcmp(name, "strobe") == 0)
 	strobe.enable = !strobe.enable;
+
+    if (strcmp(name, "meter") == 0)
+	display.lock = !display.lock;
 
     update_options();
 }
@@ -1798,7 +1797,7 @@ void options_menu(GtkWidget *widget, GdkEventButton *event, gpointer data)
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
 
     // Options
-    item = gtk_menu_item_new_with_label("Options...");
+    item = gtk_menu_item_new_with_label("Options\u2026");
     g_signal_connect(G_OBJECT(item), "activate",
 		     G_CALLBACK(options_clicked), NULL);
     gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
@@ -1945,7 +1944,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_window_set_transient_for(GTK_WINDOW(options.dialog), window);
 
     // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
     gtk_container_add(GTK_CONTAINER(options.dialog), vbox);
 
     // H box
@@ -2090,7 +2089,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), ibox, false, false, 0);
 
     // Note filter
-    note = gtk_button_new_with_label("  Note...  ");
+    note = gtk_button_new_with_label("  Note\u2026  ");
     gtk_box_pack_end(GTK_BOX(ibox), note, false, false, 0);
 
     // Note clicked
