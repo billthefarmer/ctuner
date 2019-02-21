@@ -1066,7 +1066,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
 
             // Create note filter tickbox
             note.hwnd =
-                CreateWindow(WC_BUTTON, "Note Filter:",
+                CreateWindow(WC_BUTTON, "Note filter:",
                              WS_VISIBLE | WS_CHILD | BS_LEFTTEXT |
                              BS_CHECKBOX,
                              width / 2 + MARGIN,
