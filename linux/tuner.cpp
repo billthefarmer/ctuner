@@ -1564,7 +1564,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_rel_line_to(cr, 0, -13);
     cairo_rel_line_to(cr, -5, -5);
 
-    cairo_scale(cr, height / 24, height / 24);
+    // cairo_scale(cr, height / 24, height / 24);
     cairo_fill_preserve(cr);
 
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
@@ -1578,7 +1578,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 // Update options
 void update_options()
 {
-    if (options.dialog == NULL)
+    if (options.widget == NULL)
 	return;
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
@@ -1852,6 +1852,11 @@ void note_toggled(GtkWidget *widget, gpointer data)
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
+// Expand changed
+void expand_changed(GtkWidget *widget, gpointer data)
+{
+}
+
 // Note filter callback
 void note_clicked(GtkWidget *widget, GtkWindow *window)
 {
@@ -1928,37 +1933,151 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     GtkWidget *save;
     GtkWidget *separator;
 
-    if (options.dialog != NULL)
+    if (options.widget != NULL)
     {
-	gtk_widget_show_all(options.dialog);
+	gtk_widget_show_all(options.widget);
 	return;
     }
 
     // Create options dialog
-    options.dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(options.dialog), "Tuner Options");
-    gtk_window_set_resizable(GTK_WINDOW(options.dialog), false);
-    gtk_window_set_transient_for(GTK_WINDOW(options.dialog), window);
-
-    // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
-    gtk_container_add(GTK_CONTAINER(options.dialog), vbox);
+    options.widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(options.widget), "Tuner Options");
+    gtk_window_set_resizable(GTK_WINDOW(options.widget), false);
+    gtk_window_set_transient_for(GTK_WINDOW(options.widget), window);
 
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, MARGIN);
+    gtk_container_add(GTK_CONTAINER(options.widget), hbox);
+
+    // V box
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, MARGIN);
+
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, MARGIN);
+
+    // I box
+    ibox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, 0);
+
+    // Zoom
+    options.zoom = gtk_check_button_new_with_label("Zoom spectrum");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.zoom),
+				 spectrum.zoom);
+    gtk_box_pack_start(GTK_BOX(ibox), options.zoom, false, false, 0);
+
+    // Zoom clicked
+    g_signal_connect(G_OBJECT(options.zoom), "toggled",
+		     G_CALLBACK(zoom_clicked), window);
+    // Filter
+    options.filter = gtk_check_button_new_with_label("Filter audio");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
+				 audio.filter);
+    gtk_box_pack_start(GTK_BOX(ibox), options.filter, false, false, 0);
+
+    // Filter clicked
+    g_signal_connect(G_OBJECT(options.filter), "toggled",
+		     G_CALLBACK(filter_clicked), window);
+    // Multiple
+    options.multiple = gtk_check_button_new_with_label("Multiple notes");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.multiple),
+				 display.multiple);
+    gtk_box_pack_start(GTK_BOX(ibox), options.multiple, false, false, 0);
+
+    // Multiple clicked
+    g_signal_connect(G_OBJECT(options.multiple), "toggled",
+		     G_CALLBACK(multiple_clicked), window);
+    // Fundamental
+    options.fundamental = gtk_check_button_new_with_label("Fundamental");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.fundamental),
+				 audio.fundamental);
+    gtk_box_pack_start(GTK_BOX(ibox), options.fundamental, false, false, 0);
+
+    // Fundamental clicked
+    g_signal_connect(G_OBJECT(options.fundamental), "toggled",
+        	     G_CALLBACK(fund_toggled), window);
+
+    gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, MARGIN);
+
+    // V box
+    ibox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), ibox, true, true, MARGIN);
+
+    // Strobe
+    options.strobe = gtk_check_button_new_with_label("Show strobe");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
+				 strobe.enable);
+    gtk_box_pack_start(GTK_BOX(ibox), options.strobe, false, false, 0);
+
+    // Strobe clicked
+    g_signal_connect(G_OBJECT(options.strobe), "toggled",
+		     G_CALLBACK(strobe_clicked), window);
+
+    // Downsample
+    options.downsample = gtk_check_button_new_with_label("Downsample audio");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.downsample),
+				 audio.downsample);
+    gtk_box_pack_start(GTK_BOX(ibox), options.downsample, false, false, 0);
+
+    // Downsample clicked
+    g_signal_connect(G_OBJECT(options.downsample), "toggled",
+		     G_CALLBACK(downsample_clicked), window);
+    // Lock
+    options.lock = gtk_check_button_new_with_label("Lock display");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.lock),
+				 display.lock);
+    gtk_box_pack_start(GTK_BOX(ibox), options.lock, false, false, 0);
+
+    // Lock clicked
+    g_signal_connect(G_OBJECT(options.lock), "toggled",
+		     G_CALLBACK(lock_clicked), window);
+    // Note
+    options.note = gtk_check_button_new_with_label("Note filter");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.note),
+				 audio.note);
+    gtk_box_pack_start(GTK_BOX(ibox), options.note, false, false, 0);
+
+    // Note clicked
+    g_signal_connect(G_OBJECT(options.note), "toggled",
+		     G_CALLBACK(note_toggled), window);
+
+    gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, 0);
+
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
-    label = gtk_label_new("Sample rate: 11025.0");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, MARGIN);
+    label = gtk_label_new("Expand");
+    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
+    options.expand = gtk_combo_box_text_new();
+    const char *expansions[] =
+        {"x 1", "x 2", "x 4", "x 8", "x 16"};
+    for (unsigned int i = 0; i < Length(expansions); i++)
+    {
+        char s[16];
+        sprintf(s, "%d", i);
+        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
+                                  s, expansions[i]);
+    }
+    gtk_box_pack_end(GTK_BOX(hbox), options.expand, false, false, 0);
+
+    // Expand changed
+    g_signal_connect(G_OBJECT(options.note), "changed",
+		     G_CALLBACK(expand_changed), window);
+
+    gtk_box_pack_start(GTK_BOX(vbox), vbox, false, false, 0);
+
+    /*
     // Close button
     close = gtk_button_new_with_label("  Close  ");
     gtk_box_pack_end(GTK_BOX(hbox), close, false, false, MARGIN);
 
     // Close clicked
     g_signal_connect_swapped(G_OBJECT(close), "clicked",
-			     G_CALLBACK(gtk_widget_hide), options.dialog);
+			     G_CALLBACK(gtk_widget_hide), options.widget);
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
@@ -2001,38 +2120,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
-
-    // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), vbox, true, true, MARGIN);
-
-    // Filter
-    options.filter = gtk_check_button_new_with_label("Filter audio");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
-				 audio.filter);
-    gtk_box_pack_start(GTK_BOX(vbox), options.filter, false, false, 0);
-
-    // Filter clicked
-    g_signal_connect(G_OBJECT(options.filter), "toggled",
-		     G_CALLBACK(filter_clicked), window);
-    // Lock
-    options.lock = gtk_check_button_new_with_label("Lock display");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.lock),
-				 display.lock);
-    gtk_box_pack_start(GTK_BOX(vbox), options.lock, false, false, 0);
-
-    // Lock clicked
-    g_signal_connect(G_OBJECT(options.lock), "toggled",
-		     G_CALLBACK(lock_clicked), window);
-    // Strobe
-    options.strobe = gtk_check_button_new_with_label("Show strobe");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
-				 strobe.enable);
-    gtk_box_pack_start(GTK_BOX(vbox), options.strobe, false, false, 0);
-
-    // Strobe clicked
-    g_signal_connect(G_OBJECT(options.strobe), "toggled",
-		     G_CALLBACK(strobe_clicked), window);
     // I box
     ibox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), ibox, false, false, 0);
@@ -2050,37 +2137,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
-    // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), vbox, true, true, MARGIN);
-
-    // Downsample
-    options.downsample = gtk_check_button_new_with_label("Downsample audio");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.downsample),
-				 audio.downsample);
-    gtk_box_pack_start(GTK_BOX(vbox), options.downsample, false, false, 0);
-
-    // Downsample clicked
-    g_signal_connect(G_OBJECT(options.downsample), "toggled",
-		     G_CALLBACK(downsample_clicked), window);
-    // Multiple
-    options.multiple = gtk_check_button_new_with_label("Multiple notes");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.multiple),
-				 display.multiple);
-    gtk_box_pack_start(GTK_BOX(vbox), options.multiple, false, false, 0);
-
-    // Multiple clicked
-    g_signal_connect(G_OBJECT(options.multiple), "toggled",
-		     G_CALLBACK(multiple_clicked), window);
-    // Zoom
-    options.zoom = gtk_check_button_new_with_label("Zoom spectrum");
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.zoom),
-				 spectrum.zoom);
-    gtk_box_pack_start(GTK_BOX(vbox), options.zoom, false, false, 0);
-
-    // Zoom clicked
-    g_signal_connect(G_OBJECT(options.zoom), "toggled",
-		     G_CALLBACK(zoom_clicked), window);
     // I box
     ibox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), ibox, false, false, 0);
@@ -2094,10 +2150,10 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 		     G_CALLBACK(note_clicked), window);
 
     // Destroy dialog callback
-    g_signal_connect(G_OBJECT(options.dialog), "destroy",
-		     G_CALLBACK(gtk_widget_destroyed), &options.dialog);
-
-    gtk_widget_show_all(options.dialog);
+    g_signal_connect(G_OBJECT(options.widget), "destroy",
+		     G_CALLBACK(gtk_widget_destroyed), &options.widget);
+    */
+    gtk_widget_show_all(options.widget);
 }
 
 // Save callback

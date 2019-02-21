@@ -160,14 +160,18 @@ typedef struct
 
 typedef struct
 {
-    GtkWidget *dialog;
+    GtkWidget *widget;
     GtkWidget *note;
     GtkWidget *zoom;
     GtkWidget *lock;
     GtkWidget *strobe;
     GtkWidget *filter;
+    GtkWidget *expand;
+    GtkWidget *colours;
     GtkWidget *multiple;
+    GtkWidget *transpose;
     GtkWidget *downsample;
+    GtkWidget *fundamental;
     GtkWidget *reference;
     GtkWidget *correction;
 } Options;
@@ -185,8 +189,10 @@ typedef struct
     pthread_t thread;
     snd_pcm_t *handle;
     gboolean done;
+    gboolean note;
     gboolean filter;
     gboolean downsample;
+    gboolean fundamental;
     double correction;
     double reference;
     gboolean save;
