@@ -2070,6 +2070,40 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 
     gtk_box_pack_start(GTK_BOX(vbox), vbox, false, false, 0);
 
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
+
+    // Label
+    label = gtk_label_new("Colours");
+    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+
+    options.colours = gtk_combo_box_text_new();
+    const char *colours[] =
+        {"Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"};
+    for (unsigned int i = 0; i < Length(expansions); i++)
+    {
+        char s[16];
+        sprintf(s, "%d", i);
+        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.colours),
+                                  s, colours[i]);
+    }
+    gtk_box_pack_end(GTK_BOX(hbox), options.colours, false, false, 0);
+
+    // Label
+    label = gtk_label_new("Reference:");
+    gtk_box_pack_start(GTK_BOX(ibox), label, false, false, 0);
+
+    // Reference
+    options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
+			      audio.reference);
+    gtk_box_pack_start(GTK_BOX(ibox), options.reference, false, false, 0);
+
+    // Reference changed
+    g_signal_connect(G_OBJECT(options.reference), "value-changed",
+		     G_CALLBACK(reference_changed), window);
+
     /*
     // Close button
     close = gtk_button_new_with_label("  Close  ");
