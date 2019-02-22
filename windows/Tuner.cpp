@@ -749,6 +749,8 @@ BOOL AddToolbarBitmap(HWND control, LPCTSTR name)
 	{NULL, (UINT_PTR)hbm};
 
     SendMessage(control, TB_ADDBITMAP, 1, (LPARAM)&bitmap);
+
+    return true;
 }
 
 BOOL AddToolbarButtons(HWND control)
@@ -763,13 +765,14 @@ BOOL AddToolbarButtons(HWND control)
     // Add to toolbar
     SendMessage(control, TB_ADDBUTTONS,
 		Length(buttons), (LPARAM)&buttons);
+
+    return true;
 }
 
 // Draw item
 BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 {
     LPDRAWITEMSTRUCT lpdi = (LPDRAWITEMSTRUCT)lParam;
-    UINT state = lpdi->itemState;
     RECT rect = lpdi->rcItem;
     HDC hdc = lpdi->hDC;
 
@@ -807,6 +810,8 @@ BOOL DrawItem(WPARAM wParam, LPARAM lParam)
 	return DrawMeter(hdc, rect);
 	break;
     }
+
+    return false;
 }
 
 // Display context menu
@@ -844,6 +849,7 @@ BOOL DisplayContextMenu(HWND hWnd, POINTS points)
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
 		   0, hWnd, NULL);
+    return true;
 }
 
 // Display options
@@ -871,6 +877,7 @@ BOOL DisplayOptions(WPARAM wParam, LPARAM lParam)
                      window.wind.top + OFFSET,
                      OPTIONS_WIDTH, OPTIONS_HEIGHT,
                      window.hwnd, (HMENU)NULL, hInst, NULL);
+    return true;
 }
 
 // Options Procedure
@@ -1118,9 +1125,9 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(expand.hwnd, &expand.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&expand.rect, 2);
 
-            char sizes[][6] =
+            const char *sizes[] =
                 {" x 1", " x 2", " x 4", " x 8", " x 16"};
-            for (int i = 0; i < Length(sizes); i++)
+            for (unsigned int i = 0; i < Length(sizes); i++)
                 ComboBox_AddString(expand.hwnd, sizes[i]);
 
             // Select x 1
@@ -1154,9 +1161,9 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(colours.hwnd, &colours.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&colours.rect, 2);
 
-            char strings[][16] =
+            const char *strings[] =
                 {" Blue/Cyan", " Olive/Aqua", " Magenta/Yellow"};
-            for (int i = 0; i < Length(strings); i++)
+            for (unsigned int i = 0; i < Length(strings); i++)
                 ComboBox_AddString(colours.hwnd, strings[i]);
 
             // Select Olive/Aqua
@@ -1237,14 +1244,14 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(transpose.hwnd, &transpose.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&transpose.rect, 2);
 
-            char trans[][12] =
+            const char *trans[] =
                 {" +6[Key:F#]", " +5[Key:F]", " +4[Key:E]",
                  " +3[Key:Eb]", " +2[Key:D]",
                  " +1[Key:C#]", " +0[Key:C]", " -1[Key:B]",
                  " -2[Key:Bb]", " -3[Key:A]",
                  " -4[Key:Ab]", " -5[Key:G]",
                  " -6[Key:F#]"};
-            for (int i = 0; i < Length(trans); i++)
+            for (unsigned int i = 0; i < Length(trans); i++)
                 ComboBox_AddString(transpose.hwnd, trans[i]);
 
             // Select +0[Key:C]
@@ -1278,7 +1285,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(temperament.hwnd, &temperament.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&temperament.rect, 2);
 
-            char temp[][20] =
+            const char *temp[] =
                 {" Kirnberger II", " Kirnberger III",
                  " Werckmeister III", " Werckmeister IV",
                  " Werckmeister V", " Werckmeister VI",
@@ -1295,7 +1302,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                  " Barnes 1977", " Lambert 1774",
                  " Schlick (H. Vogel)", " Meantone # (-1/4)",
                  " Meantone b (-1/4)", " Lehman-Bach"};
-            for (int i = 0; i < Length(temp); i++)
+            for (unsigned int i = 0; i < Length(temp); i++)
                 ComboBox_AddString(temperament.hwnd, temp[i]);
 
             // Select Equal Temperament
@@ -1333,7 +1340,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
                 {" C", " C#", " D", " Eb",
                  " E", " F", " F#", " G",
                  " Ab", " A", " Bb", " B"};
-            for (int i = 0; i < Length(keys); i++)
+            for (unsigned int i = 0; i < Length(keys); i++)
                 ComboBox_AddString(key.hwnd, keys[i]);
 
             // Select C
@@ -1542,6 +1549,7 @@ BOOL ZoomClicked(WPARAM wParam, LPARAM lParam)
     case BN_CLICKED:
 	SpectrumClicked(wParam, lParam);
     }
+    return true;
 }
 
 // Enable clicked
@@ -1553,6 +1561,7 @@ BOOL EnableClicked(WPARAM wParam, LPARAM lParam)
     case BN_CLICKED:
 	StrobeClicked(wParam, lParam);
     }
+    return true;
 }
 
 // Filter clicked
@@ -1670,6 +1679,7 @@ BOOL DownClicked(WPARAM wParam, LPARAM lParam)
 
     if (down.hwnd != NULL)
 	Button_SetCheck(down.hwnd, audio.down? BST_CHECKED: BST_UNCHECKED);
+
     return true;
 }
 
@@ -1688,6 +1698,7 @@ BOOL FundamentalClicked(WPARAM wParam, LPARAM lParam)
 
     if (fund.hwnd != NULL)
 	Button_SetCheck(fund.hwnd, audio.fund? BST_CHECKED: BST_UNCHECKED);
+
     return true;
 }
 
@@ -1709,6 +1720,7 @@ BOOL NoteFilterClicked(WPARAM wParam, LPARAM lParam)
 
     if (button.filter.hwnd != NULL)
         Button_Enable(button.filter.hwnd, audio.note);
+
     return true;
 }
 
@@ -1861,6 +1873,7 @@ BOOL DisplayOptionsMenu(HWND hWnd, POINTS points)
     TrackPopupMenu(menu, TPM_LEFTALIGN | TPM_RIGHTBUTTON,
 		   point.x, point.y,
 		   0, hWnd, NULL);
+    return true;
 }
 
 // Char pressed
@@ -1934,6 +1947,8 @@ BOOL CharPressed(WPARAM wParam, LPARAM lParam)
 	ContractClicked(wParam, lParam);
 	break;
     }
+
+    return true;
 }
 
 // Copy display
@@ -2049,6 +2064,7 @@ BOOL DisplayFilters(WPARAM wParam, LPARAM lParam)
                      options.rect.top + OFFSET,
                      FILTERS_WIDTH, FILTERS_HEIGHT,
                      window.hwnd, (HMENU)NULL, hInst, NULL);
+    return true;
 }
 
 // Filters Procedure
@@ -2109,7 +2125,7 @@ LRESULT CALLBACK FilterWProc(HWND hWnd,
                  OCTAVES_3, OCTAVES_4, OCTAVES_5,
                  OCTAVES_6, OCTAVES_7, OCTAVES_8};
 
-            for (int i = 0; i < Length(labels); i++)
+            for (unsigned int i = 0; i < Length(labels); i++)
             {
                 boxes.notes[i].hwnd =
                     CreateWindow(WC_BUTTON, labels[i],
@@ -2129,7 +2145,7 @@ LRESULT CALLBACK FilterWProc(HWND hWnd,
                                 filter.note[i]? BST_CHECKED: BST_UNCHECKED);
             }
 
-            for (int i = 0; i < Length(filter.octave); i++)
+            for (unsigned int i = 0; i < Length(filter.octave); i++)
             {
                 static TCHAR s[64];
                 sprintf(s, "Octave %d:", i);
@@ -2242,7 +2258,7 @@ BOOL BoxClicked(WPARAM wParam, LPARAM lParam)
     int id = LOWORD(wParam);
 
     // Check notes
-    for (int i = 0; i < Length(filter.note); i++)
+    for (unsigned int i = 0; i < Length(filter.note); i++)
     {
         if (id == noteIds[i])
         {
@@ -2254,7 +2270,7 @@ BOOL BoxClicked(WPARAM wParam, LPARAM lParam)
     }
 
     // Check octaves
-    for (int i = 0; i < Length(filter.octave); i++)
+    for (unsigned int i = 0; i < Length(filter.octave); i++)
     {
         if (id == octaveIds[i])
         {
@@ -2427,7 +2443,7 @@ BOOL DrawScope(HDC hdc, RECT rect)
     // Draw the trace
     PointF last(-1.0, 0.0);
 
-    for (int i = 0; i < width && i < scope.length; i++)
+    for (unsigned int i = 0; i < width && i < scope.length; i++)
     {
 	if (max < abs(scope.data[n + i]))
 	    max = abs(scope.data[n + i]);
@@ -2589,7 +2605,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	// Calculate scale
 	float xscale = ((float)width / (spectrum.r - spectrum.l)) / 2.0;
 
-	for (int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
+	for (unsigned int i = floor(spectrum.l); i <= ceil(spectrum.h); i++)
 	{
 	    if (i > 0 && i < spectrum.length)
 	    {
@@ -2656,7 +2672,7 @@ BOOL DrawSpectrum(HDC hdc, RECT rect)
 	    float value = 0.0;
 
 	    int index = (int)round(pow(M_E, x * xscale));
-	    for (int i = last; i <= index; i++)
+	    for (unsigned int i = last; i <= index; i++)
 	    {
 		// Don't show DC component
 		if (i > 0 && i < spectrum.length)
@@ -2845,7 +2861,6 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
     {
 	// Select font
 	SelectObject(hbdc, font);
-        int font_height = height / 9;
 
 	// Set text align
 	SetTextAlign(hbdc, TA_TOP);
@@ -3650,7 +3665,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
     // Draw treble clef
     GraphicsPath tclef;
     tclef.AddLine(tc[0][0], tc[0][1], tc[1][0], tc[1][1]);
-    for (int i = 1; i < Length(tc) - 1; i += 3)
+    for (unsigned int i = 1; i < Length(tc) - 1; i += 3)
         tclef.AddBezier(tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
                         tc[i + 2][0], tc[i + 2][1], tc[i + 3][0], tc[i + 3][1]);
     Matrix matrix;
@@ -3683,7 +3698,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         bclef.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                         bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
     bclef.StartFigure();
-    for (int i = 35; i < Length(bc) - 1; i += 3)
+    for (unsigned int i = 35; i < Length(bc) - 1; i += 3)
         bclef.AddBezier(bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                         bc[i + 2][0], bc[i + 2][1], bc[i + 3][0], bc[i + 3][1]);
 
@@ -3703,7 +3718,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
 
     // Note head
     GraphicsPath head;
-    for (int i = 0; i < Length(hd) - 1; i += 3)
+    for (unsigned int i = 0; i < Length(hd) - 1; i += 3)
         head.AddBezier(hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
                        hd[i + 2][0], hd[i + 2][1], hd[i + 3][0], hd[i + 3][1]);
     head.GetBounds(&bounds, &matrix, &pen);
@@ -3715,7 +3730,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
 
     // Sharp
     GraphicsPath sharp;
-    for (int i = 0; i < 28; i++)
+    for (unsigned int i = 0; i < 28; i++)
         sharp.AddLine(sp[i][0], sp[i][1], sp[i + 1][0], sp[i + 1][1]);
     sharp.StartFigure();
     for (int i = 29; i < 33; i++)
@@ -3770,7 +3785,7 @@ BOOL DrawStaff(HDC hdc, RECT rect)
         octave += 4;
 
     // Wrap bottom two octaves
-    else if (octave <= 1 || octave == 2 && index <= 1)
+    else if (octave <= 1 || (octave == 2 && index <= 1))
         octave += 2;
 
     float dx = (octave * lineWidth * 3.5) +
@@ -4355,7 +4370,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
     if (audio.down)
     {
 	// x2 = xa << 2
-	for (int i = 0; i < Length(x2); i++)
+	for (unsigned int i = 0; i < Length(x2); i++)
 	{
 	    x2[i] = 0.0;
 
@@ -4364,7 +4379,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
 
 	// x3 = xa << 3
-	for (int i = 0; i < Length(x3); i++)
+	for (unsigned int i = 0; i < Length(x3); i++)
 	{
 	    x3[i] = 0.0;
 
@@ -4373,7 +4388,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
 
 	// x4 = xa << 4
-	for (int i = 0; i < Length(x4); i++)
+	for (unsigned int i = 0; i < Length(x4); i++)
 	{
 	    x4[i] = 0.0;
 
@@ -4382,7 +4397,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
 
 	// x5 = xa << 5
-	for (int i = 0; i < Length(x5); i++)
+	for (unsigned int i = 0; i < Length(x5); i++)
 	{
 	    x5[i] = 0.0;
 
@@ -4391,7 +4406,7 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	}
 
 	// Add downsamples
-	for (int i = 1; i < Length(xa); i++)
+	for (unsigned int i = 1; i < Length(xa); i++)
 	{
 	    if (i < Length(x2))
 		xa[i] += x2[i];
