@@ -8,11 +8,13 @@ AC_CONFIG_SRCDIR([tuner.cpp])
 
 # Checks for programs.
 AC_LANG(C++)
+AC_PROG_CC
 AC_PROG_CXX
 PKG_PROG_PKG_CONFIG
 AC_CHECK_FUNCS([floor])
 AC_CHECK_FUNCS([memmove])
 AC_CHECK_FUNCS([pow])
+AC_CHECK_FUNCS([sqrt])
 AC_CHECK_HEADER_STDBOOL
 
 # Checks for libraries.
