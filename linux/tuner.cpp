@@ -1857,6 +1857,21 @@ void expand_changed(GtkWidget *widget, gpointer data)
 {
 }
 
+// Colours changed
+void colours_changed(GtkWidget *widget, gpointer data)
+{
+}
+
+// Transpose changed
+void transpose_changed(GtkWidget *widget, gpointer data)
+{
+}
+
+// Temperament changed
+void temperament_changed(GtkWidget *widget, gpointer data)
+{
+}
+
 // Note filter callback
 void note_clicked(GtkWidget *widget, GtkWindow *window)
 {
@@ -1947,7 +1962,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_container_add(GTK_CONTAINER(options.widget), hbox);
 
     // V box
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, MARGIN);
 
     // H box
@@ -2043,7 +2058,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
     label = gtk_label_new("Expand");
@@ -2051,21 +2066,22 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 
     options.expand = gtk_combo_box_text_new();
     const char *expansions[] =
-        {"x 1", "x 2", "x 4", "x 8", "x 16"};
+        {" x 1", " x 2", " x 4", " x 8", " x 16"};
     for (unsigned int i = 0; i < Length(expansions); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
-                                  s, expansions[i]);
+                                  NULL, expansions[i]);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand), 1);
     gtk_box_pack_end(GTK_BOX(hbox), options.expand, false, false, 0);
 
     // Expand changed
-    g_signal_connect(G_OBJECT(options.note), "changed",
+    g_signal_connect(G_OBJECT(options.expand), "changed",
 		     G_CALLBACK(expand_changed), window);
 
     gtk_box_pack_start(GTK_BOX(vbox), vbox, false, false, 0);
 
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
     label = gtk_label_new("Colours");
@@ -2073,25 +2089,72 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 
     options.colours = gtk_combo_box_text_new();
     const char *colours[] =
-        {"Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"};
-    for (unsigned int i = 0; i < Length(expansions); i++)
+        {" Blue/Cyan", " Olive/Aquamarine", " Magenta/Yellow"};
+    for (unsigned int i = 0; i < Length(colours); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.colours),
-                                  s, colours[i]);
+                                  NULL, colours[i]);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.colours),
+                             strobe.colours);
     gtk_box_pack_end(GTK_BOX(hbox), options.colours, false, false, 0);
+
+    // Expand changed
+    g_signal_connect(G_OBJECT(options.colours), "changed",
+		     G_CALLBACK(colours_changed), window);
+
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
     label = gtk_label_new("Reference:");
-    gtk_box_pack_start(GTK_BOX(ibox), label, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
     // Reference
     options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
 			      audio.reference);
-    gtk_box_pack_start(GTK_BOX(ibox), options.reference, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(hbox), options.reference, false, false, 0);
 
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
+
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+
+    // Label
+    label = gtk_label_new("Temperament");
+    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+
+    options.temperament = gtk_combo_box_text_new();
+    const char *temperaments[] =
+        {" Kirnberger II", " Kirnberger III",
+         " Werckmeister III", " Werckmeister IV",
+         " Werckmeister V", " Werckmeister VI",
+         " Bach (Klais)", " Just (Barbour)",
+         " Equal Temperament", " Pythagorean",
+         " Van Zwolle", " Meantone (-1/4)",
+         " Silbermann (-1/6)", " Salinas (-1/3)",
+         " Zarlino (-2/7)", " Rossi (-1/5)",
+         " Rossi (-2/9)", " Rameau (-1/4)",
+         " Kellner", " Vallotti",
+         " Young II", " Bendeler III",
+         " Neidhardt I", " Neidhardt II",
+         " Neidhardt III", " Bruder 1829",
+         " Barnes 1977", " Lambert 1774",
+         " Schlick (H. Vogel)", " Meantone # (-1/4)",
+         " Meantone b (-1/4)", " Lehman-Bach"};
+    for (unsigned int i = 0; i < Length(temperaments); i++)
+        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.temperament),
+                                  NULL, temperaments[i]);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.temperament),
+                             audio.temperament);
+     gtk_box_pack_end(GTK_BOX(hbox), options.temperament, false, false, 0);
+
+    // Temperament changed
+    g_signal_connect(G_OBJECT(options.temperament), "changed",
+		     G_CALLBACK(temperament_changed), window);
 
     /*
     // Close button

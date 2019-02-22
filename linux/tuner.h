@@ -174,6 +174,7 @@ typedef struct
     GtkWidget *fundamental;
     GtkWidget *reference;
     GtkWidget *correction;
+    GtkWidget *temperament;
 } Options;
 
 typedef struct
@@ -193,6 +194,8 @@ typedef struct
     gboolean filter;
     gboolean downsample;
     gboolean fundamental;
+    int temperament;
+    int key;
     double correction;
     double reference;
     gboolean save;
