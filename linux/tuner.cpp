@@ -2061,7 +2061,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
-    label = gtk_label_new("Expand");
+    label = gtk_label_new("Spectrum display expand:");
     gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
     options.expand = gtk_combo_box_text_new();
@@ -2084,7 +2084,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
-    label = gtk_label_new("Colours");
+    label = gtk_label_new("Strobe colours:");
     gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
     options.colours = gtk_combo_box_text_new();
@@ -2097,7 +2097,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
                              strobe.colours);
     gtk_box_pack_end(GTK_BOX(hbox), options.colours, false, false, 0);
 
-    // Expand changed
+    // Colours changed
     g_signal_connect(G_OBJECT(options.colours), "changed",
 		     G_CALLBACK(colours_changed), window);
 
@@ -2106,7 +2106,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
-    label = gtk_label_new("Reference:");
+    label = gtk_label_new("Reference frequency:");
     gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
     // Reference
@@ -2124,7 +2124,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Label
-    label = gtk_label_new("Temperament");
+    label = gtk_label_new("Temperament:");
     gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
 
     options.temperament = gtk_combo_box_text_new();
@@ -2155,6 +2155,30 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Temperament changed
     g_signal_connect(G_OBJECT(options.temperament), "changed",
 		     G_CALLBACK(temperament_changed), window);
+
+    // H box
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+
+    // Label
+    label = gtk_label_new("Temperament key:");
+    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+
+    options.key = gtk_combo_box_text_new();
+    const char *keys[] =
+        {" C", " C#", " D", " Eb",
+         " E", " F", " F#", " G",
+         " Ab", " A", " Bb", " B"};
+    for (unsigned int i = 0; i < Length(keys); i++)
+        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.key),
+                                  NULL, keys[i]);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.key),
+                             audio.key);
+    gtk_box_pack_end(GTK_BOX(hbox), options.key, false, false, 0);
+
+    // Key changed
+    g_signal_connect(G_OBJECT(options.key), "changed",
+		     G_CALLBACK(key_changed), window);
 
     /*
     // Close button
@@ -2239,6 +2263,11 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     g_signal_connect(G_OBJECT(options.widget), "destroy",
 		     G_CALLBACK(gtk_widget_destroyed), &options.widget);
     */
+
+    // Dialog destroyed
+    g_signal_connect(G_OBJECT(options.widget), "destroy",
+		     G_CALLBACK(gtk_widget_destroyed), options.widget);
+
     gtk_widget_show_all(options.widget);
 }
 

@@ -1336,7 +1336,7 @@ LRESULT CALLBACK OptionWProc(HWND hWnd,
             GetWindowRect(key.hwnd, &key.rect);
             MapWindowPoints(NULL, hWnd, (POINT *)&key.rect, 2);
 
-            char keys[][4] =
+            const char *keys[] =
                 {" C", " C#", " D", " Eb",
                  " E", " F", " F#", " G",
                  " Ab", " A", " Bb", " B"};
