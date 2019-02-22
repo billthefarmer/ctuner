@@ -1924,9 +1924,6 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
 // Options callback
 void options_clicked(GtkWidget *widget, GtkWindow *window)
 {
-    GtkWidget *hbox;
-    GtkWidget *ibox;
-    GtkWidget *vbox;
     GtkWidget *note;
     GtkWidget *close;
     GtkWidget *label;
@@ -1946,11 +1943,11 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_window_set_transient_for(GTK_WINDOW(options.widget), window);
 
     // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_container_add(GTK_CONTAINER(options.widget), hbox);
 
     // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, MARGIN);
 
     // H box
@@ -1958,7 +1955,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, MARGIN);
 
     // I box
-    ibox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *ibox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, 0);
 
     // Zoom
@@ -2056,12 +2053,8 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     const char *expansions[] =
         {"x 1", "x 2", "x 4", "x 8", "x 16"};
     for (unsigned int i = 0; i < Length(expansions); i++)
-    {
-        char s[16];
-        sprintf(s, "%d", i);
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
                                   s, expansions[i]);
-    }
     gtk_box_pack_end(GTK_BOX(hbox), options.expand, false, false, 0);
 
     // Expand changed
@@ -2082,12 +2075,8 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     const char *colours[] =
         {"Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"};
     for (unsigned int i = 0; i < Length(expansions); i++)
-    {
-        char s[16];
-        sprintf(s, "%d", i);
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.colours),
                                   s, colours[i]);
-    }
     gtk_box_pack_end(GTK_BOX(hbox), options.colours, false, false, 0);
 
     // Label
