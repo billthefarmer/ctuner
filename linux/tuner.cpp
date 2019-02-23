@@ -1502,6 +1502,13 @@ gboolean strobe_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 // Staff draw callback
 gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 {
+    enum
+    {
+        NATURAL,
+        SHARP,
+        FLAT
+    };
+
     // Treble clef
     static const float tc[][2] =
         {
@@ -1639,6 +1646,48 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     int lineHeight = height / 14.0;
     int lineWidth = width / 16.0;
     int margin = width / 32.0;
+
+    // Move origin
+    cairo_translate(cr, 0, height / 2);
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_set_line_width(cr, 1);
+
+    // Draw staff
+    for (int i = 1; i < 6; i++)
+    {
+        cairo_move_to(cr, margin, i * lineHeight);
+        cairo_line_to(cr, width - margin, i * lineHeight);
+        cairo_move_to(cr, margin, -i * lineHeight);
+        cairo_line_to(cr, width - margin, -i * lineHeight);
+    }
+
+    // Draw leger lines
+    cairo_move_to(cr, width / 2 - lineWidth / 2, 0);
+    cairo_line_to(cr, width / 2 + lineWidth / 2, 0);
+    cairo_move_to(cr, width / 2 + lineWidth * 5.5, -lineHeight * 6);
+    cairo_line_to(cr, width / 2 + lineWidth * 6.5, -lineHeight * 6);
+    cairo_move_to(cr, width / 2 - lineWidth * 5.5, lineHeight * 6);
+    cairo_line_to(cr, width / 2 - lineWidth * 6.5, lineHeight * 6);
+
+    cairo_stroke(cr);
+
+    // Draw treble clef
+    cairo_move_to(cr, tc[0][0], tc[0][1]);
+    cairo_line_to(cr, tc[1][0], tc[1][1]);
+    for (unsigned int i = 2; i < Length(tc) - 1; i += 3)
+        cairo_curve_to(cr, tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
+                       tc[i + 2][0], tc[i + 2][1]);
+    double x1, y1;
+    double x2, y2;
+
+    // Centre clef
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    cairo_translate(cr, (x1 + x2) / 2, (y1 + y2) / 2);
+    double scale = (height / 2) / (y2 - y1);
+    cairo_scale(cr, scale, scale);
+    // cairo_translate(cr, width / 2 + margin + lineWidth / 2, -lineHeight * 3);
+    cairo_fill(cr);
+
 }
 
 // Meter draw callback

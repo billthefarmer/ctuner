@@ -53,6 +53,7 @@ enum
      SPECTRUM_HEIGHT = 48,
      DISPLAY_HEIGHT  = 150,
      STROBE_HEIGHT   = 66,
+     STAFF_HEIGHT    = 66,
      METER_HEIGHT    = 78};
 
 // PCM values
