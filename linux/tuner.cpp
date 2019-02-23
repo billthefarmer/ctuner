@@ -141,6 +141,21 @@ void activate(GtkApplication *app, gpointer data)
 
     gtk_widget_add_events(strobe.widget, GDK_BUTTON_PRESS_MASK);
 
+    // Staff
+    staff.widget = gtk_drawing_area_new();
+    gtk_widget_set_size_request(staff.widget, DISPLAY_WIDTH, STAFF_HEIGHT);
+    gtk_widget_set_name(staff.widget, "staff");
+    gtk_box_pack_start(GTK_BOX(vbox), staff.widget, true, true, 0);
+
+    g_signal_connect(G_OBJECT(staff.widget), "draw",
+		     G_CALLBACK(staff_draw_callback), NULL);
+
+    // Button pressed callback
+    g_signal_connect(G_OBJECT(staff.widget), "button-press-event",
+		     G_CALLBACK(button_press), NULL);
+
+    gtk_widget_add_events(staff.widget, GDK_BUTTON_PRESS_MASK);
+
     // Meter
     meter.widget = gtk_drawing_area_new();
     gtk_widget_set_size_request(meter.widget, DISPLAY_WIDTH, METER_HEIGHT);
@@ -183,6 +198,12 @@ void activate(GtkApplication *app, gpointer data)
     // Show the window
     gtk_widget_show_all(window);
 
+    // Show staff or strobe
+    if (!strobe.enable)
+        gtk_widget_hide(strobe.widget);
+    if (!staff.enable)
+        gtk_widget_hide(staff.widget);
+
     // Start audio
     initAudio();
 }
@@ -193,6 +214,7 @@ void restoreOptions()
     // Initial values
     spectrum.zoom = true;
     spectrum.expand = 1;
+    staff.enable = true;
 
     audio.reference = A5_REFERENCE;
     audio.correction = 1.0;
@@ -257,6 +279,7 @@ void restoreOptions()
 	    if (strncmp(line, "strobe", strlen("strobe")) == 0)
 	    {
 		sscanf(line, "strobe=%d", &strobe.enable);
+                staff.enable = !strobe.enable;
 		continue;
 	    }
 
@@ -861,7 +884,7 @@ void cairo_round_rect(cairo_t *cr, double x, double y,
 }
 
 // Draw edge
-void cairo_edge(cairo_t *cr, int w, int h)
+void cairo_draw_edge(cairo_t *cr, int w, int h)
 {
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
     cairo_set_line_width(cr, 3);
@@ -903,8 +926,8 @@ void cairo_centre_text(cairo_t *cr, char *t)
 // Scope draw callback
 gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 {
-    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-	       gtk_widget_get_allocated_height(widget));
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
 
     int width = gtk_widget_get_allocated_width(widget) - 4;
     int height = gtk_widget_get_allocated_height(widget) - 4;
@@ -998,8 +1021,8 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     enum
     {FONT_HEIGHT   = 10};
 
-    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-	       gtk_widget_get_allocated_height(widget));
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
 
     int width = gtk_widget_get_allocated_width(widget) - 4;
     int height = gtk_widget_get_allocated_height(widget) - 4;
@@ -1209,8 +1232,8 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	{"", "\u266F", "", "\u266D", "", "",
 	 "\u266F", "", "\u266D", "", "\u266D", ""};
 
-    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-	       gtk_widget_get_allocated_height(widget));
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
 
     const int width = gtk_widget_get_allocated_width(widget) - 4;
     const int height = gtk_widget_get_allocated_height(widget) - 4;
@@ -1375,12 +1398,12 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_right_justify_text(cr, s);
     }
 
-    // Show lock
+    // Show L for lock
     if (display.lock)
-	// DrawLock(hbdc, -1, height + 1);
-	;
-
-    // cairo_destroy(cr);
+    {
+	cairo_move_to(cr, 0, 10 - height);
+	cairo_show_text(cr, "L");
+    }
 
     return true;
 }
@@ -1396,8 +1419,8 @@ gboolean strobe_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	 {{0.5, 0.5, 0}, {0.5, 1.0, 0.828}},
 	 {{1.0, 0.25, 1.0}, {1.0, 1.0, 0.25}}};
 
-    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-	       gtk_widget_get_allocated_height(widget));
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
 
     if (!strobe.enable)
 	return true;
@@ -1473,16 +1496,157 @@ gboolean strobe_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     cairo_set_source(cr, cp);
     cairo_paint(cr);
-    // cairo_destroy(cr);
 
     return true;
+}
+
+// Staff draw callback
+gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
+{
+    // Treble clef
+    static const float tc[][2] =
+        {
+         {-6, 16}, {-8, 13},
+         {-14, 19}, {-10, 35}, {2, 35},
+         {8, 37}, {21, 30}, {21, 17},
+         {21, 5}, {10, -1}, {0, -1},
+         {-12, -1}, {-23, 5}, {-23, 22},
+         {-23, 29}, {-22, 37}, {-7, 49},
+         {10, 61}, {10, 68}, {10, 73},
+         {10, 78}, {9, 82}, {7, 82},
+         {2, 78}, {-2, 68}, {-2, 62},
+         {-2, 25}, {10, 18}, {11, -8},
+         {11, -18}, {5, -23}, {-4, -23},
+         {-10, -23}, {-15, -18}, {-15, -13},
+         {-15, -8}, {-12, -4}, {-7, -4},
+         {3, -4}, {3, -20}, {-6, -17},
+         {-5, -23}, {9, -20}, {9, -9},
+         {7, 24}, {-5, 30}, {-5, 67},
+         {-5, 78}, {-2, 87}, {7, 91},
+         {13, 87}, {18, 80}, {17, 73},
+         {17, 62}, {10, 54}, {1, 45},
+         {-5, 38}, {-15, 33}, {-15, 19},
+         {-15, 7}, {-8, 1}, {0, 1},
+         {8, 1}, {15, 6}, {15, 14},
+         {15, 23}, {7, 26}, {2, 26},
+         {-5, 26}, {-9, 21}, {-6, 16}
+        };
+
+    // Bass clef
+    static const float bc[][2] =
+        {
+         {-2.3,3},
+         {6,7}, {10.5,12}, {10.5,16},
+         {10.5,20.5}, {8.5,23.5}, {6.2,23.3},
+         {5.2,23.5}, {2,23.5}, {0.5,19.5},
+         {2,20}, {4,19.5}, {4,18},
+         {4,17}, {3.5,16}, {2,16},
+         {1,16}, {0,16.9}, {0,18.5},
+         {0,21}, {2.1,24}, {6,24},
+         {10,24}, {13.5,21.5}, {13.5,16.5},
+         {13.5,11}, {7,5.5}, {-2.0,2.8},
+         {14.9,21},
+         {14.9,22.5}, {16.9,22.5}, {16.9,21},
+         {16.9,19.5}, {14.9,19.5}, {14.9,21},
+         {14.9,15},
+         {14.9,16.5}, {16.9,16.5}, {16.9,15},
+         {16.9,13.5}, {14.9,13.5}, {14.9,15}
+        };
+
+    // Note head
+    static const float hd[][2] =
+        {
+         {8.0, 0.0},
+         {8.0, 8.0}, {-8.0, 8.0}, {-8.0, 0.0},
+         {-8.0, -8.0}, {8.0, -8.0}, {8.0, 0.0}
+        };
+
+    // Sharp symbol
+    static const float sp[][2] =
+        {
+         {35, 35}, // 0
+         {8, 22}, // 1
+         {8, 46}, // 2
+         {35, 59}, // 3
+         {35, 101}, // 4
+         {8, 88}, // 5
+         {8, 111}, // 6
+         {35, 125}, // 7
+         {35, 160}, // 8
+         {44, 160}, // 9
+         {44, 129}, // 10
+         {80, 147}, // 11
+         {80, 183}, // 12
+         {89, 183}, // 13
+         {89, 151}, // 14
+         {116, 165}, // 15
+         {116, 141}, // 16
+         {89, 127}, // 17
+         {89, 86}, // 18
+         {116, 100}, // 19
+         {116, 75}, // 20
+         {89, 62}, // 21
+         {89, 19}, // 22
+         {80, 19}, // 23
+         {80, 57}, // 23
+         {44, 39}, // 25
+         {44, -1}, // 26
+         {35, -1}, // 27
+         {35, 35}, // 28
+         {44, 64}, // 29
+         {80, 81}, // 30
+         {80, 123}, // 31
+         {44, 105}, // 32
+         {44, 64}, // 33
+        };
+
+    // Flat symbol
+    static const float ft[][2] =
+        {
+         {20, 86}, // 0
+         {28, 102.667}, {41.6667, 111}, {61, 111}, // 3
+         {71.6667, 111}, {80.3333, 107.5}, {87, 100.5}, // 6
+         {93.6667, 93.5}, {97, 83.6667}, {97, 71}, // 9
+         {97, 53}, {89, 36.6667}, {73, 22}, // 12
+         {57, 7.33333}, {35.3333, -1.33333}, {8, -4}, // 15
+         {8, 195}, // 16
+         {20, 195}, // 17
+         {20, 86}, // 18
+         {20, 7}, // 19
+         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // 22
+         {67.1667, 38.3333}, {72, 51.6667}, {72, 67}, // 25
+         {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87}, // 28
+         {62.8333, 91.6667}, {57.3333, 94}, {50, 94}, // 31
+         {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83}, // 34
+         {22.8333, 75.6667}, {20, 64.6667}, {20, 50}, // 37
+         {20, 7}, // 38
+        };
+
+    // Scale offsets
+    static const int offset[] =
+        {0, 0, 1, 2, 2, 3,
+         3, 4, 5, 5, 6, 6};
+
+    static const int sharps[] =
+	{NATURAL, SHARP, NATURAL, FLAT, NATURAL, NATURAL,
+	 SHARP, NATURAL, FLAT, NATURAL, FLAT, NATURAL};
+
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
+
+    int width = gtk_widget_get_allocated_width(widget) - 4;
+    int height = gtk_widget_get_allocated_height(widget) - 4;
+
+    int lineHeight = height / 14.0;
+    int lineWidth = width / 16.0;
+    int margin = width / 32.0;
 }
 
 // Meter draw callback
 gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 {
-    cairo_edge(cr,  gtk_widget_get_allocated_width(widget),
-               gtk_widget_get_allocated_height(widget));
+    cairo_draw_edge(cr,  gtk_widget_get_allocated_width(widget),
+                    gtk_widget_get_allocated_height(widget));
 
     int width = gtk_widget_get_allocated_width(widget) - 4;
     int height = gtk_widget_get_allocated_height(widget) - 4;

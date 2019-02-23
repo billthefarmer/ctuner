@@ -91,7 +91,7 @@ typedef struct
 {
     double f;
     double fr;
-    int n;
+    gint n;
 } maximum;
 
 typedef struct
@@ -106,15 +106,15 @@ typedef struct
 {
     GtkWidget *widget;
     short *data;
-    int length;
+    gint length;
 } Scope;
 
 typedef struct
 {
     GtkWidget *widget;
-    int length;
-    int expand;
-    int count;
+    gint length;
+    gint expand;
+    gint count;
     gboolean zoom;
     double f;
     double r;
@@ -133,8 +133,8 @@ typedef struct
     double c;
     gboolean lock;
     gboolean multiple;
-    int count;
-    int n;
+    gint count;
+    gint n;
 } Display;
 
 typedef struct
@@ -142,9 +142,16 @@ typedef struct
     GtkWidget *widget;
     gboolean changed;
     gboolean enable;
-    int colours;
+    gint colours;
     double c;
 } Strobe;
+
+typedef struct
+{
+    GtkWidget *widget;
+    gboolean enable;
+    gint n;
+} Staff;
 
 typedef struct
 {
@@ -194,8 +201,8 @@ typedef struct
     gboolean filter;
     gboolean downsample;
     gboolean fundamental;
-    int temperament;
-    int key;
+    gint temperament;
+    gint key;
     double correction;
     double reference;
     gboolean save;
@@ -206,6 +213,7 @@ Scope scope;
 Spectrum spectrum;
 Display display;
 Strobe strobe;
+Staff staff;
 Meter meter;
 Status status;
 
@@ -222,6 +230,7 @@ gboolean scope_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean spectrum_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean display_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean strobe_draw_callback(GtkWidget *, cairo_t *, gpointer);
+gboolean staff_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 
 gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
