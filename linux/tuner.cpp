@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
 
     // Stop audio
     audio.done = true;
-    snd_pcm_close(audio.handle);
     saveOptions();
 
     return status;
@@ -887,8 +886,8 @@ void cairo_round_rect(cairo_t *cr, double x, double y,
 void cairo_draw_edge(cairo_t *cr, int w, int h)
 {
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
-    cairo_set_line_width(cr, 3);
-    cairo_round_rect(cr, 0, 0, w, h, 5);
+    cairo_set_line_width(cr, 2);
+    cairo_round_rect(cr, 1, 1, w - 2, h - 2, 5);
     cairo_stroke(cr);
 
     cairo_round_rect(cr, 2, 2, w - 4, h - 4, 5);
@@ -1742,7 +1741,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 // Update options
 void update_options()
 {
-    if (options.widget == NULL)
+    if (options.window == NULL)
 	return;
 
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.filter),
@@ -2036,6 +2035,11 @@ void temperament_changed(GtkWidget *widget, gpointer data)
 {
 }
 
+// Key changed
+void key_changed(GtkWidget *widget, gpointer data)
+{
+}
+
 // Note filter callback
 void note_clicked(GtkWidget *widget, GtkWindow *window)
 {
@@ -2103,34 +2107,28 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
 // Options callback
 void options_clicked(GtkWidget *widget, GtkWindow *window)
 {
-    GtkWidget *note;
-    GtkWidget *close;
-    GtkWidget *label;
-    GtkWidget *save;
-    GtkWidget *separator;
-
-    if (options.widget != NULL)
+    if (options.window != NULL)
     {
-	gtk_widget_show_all(options.widget);
+	gtk_widget_show_all(options.window);
 	return;
     }
 
     // Create options dialog
-    options.widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(options.widget), "Tuner Options");
-    gtk_window_set_resizable(GTK_WINDOW(options.widget), false);
-    gtk_window_set_transient_for(GTK_WINDOW(options.widget), window);
+    options.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(options.window), "Tuner Options");
+    gtk_window_set_resizable(GTK_WINDOW(options.window), false);
+    gtk_window_set_transient_for(GTK_WINDOW(options.window), window);
 
     // H box
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_container_add(GTK_CONTAINER(options.widget), hbox);
+    gtk_container_add(GTK_CONTAINER(options.window), hbox);
 
     // V box
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
     gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, MARGIN);
 
     // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, SPACING);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, MARGIN);
 
     // I box
@@ -2174,11 +2172,9 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     g_signal_connect(G_OBJECT(options.fundamental), "toggled",
         	     G_CALLBACK(fund_toggled), window);
 
-    gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, MARGIN);
-
-    // V box
+    // I box
     ibox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), ibox, true, true, MARGIN);
+    gtk_box_pack_end(GTK_BOX(hbox), ibox, true, true, 0);
 
     // Strobe
     options.strobe = gtk_check_button_new_with_label("Show strobe");
@@ -2189,7 +2185,6 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Strobe clicked
     g_signal_connect(G_OBJECT(options.strobe), "toggled",
 		     G_CALLBACK(strobe_clicked), window);
-
     // Downsample
     options.downsample = gtk_check_button_new_with_label("Downsample audio");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.downsample),
@@ -2208,7 +2203,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Lock clicked
     g_signal_connect(G_OBJECT(options.lock), "toggled",
 		     G_CALLBACK(lock_clicked), window);
-    // Note
+    // Note filter
     options.note = gtk_check_button_new_with_label("Note filter");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.note),
 				 audio.note);
@@ -2217,16 +2212,13 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Note clicked
     g_signal_connect(G_OBJECT(options.note), "toggled",
 		     G_CALLBACK(note_toggled), window);
-
-    gtk_box_pack_start(GTK_BOX(hbox), ibox, false, false, 0);
-
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+    // Expand
+    GtkWidget *expand = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), expand, false, false, 0);
 
     // Label
-    label = gtk_label_new("Spectrum display expand:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+    GtkWidget *label = gtk_label_new("Spectrum display expand:");
+    gtk_box_pack_start(GTK_BOX(expand), label, false, false, 0);
 
     options.expand = gtk_combo_box_text_new();
     const char *expansions[] =
@@ -2235,21 +2227,18 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
                                   NULL, expansions[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand), 1);
-    gtk_box_pack_end(GTK_BOX(hbox), options.expand, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(expand), options.expand, false, false, 0);
 
     // Expand changed
     g_signal_connect(G_OBJECT(options.expand), "changed",
 		     G_CALLBACK(expand_changed), window);
-
-    gtk_box_pack_start(GTK_BOX(vbox), vbox, false, false, 0);
-
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+    // Colour
+    GtkWidget *colour = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), colour, false, false, 0);
 
     // Label
     label = gtk_label_new("Strobe colours:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(colour), label, false, false, 0);
 
     options.colours = gtk_combo_box_text_new();
     const char *colours[] =
@@ -2259,37 +2248,37 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
                                   NULL, colours[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.colours),
                              strobe.colours);
-    gtk_box_pack_end(GTK_BOX(hbox), options.colours, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(colour), options.colours, false, false, 0);
 
     // Colours changed
     g_signal_connect(G_OBJECT(options.colours), "changed",
 		     G_CALLBACK(colours_changed), window);
 
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+    // Reference
+    GtkWidget *reference = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), reference, false, false, 0);
 
     // Label
     label = gtk_label_new("Reference frequency:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(reference), label, false, false, 0);
 
     // Reference
     options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
     gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
 			      audio.reference);
-    gtk_box_pack_end(GTK_BOX(hbox), options.reference, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(reference), options.reference, false, false, 0);
 
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
 
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+    // Temperament
+    GtkWidget *temperament = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), temperament, false, false, 0);
 
     // Label
     label = gtk_label_new("Temperament:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(temperament), label, false, false, 0);
 
     options.temperament = gtk_combo_box_text_new();
     const char *temperaments[] =
@@ -2314,19 +2303,19 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
                                   NULL, temperaments[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.temperament),
                              audio.temperament);
-     gtk_box_pack_end(GTK_BOX(hbox), options.temperament, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(temperament), options.temperament, false, false, 0);
 
     // Temperament changed
     g_signal_connect(G_OBJECT(options.temperament), "changed",
 		     G_CALLBACK(temperament_changed), window);
 
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
+    // Key
+    GtkWidget *key = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    gtk_box_pack_start(GTK_BOX(vbox), key, false, false, 0);
 
     // Label
     label = gtk_label_new("Temperament key:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(key), label, false, false, 0);
 
     options.key = gtk_combo_box_text_new();
     const char *keys[] =
@@ -2338,79 +2327,22 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
                                   NULL, keys[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.key),
                              audio.key);
-    gtk_box_pack_end(GTK_BOX(hbox), options.key, false, false, 0);
+    gtk_box_pack_start(GTK_BOX(key), options.key, false, false, 0);
 
     // Key changed
     g_signal_connect(G_OBJECT(options.key), "changed",
 		     G_CALLBACK(key_changed), window);
-
-    /*
     // Close button
-    close = gtk_button_new_with_label("  Close  ");
-    gtk_box_pack_end(GTK_BOX(hbox), close, false, false, MARGIN);
+    GtkWidget *button  = gtk_button_new_with_label("  Close  ");
+    gtk_box_pack_end(GTK_BOX(key), button, false, false, 0);
 
     // Close clicked
-    g_signal_connect_swapped(G_OBJECT(close), "clicked",
-			     G_CALLBACK(gtk_widget_hide), options.widget);
+    g_signal_connect_swapped(G_OBJECT(button), "clicked",
+			     G_CALLBACK(gtk_widget_hide), options.window);
+    /*
     // H box
     hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
-
-    // Label
-    label = gtk_label_new("Correction:");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, MARGIN);
-
-    // Correction
-    options.correction = gtk_spin_button_new_with_range(0.9999, 1.0001,
-							0.000001);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.correction),
-			      audio.correction);
-    gtk_box_pack_start(GTK_BOX(hbox), options.correction, false, false, 0);
-
-    // Correction changed
-    g_signal_connect(G_OBJECT(options.correction), "value-changed",
-		     G_CALLBACK(correction_changed), window);
-
-    // Save button
-    save = gtk_button_new_with_label("   Save   ");
-    gtk_box_pack_end(GTK_BOX(hbox), save, false, false, MARGIN);
-
-    // Save clicked
-    g_signal_connect(G_OBJECT(save), "clicked",
-		     G_CALLBACK(save_clicked), window);
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, MARGIN);
-
-    // Label
-    label = gtk_label_new("Use correction if your sound card clock is\n"
-			  "significantly inaccurate");
-    gtk_box_pack_start(GTK_BOX(hbox), label, false, false, MARGIN);
-
-    // Separator
-    separator = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
-    gtk_box_pack_end(GTK_BOX(vbox), separator, false, false, 0);
-
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, 0);
-    // I box
-    ibox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-    gtk_box_pack_start(GTK_BOX(vbox), ibox, false, false, 0);
-
-    // Label
-    label = gtk_label_new("Reference:");
-    gtk_box_pack_start(GTK_BOX(ibox), label, false, false, 0);
-
-    // Reference
-    options.reference = gtk_spin_button_new_with_range(430.0, 450.0, 0.1);
-    gtk_spin_button_set_value(GTK_SPIN_BUTTON(options.reference),
-			      audio.reference);
-    gtk_box_pack_start(GTK_BOX(ibox), options.reference, false, false, 0);
-
-    // Reference changed
-    g_signal_connect(G_OBJECT(options.reference), "value-changed",
-		     G_CALLBACK(reference_changed), window);
     // I box
     ibox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), ibox, false, false, 0);
@@ -2422,17 +2354,13 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Note clicked
     g_signal_connect(G_OBJECT(note), "clicked",
 		     G_CALLBACK(note_clicked), window);
-
-    // Destroy dialog callback
-    g_signal_connect(G_OBJECT(options.widget), "destroy",
-		     G_CALLBACK(gtk_widget_destroyed), &options.widget);
     */
 
-    // Dialog destroyed
-    g_signal_connect(G_OBJECT(options.widget), "destroy",
-		     G_CALLBACK(gtk_widget_destroyed), options.widget);
+    // Window destroyed
+    g_signal_connect(G_OBJECT(options.window), "destroy",
+		     G_CALLBACK(gtk_widget_destroyed), &options.window);
 
-    gtk_widget_show_all(options.widget);
+    gtk_widget_show_all(options.window);
 }
 
 // Save callback

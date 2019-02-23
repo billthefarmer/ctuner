@@ -167,7 +167,8 @@ typedef struct
 
 typedef struct
 {
-    GtkWidget *widget;
+    GtkWidget *window;
+    GtkWidget *key;
     GtkWidget *note;
     GtkWidget *zoom;
     GtkWidget *lock;
