@@ -943,7 +943,7 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_paint(cr);
 
     cairo_translate(cr, 0, height / 2);
-    cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_source_rgb(cr, 0, 0.25, 0);
     cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_set_line_width(cr, 1);
 
@@ -1038,7 +1038,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_paint(cr);
 
     cairo_translate(cr, 0, height - 1);
-    cairo_set_source_rgb(cr, 0, 0.5, 0);
+    cairo_set_source_rgb(cr, 0, 0.25, 0);
     cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_set_line_width(cr, 1);
 
@@ -1617,23 +1617,23 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Flat symbol
     static const double ft[][2] =
         {
-         {20, 86}, // 0
-         {28, 102.667}, {41.6667, 111}, {61, 111}, // 3
+         {20, 86}, // 0 moveto
+         {28, 102.667}, {41.6667, 111}, {61, 111}, // 3 curveto
          {71.6667, 111}, {80.3333, 107.5}, {87, 100.5}, // 6
          {93.6667, 93.5}, {97, 83.6667}, {97, 71}, // 9
          {97, 53}, {89, 36.6667}, {73, 22}, // 12
          {57, 7.33333}, {35.3333, -1.33333}, {8, -4}, // 15
-         {8, 195}, // 16
+         {8, 195}, // 16 lineto
          {20, 195}, // 17
          {20, 86}, // 18
-         {20, 7}, // 19
-         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // 22
+         {20, 7}, // 19 moveto
+         {35.3333, 9}, {47.8333, 15.6667}, {57.5, 27}, // 22 curveto
          {67.1667, 38.3333}, {72, 51.6667}, {72, 67}, // 25
          {72, 75.6667}, {70.1667, 82.3333}, {66.5, 87}, // 28
          {62.8333, 91.6667}, {57.3333, 94}, {50, 94}, // 31
          {41.3333, 94}, {34.1667, 90.3333}, {28.5, 83}, // 34
          {22.8333, 75.6667}, {20, 64.6667}, {20, 50}, // 37
-         {20, 7}, // 38
+         {20, 7}, // 38 lineto
         };
 
     // Scale offsets
@@ -1695,17 +1695,21 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    // Translate
+    cairo_translate(cr, (x1 + x2) / 2, (y1 + y2) / 2);
+
+    // Scale
+    double scale = (height / 2) / (y2 - y1);
+    cairo_scale(cr, 1 / scale, -1 / scale);
     // Copy path
     cairo_path_t *treble = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
+    cairo_restore(cr);
+    cairo_save(cr);
 
     // Translate
-    cairo_translate(cr, margin + lineWidth / 2, -lineHeight);
-
-    // Scale
-    double scale = (height / 2) / (y2 - y1);
-    cairo_scale(cr, scale, -scale);
+    cairo_translate(cr, margin + lineWidth / 2, -lineHeight * 3);
 
     cairo_append_path(cr, treble);
     cairo_path_destroy(treble);
@@ -1729,18 +1733,22 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
                        bc[i + 2][0], bc[i + 2][1]);
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    // Translate
+    cairo_translate(cr, (x1 + x2) / 2, (y1 + y2) / 2);
+
+    // Scale
+    scale = (lineHeight * 4.5) / (y2 - y1);
+    cairo_scale(cr, 1 /scale, -1 / scale);
 
     // Copy path
     cairo_path_t *bass = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
+    cairo_restore(cr);
+    cairo_save(cr);
 
     // Translate
-    cairo_translate(cr, margin + lineWidth / 3.5, lineHeight * 5.8);
-
-    // Scale
-    scale = (lineHeight * 4.5) / (y2 - y1);
-    cairo_scale(cr, scale, -scale);
+    cairo_translate(cr, margin + lineWidth / 2, lineHeight * 3);
 
     cairo_append_path(cr, bass);
     cairo_path_destroy(bass);
@@ -1779,11 +1787,11 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
     // Translate
-    cairo_translate(cr, -(x1 + x2) / 2, -(y1 + y2) / 2);
+    cairo_translate(cr, -(x1 + x2) / 2, (y1 + y2) / 2);
 
     // Scale
     scale = (lineHeight * 3) / (y2 - y1);
-    cairo_scale(cr, 1 / scale, 1 / scale);
+    cairo_scale(cr, 1 / scale, -1 / scale);
 
     // Copy path
     cairo_path_t *sharp = cairo_copy_path(cr);
@@ -1797,10 +1805,10 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     for (unsigned int i = 1; i < 15; i += 3)
         cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
                        ft[i + 2][0], ft[i + 2][1]);
-    cairo_move_to(cr, ft[16][0], ft[16][1]);
-    for (unsigned int i = 17; i < 20; i++)
-        cairo_line_to(cr, sp[i][0], sp[i][1]);
-    for (unsigned int i = 20; i < 37; i += 3)
+    for (unsigned int i = 16; i < 19; i++)
+        cairo_line_to(cr, ft[i][0], ft[i][1]);
+    cairo_move_to(cr, ft[19][0], ft[19][1]);
+    for (unsigned int i = 20; i < 38; i += 3)
         cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
                        ft[i + 2][0], ft[i + 2][1]);
     cairo_line_to(cr, ft[38][0], ft[38][1]);
@@ -1808,11 +1816,11 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
     // Translate
-    cairo_translate(cr, -(x1 + x2) / 2, -(y1 + y2) / 2);
+    cairo_translate(cr, -(x1 + x2) / 2, (y1 + y2) / 2);
 
     // Scale
     scale = (lineHeight * 3) / (y2 - y1);
-    cairo_scale(cr, 1 / scale, 1 / scale);
+    cairo_scale(cr, 1 / scale, -1 / scale);
 
     // Copy path
     cairo_path_t *flat = cairo_copy_path(cr);
@@ -1847,10 +1855,6 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_translate(cr, width / 2 - xBase + dx, yBase - dy);
 
     cairo_append_path(cr, head);
-    cairo_path_destroy(head);
-
-    // Get extents
-    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
     cairo_fill(cr);
 
     switch (sharps[index])
@@ -1866,12 +1870,13 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         break;
 
     case FLAT:
-        cairo_translate(cr, -lineWidth, lineHeight / 2);
+        cairo_translate(cr, -lineWidth, -lineHeight / 2);
         cairo_append_path(cr, flat);
         cairo_fill(cr);
         break;
     }
 
+    cairo_path_destroy(head);
     cairo_path_destroy(sharp);
     cairo_path_destroy(flat);
 
