@@ -737,12 +737,18 @@ void *readAudio(void *)
 		display.n = n;
 		display.count = count;
 
+                // Update staff
+                staff.n = n;
+
 		// Update meter
 		meter.c = c;
 
 		// Update strobe
 		strobe.c = c;
 	    }
+
+	    // Update staff
+	    widget_queue_draw(staff.widget);
 
 	    // Update display
 	    widget_queue_draw(display.widget);
@@ -765,6 +771,9 @@ void *readAudio(void *)
 		    display.n = 0;
 		    display.count = 0;
 
+                    // Update staff
+                    staff.n = 0;
+
 		    // Update meter
 		    meter.c = 0.0;
 
@@ -777,6 +786,9 @@ void *readAudio(void *)
 		    spectrum.l = 0.0;
 		    spectrum.h = 0.0;
 		}
+
+                // Update staff
+                widget_queue_draw(staff.widget);
 
 		// Update display
 		widget_queue_draw(display.widget);
@@ -1506,7 +1518,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     };
 
     // Treble clef
-    static const float tc[][2] =
+    static const double tc[][2] =
         {
          {-6, 16}, {-8, 13},
          {-14, 19}, {-10, 35}, {2, 35},
@@ -1535,7 +1547,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         };
 
     // Bass clef
-    static const float bc[][2] =
+    static const double bc[][2] =
         {
          {-2.3,3},
          {6,7}, {10.5,12}, {10.5,16},
@@ -1556,7 +1568,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         };
 
     // Note head
-    static const float hd[][2] =
+    static const double hd[][2] =
         {
          {8.0, 0.0},
          {8.0, 8.0}, {-8.0, 8.0}, {-8.0, 0.0},
@@ -1564,7 +1576,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         };
 
     // Sharp symbol
-    static const float sp[][2] =
+    static const double sp[][2] =
         {
          {35, 35}, // 0
          {8, 22}, // 1
@@ -1603,7 +1615,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         };
 
     // Flat symbol
-    static const float ft[][2] =
+    static const double ft[][2] =
         {
          {20, 86}, // 0
          {28, 102.667}, {41.6667, 111}, {61, 111}, // 3
@@ -1684,7 +1696,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
     // Copy path
-    cairo_path_t *path = cairo_copy_path(cr);
+    cairo_path_t *treble = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
 
@@ -1695,13 +1707,14 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     double scale = (height / 2) / (y2 - y1);
     cairo_scale(cr, scale, -scale);
 
-    cairo_append_path(cr, path);
-    cairo_path_destroy(path);
+    cairo_append_path(cr, treble);
+    cairo_path_destroy(treble);
     cairo_fill(cr);
 
     // Draw bass clef
     cairo_restore(cr);
-    // cairo_identity_matrix(cr);
+    cairo_save(cr);
+
     cairo_move_to(cr, bc[0][0], bc[0][1]);
     for (unsigned int i = 1; i < 27; i += 3)
         cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
@@ -1714,12 +1727,11 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     for (unsigned int i = 36; i < Length(bc); i += 3)
         cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                        bc[i + 2][0], bc[i + 2][1]);
-
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
 
     // Copy path
-    path = cairo_copy_path(cr);
+    cairo_path_t *bass = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
 
@@ -1730,9 +1742,100 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     scale = (lineHeight * 4.5) / (y2 - y1);
     cairo_scale(cr, scale, -scale);
 
-    cairo_append_path(cr, path);
-    cairo_path_destroy(path);
+    cairo_append_path(cr, bass);
+    cairo_path_destroy(bass);
     cairo_fill(cr);
+
+    // Draw note head
+    cairo_restore(cr);
+
+    cairo_move_to(cr, hd[0][0], hd[0][1]);
+    for (unsigned int i = 1; i < Length(hd) - 1; i += 3)
+        cairo_curve_to(cr, hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
+                       hd[i + 2][0], hd[i + 2][1]);
+    // Copy path
+    cairo_path_t *head = cairo_copy_path(cr);
+    // Clear path
+    cairo_new_path(cr);
+
+    // Draw sharp
+    cairo_move_to(cr, sp[0][0], sp[0][1]);
+    for (unsigned int i = 1; i < 28; i++)
+        cairo_line_to(cr, sp[i][0], sp[i][1]);
+    cairo_move_to(cr, sp[29][0], sp[29][1]);
+    for (unsigned int i = 30; i < Length(sp); i++)
+        cairo_line_to(cr, sp[i][0], sp[i][1]);
+
+    // Copy path
+    cairo_path_t *sharp = cairo_copy_path(cr);
+    // Clear path
+    cairo_new_path(cr);
+
+    // Draw flat
+    cairo_move_to(cr, ft[0][0], ft[0][1]);
+    for (unsigned int i = 1; i < 15; i += 3)
+        cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1]);
+    cairo_move_to(cr, ft[16][0], ft[16][1]);
+    for (unsigned int i = 17; i < 20; i++)
+        cairo_line_to(cr, sp[i][0], sp[i][1]);
+    for (unsigned int i = 20; i < 37; i += 3)
+        cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
+                       ft[i + 2][0], ft[i + 2][1]);
+    cairo_line_to(cr, ft[38][0], ft[38][1]);
+
+    // Copy path
+    cairo_path_t *flat = cairo_copy_path(cr);
+    // Clear path
+    cairo_new_path(cr);
+
+    // Calculate transform for note
+    int xBase = lineWidth * 14;
+    int yBase = lineHeight * 14;
+    int note = staff.n - staff.transpose;
+    int octave = note / OCTAVE;
+    int index = (note + OCTAVE) % OCTAVE;
+
+    // Wrap top two octaves
+    if (octave >= 6)
+        octave -= 2;
+
+    // Wrap C0
+    else if (octave == 0 && index <= 1)
+        octave += 4;
+
+    // Wrap bottom two octaves
+    else if (octave <= 1 || (octave == 2 && index <= 1))
+        octave += 2;
+
+    double dx = (octave * lineWidth * 3.5) +
+        (offset[index] * lineWidth / 2);
+    double dy = (octave * lineHeight * 3.5) +
+        (offset[index] * lineHeight / 2);
+
+    cairo_translate(cr, width / 2 - xBase + dx, yBase - dy);
+
+    cairo_append_path(cr, head);
+    cairo_path_destroy(head);
+
+    // Get extents
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    cairo_fill(cr);
+
+    switch (sharps[index])
+    {
+    case NATURAL:
+        break;
+
+    case SHARP:
+        break;
+
+    case FLAT:
+        break;
+    }
+
+    cairo_path_destroy(sharp);
+    cairo_path_destroy(flat);
 
     return true;
 }
@@ -1801,7 +1904,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     cairo_stroke(cr);
 
-    static float mc;
+    static double mc;
 
     // Do calculation
     mc = ((mc * 3.0) + meter.c) / 4.0;

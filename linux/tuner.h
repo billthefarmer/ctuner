@@ -151,6 +151,7 @@ typedef struct
 {
     GtkWidget *widget;
     gboolean enable;
+    gint transpose;
     gint n;
 } Staff;
 
