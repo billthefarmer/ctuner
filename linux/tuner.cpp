@@ -972,7 +972,7 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     int dx = 0;
     int n = 0;
 
-    for (int i = 1; i < width; i++)
+    for (int i = 1; i < scope.length; i++)
     {
 	dx = scope.data[i] - scope.data[i - 1];
 	if (maxdx < dx)
@@ -998,7 +998,7 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 
     cairo_move_to(cr, 0, 0);
-    for (int i = 0; i < width; i++)
+    for (int i = 0; i < MIN(width - n, scope.length - n); i++)
     {
 	if (max < abs(scope.data[n + i]))
 	    max = abs(scope.data[n + i]);
@@ -1748,15 +1748,25 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     // Draw note head
     cairo_restore(cr);
+    cairo_save(cr);
 
     cairo_move_to(cr, hd[0][0], hd[0][1]);
     for (unsigned int i = 1; i < Length(hd) - 1; i += 3)
         cairo_curve_to(cr, hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
                        hd[i + 2][0], hd[i + 2][1]);
+
+    // Get extents
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+
+    // Scale
+    scale = (lineHeight) / (y2 - y1);
+    cairo_scale(cr, 1/scale, 1/scale);
+
     // Copy path
     cairo_path_t *head = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
+    cairo_restore(cr);
 
     // Draw sharp
     cairo_move_to(cr, sp[0][0], sp[0][1]);
