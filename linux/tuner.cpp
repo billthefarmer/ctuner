@@ -48,13 +48,6 @@ int main(int argc, char *argv[])
 // Application
 void activate(GtkApplication *app, gpointer data)
 {
-    // Widgets
-    GtkWidget *window;
-    GtkWidget *vbox;
-    GtkWidget *hbox;
-    GtkWidget *quit;
-    GtkWidget *options;
-    
     GdkGeometry geometry =
         {
             -1, -1, -1, -1, -1, -1, 1, 1,
@@ -62,17 +55,26 @@ void activate(GtkApplication *app, gpointer data)
         };
 
     // Create main window
-    window = gtk_application_window_new(app);
+    GtkWidget *window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Tuner");
     gtk_window_set_resizable(GTK_WINDOW(window), true);
     gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geometry,
                                   GDK_HINT_ASPECT);
+
+    // Margin - all this instead of gtk_widget_set_margin()
+    GValue margin = G_VALUE_INIT;
+    g_value_init(&margin, G_TYPE_INT);
+    g_value_set_int(&margin, MARGIN);
+    g_object_set_property(G_OBJECT(window), "margin", margin);
+
+    printf("Margin %d\n", gtk_widget_get_margin_left(GTK_WIDGET(window)));
+
     // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
     gtk_box_pack_start(GTK_BOX(vbox), hbox, true, true, MARGIN);
 
     // V box
@@ -169,7 +171,7 @@ void activate(GtkApplication *app, gpointer data)
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Options button
-    options = gtk_button_new_with_label(" Options\u2026 ");
+    GtkWidget *options = gtk_button_new_with_label(" Options\u2026 ");
     gtk_box_pack_start(GTK_BOX(hbox), options, false, false, 0);
 
     // Options clicked
@@ -177,7 +179,7 @@ void activate(GtkApplication *app, gpointer data)
 		     G_CALLBACK(options_clicked), window);
 
     // Quit button
-    quit = gtk_button_new_with_label("    Quit    ");
+    GtkWidget *quit = gtk_button_new_with_label("    Quit    ");
     gtk_box_pack_end(GTK_BOX(hbox), quit, false, false, 0);
 
     // Quit clicked
