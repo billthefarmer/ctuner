@@ -45,6 +45,15 @@ int main(int argc, char *argv[])
     return status;
 }
 
+// Set margin
+void gtk_widget_set_margin(GtkWidget *widget, gint margin)
+{
+    GValue value = G_VALUE_INIT;
+    g_value_init(&value, G_TYPE_INT);
+    g_value_set_int(&value, margin);
+    g_object_set_property(G_OBJECT(widget), "margin", &value);
+}
+
 // Application
 void activate(GtkApplication *app, gpointer data)
 {
@@ -61,25 +70,10 @@ void activate(GtkApplication *app, gpointer data)
     gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geometry,
                                   GDK_HINT_ASPECT);
 
-    // Margin - all this instead of gtk_widget_set_margin()
-    GValue margin = G_VALUE_INIT;
-    g_value_init(&margin, G_TYPE_INT);
-    g_value_set_int(&margin, MARGIN);
-    g_object_set_property(G_OBJECT(window), "margin", margin);
-
-    printf("Margin %d\n", gtk_widget_get_margin_left(GTK_WIDGET(window)));
-
     // V box
-    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, MARGIN);
+    GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
+    gtk_widget_set_margin(GTK_WIDGET(vbox), MARGIN);
     gtk_container_add(GTK_CONTAINER(window), vbox);
-
-    // H box
-    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, true, true, MARGIN);
-
-    // V box
-    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
-    gtk_box_pack_start(GTK_BOX(hbox), vbox, true, true, MARGIN);
 
     // Scope
     scope.widget = gtk_drawing_area_new();
@@ -167,7 +161,7 @@ void activate(GtkApplication *app, gpointer data)
 		     G_CALLBACK(meter_draw_callback), NULL);
 
     // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
 
     // Options button
@@ -1671,7 +1665,11 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_move_to(cr, width / 2 - lineWidth * 5.5, lineHeight * 6);
     cairo_line_to(cr, width / 2 - lineWidth * 6.5, lineHeight * 6);
 
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_stroke(cr);
+
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
+    cairo_save(cr);
 
     // Draw treble clef
     cairo_move_to(cr, tc[0][0], tc[0][1]);
@@ -1679,17 +1677,64 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     for (unsigned int i = 2; i < Length(tc) - 1; i += 3)
         cairo_curve_to(cr, tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
                        tc[i + 2][0], tc[i + 2][1]);
+
     double x1, y1;
     double x2, y2;
 
-    // Centre clef
+    // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
-    cairo_translate(cr, (x1 + x2) / 2, (y1 + y2) / 2);
+    // Copy path
+    cairo_path_t *path = cairo_copy_path(cr);
+    // Clear path
+    cairo_new_path(cr);
+
+    // Translate
+    cairo_translate(cr, margin + lineWidth / 2, -lineHeight);
+
+    // Scale
     double scale = (height / 2) / (y2 - y1);
-    cairo_scale(cr, scale, scale);
-    // cairo_translate(cr, width / 2 + margin + lineWidth / 2, -lineHeight * 3);
+    cairo_scale(cr, scale, -scale);
+
+    cairo_append_path(cr, path);
+    cairo_path_destroy(path);
     cairo_fill(cr);
 
+    // Draw bass clef
+    cairo_restore(cr);
+    // cairo_identity_matrix(cr);
+    cairo_move_to(cr, bc[0][0], bc[0][1]);
+    for (unsigned int i = 1; i < 27; i += 3)
+        cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1]);
+    cairo_move_to(cr, bc[28][0], bc[28][1]);
+    for (unsigned int i = 29; i < 34; i += 3)
+        cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1]);
+    cairo_move_to(cr, bc[35][0], bc[35][1]);
+    for (unsigned int i = 36; i < Length(bc); i += 3)
+        cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
+                       bc[i + 2][0], bc[i + 2][1]);
+
+    // Get extents
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+
+    // Copy path
+    path = cairo_copy_path(cr);
+    // Clear path
+    cairo_new_path(cr);
+
+    // Translate
+    cairo_translate(cr, margin + lineWidth / 3.5, lineHeight * 5.8);
+
+    // Scale
+    scale = (lineHeight * 4.5) / (y2 - y1);
+    cairo_scale(cr, scale, -scale);
+
+    cairo_append_path(cr, path);
+    cairo_path_destroy(path);
+    cairo_fill(cr);
+
+    return true;
 }
 
 // Meter draw callback
@@ -1710,6 +1755,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Move origin
     cairo_translate(cr, width / 2, 0);
     cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
     cairo_set_line_width(cr, 1);
 
     // Draw the meter scale
@@ -1718,7 +1764,6 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	static char s[16];
 	int x = width / 11 * i;
 
-        cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
 	sprintf(s, "%d", i * 10);
 	cairo_move_to(cr, x, height / 3);
 	cairo_centre_text(cr, s);
@@ -1743,6 +1788,7 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	}
     }
 
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);
     cairo_stroke(cr);
 
     cairo_pattern_t *linear =
