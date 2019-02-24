@@ -1754,19 +1754,19 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     for (unsigned int i = 1; i < Length(hd) - 1; i += 3)
         cairo_curve_to(cr, hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
                        hd[i + 2][0], hd[i + 2][1]);
-
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
 
     // Scale
     scale = (lineHeight) / (y2 - y1);
-    cairo_scale(cr, 1/scale, 1/scale);
+    cairo_scale(cr, 1 / scale, 1 / scale);
 
     // Copy path
     cairo_path_t *head = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
     cairo_restore(cr);
+    cairo_save(cr);
 
     // Draw sharp
     cairo_move_to(cr, sp[0][0], sp[0][1]);
@@ -1776,10 +1776,21 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     for (unsigned int i = 30; i < Length(sp); i++)
         cairo_line_to(cr, sp[i][0], sp[i][1]);
 
+    // Get extents
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    // Translate
+    cairo_translate(cr, -(x1 + x2) / 2, -(y1 + y2) / 2);
+
+    // Scale
+    scale = (lineHeight * 3) / (y2 - y1);
+    cairo_scale(cr, 1 / scale, 1 / scale);
+
     // Copy path
     cairo_path_t *sharp = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
+    cairo_restore(cr);
+    cairo_save(cr);
 
     // Draw flat
     cairo_move_to(cr, ft[0][0], ft[0][1]);
@@ -1794,10 +1805,20 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
                        ft[i + 2][0], ft[i + 2][1]);
     cairo_line_to(cr, ft[38][0], ft[38][1]);
 
+    // Get extents
+    cairo_path_extents(cr, &x1, &y1, &x2, &y2);
+    // Translate
+    cairo_translate(cr, -(x1 + x2) / 2, -(y1 + y2) / 2);
+
+    // Scale
+    scale = (lineHeight * 3) / (y2 - y1);
+    cairo_scale(cr, 1 / scale, 1 / scale);
+
     // Copy path
     cairo_path_t *flat = cairo_copy_path(cr);
     // Clear path
     cairo_new_path(cr);
+    cairo_restore(cr);
 
     // Calculate transform for note
     int xBase = lineWidth * 14;
@@ -1835,12 +1856,19 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     switch (sharps[index])
     {
     case NATURAL:
+        // Do nothing
         break;
 
     case SHARP:
+        cairo_translate(cr, -lineWidth, 0);
+        cairo_append_path(cr, sharp);
+        cairo_fill(cr);
         break;
 
     case FLAT:
+        cairo_translate(cr, -lineWidth, lineHeight / 2);
+        cairo_append_path(cr, flat);
+        cairo_fill(cr);
         break;
     }
 
