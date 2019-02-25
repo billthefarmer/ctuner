@@ -1282,9 +1282,12 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         cairo_text_extents(cr, "C#0 +0.00\u00A2 0000.00Hz 0000.00Hz +00.00Hz",
                            &extents);
         cairo_get_font_matrix(cr, &matrix);
-        double sx = (width - 16) / extents.x_advance;
-        cairo_matrix_scale(&matrix, sx, 1.0);
-        cairo_set_font_matrix(cr, &matrix);
+	if (width - 16 < extents.x_advance)
+	{
+	    double sx = (width - 16) / extents.x_advance;
+	    cairo_matrix_scale(&matrix, sx, 1.0);
+	    cairo_set_font_matrix(cr, &matrix);
+	}
 
 	// Set text align
 	if (display.count == 0)
@@ -1360,28 +1363,12 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     else
     {
 	double x, y;
-        cairo_text_extents_t extents;
-        cairo_matrix_t matrix;
 
-	// Select large font
+	// Select xlarge font
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_BOLD);
-	cairo_set_font_size(cr, large);
-
-        // Scale font
-        cairo_text_extents(cr, "+00.00\u00A2",
-                           &extents);
-        double sx = ((width / 2) - 16) / extents.x_advance;
-        cairo_get_font_matrix(cr, &matrix);
-        cairo_matrix_scale(&matrix, sx, 1.0);
-        cairo_set_font_matrix(cr, &matrix);
-
-	// Select xlarge font
 	cairo_set_font_size(cr, xlarge);
-        cairo_get_font_matrix(cr, &matrix);
-        cairo_matrix_scale(&matrix, sx, 1.0);
-        cairo_set_font_matrix(cr, &matrix);
 
 	// Display note
 	sprintf(s, "%s", notes[display.n % Length(notes)]);
@@ -1392,9 +1379,6 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
 	// Select medium font
 	cairo_set_font_size(cr, half);
-        cairo_get_font_matrix(cr, &matrix);
-        cairo_matrix_scale(&matrix, sx, 1.0);
-        cairo_set_font_matrix(cr, &matrix);
 
 	sprintf(s, "%d", display.n / 12);
 	cairo_show_text(cr, s);
@@ -1409,7 +1393,6 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	// Select large font
 	cairo_restore(cr);
 	cairo_set_font_size(cr, large);
-        cairo_set_font_matrix(cr, &matrix);
 
 	// Display cents
 	sprintf(s, "%+4.2f\u00A2", display.c * 100.0);
@@ -1423,14 +1406,6 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, medium);
-
-        // Scale font
-        cairo_text_extents(cr, "0000.00Hz",
-                           &extents);
-        sx = ((width / 2) - 8) / extents.x_advance;
-        cairo_get_font_matrix(cr, &matrix);
-        cairo_matrix_scale(&matrix, sx, 1.0);
-        cairo_set_font_matrix(cr, &matrix);
 
 	// Display reference frequency
 	sprintf(s, "%4.2fHz", display.fr);
