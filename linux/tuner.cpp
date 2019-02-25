@@ -555,7 +555,7 @@ void *readAudio(void *)
 	if (audio.downsample)
 	{
 	    // x2 = xa << 2
-	    for (unsigned int i = 0; i < Length(x2); i++)
+	    for (uint i = 0; i < Length(x2); i++)
 	    {
 		x2[i] = 0.0;
 
@@ -564,7 +564,7 @@ void *readAudio(void *)
 	    }
 
 	    // x3 = xa << 3
-	    for (unsigned int i = 0; i < Length(x3); i++)
+	    for (uint i = 0; i < Length(x3); i++)
 	    {
 		x3[i] = 0.0;
 
@@ -573,7 +573,7 @@ void *readAudio(void *)
 	    }
 
 	    // x4 = xa << 4
-	    for (unsigned int i = 0; i < Length(x4); i++)
+	    for (uint i = 0; i < Length(x4); i++)
 	    {
 		x4[i] = 0.0;
 
@@ -582,7 +582,7 @@ void *readAudio(void *)
 	    }
 
 	    // x5 = xa << 5
-	    for (unsigned int i = 0; i < Length(x5); i++)
+	    for (uint i = 0; i < Length(x5); i++)
 	    {
 		x5[i] = 0.0;
 
@@ -591,7 +591,7 @@ void *readAudio(void *)
 	    }
 
 	    // Add downsamples
-	    for (unsigned int i = 1; i < Length(xa); i++)
+	    for (uint i = 1; i < Length(xa); i++)
 	    {
 		if (i < Length(x2))
 		    xa[i] += x2[i];
@@ -614,7 +614,7 @@ void *readAudio(void *)
 	double max = 0.0;
 	double f = 0.0;
 
-	unsigned int count = 0;
+	uint count = 0;
 	int limit = RANGE - 1;
 
 	// Find maximum value, and list of maxima
@@ -693,7 +693,7 @@ void *readAudio(void *)
 	    // Find nearest maximum to reference note
 	    double df = 1000.0;
 
-	    for (unsigned int i = 0; i < count; i++)
+	    for (uint i = 0; i < count; i++)
 	    {
 		if (fabs(maxima[i].f - fr) < df)
 		{
@@ -721,7 +721,7 @@ void *readAudio(void *)
 	    widget_queue_draw(scope.widget);
 
 	    // Update spectrum window
-	    for (unsigned int i = 0; i < count; i++)
+	    for (uint i = 0; i < count; i++)
 		values[i].f = maxima[i].f / fps * audio.correction;
 
 	    spectrum.count = count;
@@ -1270,11 +1270,21 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     if (display.multiple)
     {
+        cairo_text_extents_t extents;
+        cairo_matrix_t matrix;
+
 	// Select font
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, small);
+
+        cairo_text_extents(cr, "C#0 +0.00\u00A2 0000.00Hz 0000.00Hz +00.00Hz",
+                           &extents);
+        cairo_get_font_matrix(cr, &matrix);
+        double sx = (width - 16) / extents.x_advance;
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
 
 	// Set text align
 	if (display.count == 0)
@@ -1350,15 +1360,28 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     else
     {
 	double x, y;
-	cairo_matrix_t matrix;
+        cairo_text_extents_t extents;
+        cairo_matrix_t matrix;
 
-	// Select xlarge font
+	// Select large font
 	cairo_select_font_face(cr, "sans-serif",
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_BOLD);
-	cairo_matrix_init_scale(&matrix, 0.8, 1.0);
-	cairo_set_font_matrix(cr, &matrix);
+	cairo_set_font_size(cr, large);
+
+        // Scale font
+        cairo_text_extents(cr, "+00.00\u00A2",
+                           &extents);
+        double sx = ((width / 2) - 16) / extents.x_advance;
+        cairo_get_font_matrix(cr, &matrix);
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
+
+	// Select xlarge font
 	cairo_set_font_size(cr, xlarge);
+        cairo_get_font_matrix(cr, &matrix);
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
 
 	// Display note
 	sprintf(s, "%s", notes[display.n % Length(notes)]);
@@ -1369,6 +1392,9 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
 	// Select medium font
 	cairo_set_font_size(cr, half);
+        cairo_get_font_matrix(cr, &matrix);
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
 
 	sprintf(s, "%d", display.n / 12);
 	cairo_show_text(cr, s);
@@ -1383,6 +1409,7 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	// Select large font
 	cairo_restore(cr);
 	cairo_set_font_size(cr, large);
+        cairo_set_font_matrix(cr, &matrix);
 
 	// Display cents
 	sprintf(s, "%+4.2f\u00A2", display.c * 100.0);
@@ -1396,6 +1423,14 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 			       CAIRO_FONT_SLANT_NORMAL,
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, medium);
+
+        // Scale font
+        cairo_text_extents(cr, "0000.00Hz",
+                           &extents);
+        sx = ((width / 2) - 8) / extents.x_advance;
+        cairo_get_font_matrix(cr, &matrix);
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
 
 	// Display reference frequency
 	sprintf(s, "%4.2fHz", display.fr);
@@ -1701,7 +1736,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Draw treble clef
     cairo_move_to(cr, tc[0][0], tc[0][1]);
     cairo_line_to(cr, tc[1][0], tc[1][1]);
-    for (unsigned int i = 2; i < Length(tc) - 1; i += 3)
+    for (uint i = 2; i < Length(tc) - 1; i += 3)
         cairo_curve_to(cr, tc[i][0], tc[i][1], tc[i + 1][0], tc[i + 1][1],
                        tc[i + 2][0], tc[i + 2][1]);
 
@@ -1735,15 +1770,15 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_save(cr);
 
     cairo_move_to(cr, bc[0][0], bc[0][1]);
-    for (unsigned int i = 1; i < 27; i += 3)
+    for (uint i = 1; i < 27; i += 3)
         cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                        bc[i + 2][0], bc[i + 2][1]);
     cairo_move_to(cr, bc[28][0], bc[28][1]);
-    for (unsigned int i = 29; i < 34; i += 3)
+    for (uint i = 29; i < 34; i += 3)
         cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                        bc[i + 2][0], bc[i + 2][1]);
     cairo_move_to(cr, bc[35][0], bc[35][1]);
-    for (unsigned int i = 36; i < Length(bc); i += 3)
+    for (uint i = 36; i < Length(bc); i += 3)
         cairo_curve_to(cr, bc[i][0], bc[i][1], bc[i + 1][0], bc[i + 1][1],
                        bc[i + 2][0], bc[i + 2][1]);
     // Get extents
@@ -1774,14 +1809,14 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_save(cr);
 
     cairo_move_to(cr, hd[0][0], hd[0][1]);
-    for (unsigned int i = 1; i < Length(hd) - 1; i += 3)
+    for (uint i = 1; i < Length(hd) - 1; i += 3)
         cairo_curve_to(cr, hd[i][0], hd[i][1], hd[i + 1][0], hd[i + 1][1],
                        hd[i + 2][0], hd[i + 2][1]);
     // Get extents
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
 
     // Scale
-    scale = (lineHeight) / (y2 - y1);
+    scale = (lineHeight * 1.25) / (y2 - y1);
     cairo_scale(cr, 1 / scale, 1 / scale);
 
     // Copy path
@@ -1793,10 +1828,10 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     // Draw sharp
     cairo_move_to(cr, sp[0][0], sp[0][1]);
-    for (unsigned int i = 1; i < 28; i++)
+    for (uint i = 1; i < 28; i++)
         cairo_line_to(cr, sp[i][0], sp[i][1]);
     cairo_move_to(cr, sp[29][0], sp[29][1]);
-    for (unsigned int i = 30; i < Length(sp); i++)
+    for (uint i = 30; i < Length(sp); i++)
         cairo_line_to(cr, sp[i][0], sp[i][1]);
 
     // Get extents
@@ -1817,13 +1852,13 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     // Draw flat
     cairo_move_to(cr, ft[0][0], ft[0][1]);
-    for (unsigned int i = 1; i < 15; i += 3)
+    for (uint i = 1; i < 15; i += 3)
         cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
                        ft[i + 2][0], ft[i + 2][1]);
-    for (unsigned int i = 16; i < 19; i++)
+    for (uint i = 16; i < 19; i++)
         cairo_line_to(cr, ft[i][0], ft[i][1]);
     cairo_move_to(cr, ft[19][0], ft[19][1]);
-    for (unsigned int i = 20; i < 38; i += 3)
+    for (uint i = 20; i < 38; i += 3)
         cairo_curve_to(cr, ft[i][0], ft[i][1], ft[i + 1][0], ft[i + 1][1],
                        ft[i + 2][0], ft[i + 2][1]);
     cairo_line_to(cr, ft[38][0], ft[38][1]);
@@ -2262,14 +2297,14 @@ gboolean button_press(GtkWidget *widget, GdkEventButton *event, gpointer data)
 // Fundamental clicked
 void fund_toggled(GtkWidget *widget, gpointer data)
 {
-    filters.fund =
+    audio.fundamental =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Note clicked
 void note_toggled(GtkWidget *widget, gpointer data)
 {
-    filters.note =
+    audio.note =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
@@ -2301,19 +2336,19 @@ void key_changed(GtkWidget *widget, gpointer data)
 // Note filter toggled
 void note_filter_toggled(GtkWidget *widget, gpointer data)
 {
-    uint id = (uint *) *data;
-    switch (id)
-    {
-    }
+    // uint id = (uint) *data;
+    // switch (id)
+    // {
+    // }
 }
 
 // Octave filter toggled
 void octave_filter_toggled(GtkWidget *widget, gpointer data)
 {
-    uint id = (uint *) *data;
-    switch (id)
-    {
-    }
+    // uint id = (uint *) *data;
+    // switch (id)
+    // {
+    // }
 }
 
 // Note filter callback
@@ -2337,15 +2372,15 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
         };
 
-    if (options.note != NULL)
+    if (filters.window != NULL)
     {
-	gtk_widget_show_all(options.note);
+	gtk_widget_show_all(filters.window);
 	return;
     }
 
     // Create note filter dialog
     filters.window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(filters.window), "Tuner note filter");
+    gtk_window_set_title(GTK_WINDOW(filters.window), "Tuner Note Filters");
     gtk_window_set_resizable(GTK_WINDOW(filters.window), false);
     gtk_window_set_transient_for(GTK_WINDOW(filters.window), window);
 
@@ -2360,49 +2395,57 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
 
     // V box
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, SPACING);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, 0);
 
     for (uint i = 0; i < Length(notes); i++)
     {
-        if (i == 5)
+        if (i == 6)
         {
-            vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
+            vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
             gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, 0);
         }
 
         GtkWidget *button = gtk_check_button_new_with_label(notes[i]);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button),
-                                     filters.note[i]);
+                                     filters.notes[i]);
         gtk_box_pack_start(GTK_BOX(vbox), button, false, false, 0);
 
-        g_signal_connect(G_OBJECT(button), "toggle",
-                         G_CALLBACK(note_filter_toggled), &ids[i]);
+        g_signal_connect(G_OBJECT(button), "toggled",
+                         G_CALLBACK(note_filter_toggled), (gpointer) &ids[i]);
     }
 
     // V box
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, SPACING);
+    gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, 0);
 
     for (uint i = 0; i < Length(octaves); i++)
     {
-        if (i == 4)
+        if (i == 6)
         {
-            vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, SPACING);
+            vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
             gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, 0);
         }
 
         GtkWidget *button = gtk_check_button_new_with_label(octaves[i]);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button),
-                                     filters.octave[i]);
+                                     filters.octaves[i]);
         gtk_box_pack_start(GTK_BOX(vbox), button, false, false, 0);
 
-        g_signal_connect(G_OBJECT(button), "toggle",
-                         G_CALLBACK(octave_filter_toggled), &ids[i]);
+        g_signal_connect(G_OBJECT(button), "toggled",
+                         G_CALLBACK(octave_filter_toggled), (gpointer) &ids[i]);
     }
 
-    // H box
-    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
-    gtk_box_pack_start(GTK_BOX(vbox), hbox, false, false, MARGIN);
+    // Close box
+    GtkWidget *close = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_end(GTK_BOX(vbox), close, false, false, 0);
+
+    // Close button
+    GtkWidget *button  = gtk_button_new_with_label("  Close  ");
+    gtk_box_pack_end(GTK_BOX(close), button, false, false, 0);
+
+    // Close clicked
+    g_signal_connect_swapped(G_OBJECT(button), "clicked",
+			     G_CALLBACK(gtk_widget_hide), filters.window);
 
     // Destroy dialog callback
     g_signal_connect(G_OBJECT(filters.window), "destroy",
@@ -2467,7 +2510,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     g_signal_connect(G_OBJECT(options.multiple), "toggled",
 		     G_CALLBACK(multiple_clicked), window);
     // Fundamental
-    options.fundamental = gtk_check_button_new_with_label("Fundamental");
+    options.fundamental = gtk_check_button_new_with_label("Fundamental filter");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.fundamental),
 				 audio.fundamental);
     gtk_box_pack_start(GTK_BOX(left), options.fundamental, false, false, 0);
@@ -2477,7 +2520,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
         	     G_CALLBACK(fund_toggled), window);
 
     // Right box
-    right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *right = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_pack_end(GTK_BOX(hbox), right, true, true, 0);
 
     // Strobe
@@ -2527,7 +2570,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     options.expand = gtk_combo_box_text_new();
     const char *expansions[] =
         {" x 1", " x 2", " x 4", " x 8", " x 16"};
-    for (unsigned int i = 0; i < Length(expansions); i++)
+    for (uint i = 0; i < Length(expansions); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
                                   NULL, expansions[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand), 1);
@@ -2547,7 +2590,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     options.colours = gtk_combo_box_text_new();
     const char *colours[] =
         {" Blue/Cyan", " Olive/Aquamarine", " Magenta/Yellow"};
-    for (unsigned int i = 0; i < Length(colours); i++)
+    for (uint i = 0; i < Length(colours); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.colours),
                                   NULL, colours[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.colours),
@@ -2602,7 +2645,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
          " Barnes 1977", " Lambert 1774",
          " Schlick (H. Vogel)", " Meantone # (-1/4)",
          " Meantone b (-1/4)", " Lehman-Bach"};
-    for (unsigned int i = 0; i < Length(temperaments); i++)
+    for (uint i = 0; i < Length(temperaments); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.temperament),
                                   NULL, temperaments[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.temperament),
@@ -2614,7 +2657,7 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
 		     G_CALLBACK(temperament_changed), window);
 
     // Key
-    GtkWidget *key = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, MARGIN);
+    GtkWidget *key = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), key, false, false, 0);
 
     // Label
@@ -2626,27 +2669,27 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
         {" C", " C#", " D", " Eb",
          " E", " F", " F#", " G",
          " Ab", " A", " Bb", " B"};
-    for (unsigned int i = 0; i < Length(keys); i++)
+    for (uint i = 0; i < Length(keys); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.key),
                                   NULL, keys[i]);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.key),
                              audio.key);
-    gtk_box_pack_start(GTK_BOX(key), options.key, false, false, 0);
+    gtk_box_pack_end(GTK_BOX(key), options.key, false, false, 0);
 
     // Key changed
     g_signal_connect(G_OBJECT(options.key), "changed",
 		     G_CALLBACK(key_changed), window);
-    // Note filter
-    GtkWidget *note = gtk_button_new_with_label("  Note\u2026  ");
-    gtk_box_pack_end(GTK_BOX(key), note, false, false, 0);
-
-    // Note clicked
-    g_signal_connect(G_OBJECT(note), "clicked",
-		     G_CALLBACK(note_clicked), window);
     // Close
     GtkWidget *close = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX(vbox), close, false, false, 0);
 
+    // Note filter
+    GtkWidget *note = gtk_button_new_with_label("  Note filters\u2026  ");
+    gtk_box_pack_start(GTK_BOX(close), note, false, false, 0);
+
+    // Note clicked
+    g_signal_connect(G_OBJECT(note), "clicked",
+		     G_CALLBACK(note_clicked), window);
     // Close button
     GtkWidget *button  = gtk_button_new_with_label("  Close  ");
     gtk_box_pack_end(GTK_BOX(close), button, false, false, 0);

@@ -190,8 +190,6 @@ typedef struct
 typedef struct
 {
     GtkWidget *window;
-    gboolean fund;
-    gboolean note;
     gboolean notes[12];
     gboolean octaves[9];
 } Filters;
