@@ -210,8 +210,6 @@ typedef struct
     gint temperament;
     gint key;
     double reference;
-    double temperaments[32][12] =
-#include "temperaments.h"
 } Audio;
 
 // Data
@@ -227,6 +225,10 @@ Options options;
 Filters filters;
 
 Audio audio;
+
+// Temperaments
+double temperaments[32][12] =
+#include "temperaments.h"
 
 // Functions
 void initAudio(void);

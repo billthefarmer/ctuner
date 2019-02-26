@@ -4498,11 +4498,11 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	    int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
 
 	    // Temperament ratio
-	    double temperRatio = temperamentValues[audio.temperament][n] /
-	      temperamentValues[audio.temperament][a];
+	    double temperRatio = temperaments[audio.temperament][n] /
+	      temperaments[audio.temperament][a];
 	    // Equal ratio
-	    double equalRatio = temperamentValues[EQUAL][n] /
-	      temperamentValues[EQUAL][a];
+	    double equalRatio = temperaments[EQUAL][n] /
+	      temperaments[EQUAL][a];
 
 	    // Temperament adjustment
 	    double temperAdjust = temperRatio / equalRatio;
@@ -4563,11 +4563,11 @@ VOID WaveInData(WPARAM wParam, LPARAM lParam)
 	int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
 
 	// Temperament ratio
-	double temperRatio = temperamentValues[audio.temperament][n] /
-            temperamentValues[audio.temperament][a];
+	double temperRatio = temperaments[audio.temperament][n] /
+            temperaments[audio.temperament][a];
 	// Equal ratio
-	double equalRatio = temperamentValues[EQUAL][n] /
-            temperamentValues[EQUAL][a];
+	double equalRatio = temperaments[EQUAL][n] /
+            temperaments[EQUAL][a];
 
         // Temperament adjustment
         double temperAdjust = temperRatio / equalRatio;

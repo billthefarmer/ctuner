@@ -607,6 +607,45 @@ void *readAudio(void *)
 	// Find maximum value, and list of maxima
 	for (int i = 1; i < limit; i++)
 	{
+            // Clear maxima
+            maxima[count].f  = 0.0;
+            maxima[count].fr = 0.0;
+            maxima[count].n  = 0;
+
+            values[count] = 0.0;
+
+            // Cents relative to reference
+            double cf = -12.0 * log2(audio.reference / xf[i]);
+
+            // Note number
+            int note = round(cf) + C5_OFFSET;
+
+            // Don't use if negative
+            if (note < 0)
+                continue;
+
+            // Fundamental filter
+            if (audio.fundamental && (count > 0) &&
+                ((note % OCTAVE) != (maxima[0].n % OCTAVE)))
+                continue;
+
+            // Note filter
+            if (audio.note)
+            {
+                // Get note and octave
+                int n = note % OCTAVE;
+                int o = note / OCTAVE;
+
+                // Ignore too high
+                if (o >= Length(filter.octave))
+                    continue;
+
+                // Ignore if filtered
+                if (!filter.note[n] ||
+                    !filter.octave[o])
+                    continue;
+            }
+
 	    if (xa[i] > max)
 	    {
 		max = xa[i];
@@ -618,17 +657,30 @@ void *readAudio(void *)
 		xa[i] > MINIMUM && xa[i] > (max / 4.0) &&
 		dx[i] > 0.0 && dx[i + 1] < 0.0)
 	    {
+                // Frequency
 		maxima[count].f = xf[i];
 
-		// Cents relative to reference
-		double cf =
-		    -12.0 * log2(audio.reference / xf[i]);
+		// Note number
+		maxima[count].n = note;
+
+                // Octave note number
+                int n = (note - audio.key + OCTAVE) % OCTAVE;
+                // A note number
+                int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
+
+                // Temperament ratio
+                double temperRatio = temperaments[audio.temperament][n] /
+                    temperaments[audio.temperament][a];
+                // Equal ratio
+                double equalRatio = temperaments[EQUAL][n] /
+                    temperaments[EQUAL][a];
+
+                // Temperament adjustment
+                double temperAdjust = temperRatio / equalRatio;
 
 		// Reference note
-		maxima[count].fr = audio.reference * pow(2.0, round(cf) / 12.0);
-
-		// Note number
-		maxima[count].n = round(cf) + C5_OFFSET;
+		maxima[count].fr = audio.reference *
+                    pow(2.0, round(cf) / 12.0) * temperAdjust;
 
 		// Set limit to octave above
 		if (!audio.downsample && (limit > i * 2))
@@ -660,22 +712,45 @@ void *readAudio(void *)
 		f = maxima[0].f;
 
 	    // Cents relative to reference
-
 	    double cf =
 		-12.0 * log2(audio.reference / f);
 
+            // Don't count silly values
+            if (isnan(cf))
+            {
+                cf = 0.0;
+                found = false;
+            }
+
+            // Note number
+            note = round(cf) + C5_OFFSET;
+
+            if (note < 0)
+                found = false;
+
+            // Octave note number
+            int n = (note - audio.key + OCTAVE) % OCTAVE;
+            // A note number
+            int a = (A_OFFSET - audio.key + OCTAVE) % OCTAVE;
+
+            // Temperament ratio
+            double temperRatio = temperaments[audio.temperament][n] /
+                temperaments[audio.temperament][a];
+            // Equal ratio
+            double equalRatio = temperaments[EQUAL][n] /
+                temperaments[EQUAL][a];
+
+            // Temperament adjustment
+            double temperAdjust = temperRatio / equalRatio;
+
 	    // Reference note
-	    fr = audio.reference * pow(2.0, round(cf) / 12.0);
+	    fr = audio.reference * pow(2.0, round(cf) / 12.0) * temperAdjust;
 
 	    // Lower and upper freq
-	    fl = audio.reference * pow(2.0, (round(cf) - 0.55) / 12.0);
-	    fh = audio.reference * pow(2.0, (round(cf) + 0.55) / 12.0);
-
-	    // Note number
-	    n = round(cf) + C5_OFFSET;
-
-	    if (n < 0)
-		found = false;
+	    fl = audio.reference * pow(2.0, (round(cf) - 0.55) /
+                                       12.0) * temperAdjust;
+	    fh = audio.reference * pow(2.0, (round(cf) + 0.55) /
+                                       12.0) * temperAdjust;
 
 	    // Find nearest maximum to reference note
 	    double df = 1000.0;

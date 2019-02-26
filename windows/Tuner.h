@@ -384,7 +384,7 @@ AUDIO audio;
 FILTER filter;
 
 // Temperaments data
-double temperamentValues[32][12] =
+double temperaments[32][12] =
 #include "Temperaments.h"
 
 // Function prototypes
