@@ -1779,7 +1779,7 @@ gboolean staff_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_path_extents(cr, &x1, &y1, &x2, &y2);
 
     // Scale
-    scale = (lineHeight * 1.25) / (y2 - y1);
+    scale = (lineHeight * 1.5) / (y2 - y1);
     cairo_scale(cr, 1 / scale, 1 / scale);
 
     // Copy path
@@ -1911,6 +1911,18 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
                            CAIRO_FONT_WEIGHT_NORMAL);
     cairo_set_font_size(cr, height / 3);
 
+    cairo_text_extents_t extents;
+    cairo_matrix_t matrix;
+
+    cairo_text_extents(cr, "50", &extents);
+    cairo_get_font_matrix(cr, &matrix);
+    if (width / 11 <= extents.x_advance)
+    {
+        double sx = (width / 12) / extents.x_advance;
+        cairo_matrix_scale(&matrix, sx, 1.0);
+        cairo_set_font_matrix(cr, &matrix);
+    }
+
     // Move origin
     cairo_translate(cr, width / 2, 0);
     cairo_set_source_rgb(cr, 0, 0, 0);
@@ -1951,14 +1963,19 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     cairo_stroke(cr);
 
     cairo_pattern_t *linear =
-        cairo_pattern_create_linear(0, height * 3 / 4, 0, height * 3 / 4 + 4);
+        cairo_pattern_create_linear(0, height * 3 / 4 - height / 16,
+                                    0, height * 3 / 4 + height / 16);
     cairo_pattern_add_color_stop_rgb(linear, 0, 0.5, 0.5, 0.5);
     cairo_pattern_add_color_stop_rgb(linear, 4, 1, 1, 1);
 
     cairo_set_source(cr, linear);
-    cairo_rectangle(cr, -(width - 20) / 2, height * 3 / 4, width - 20, 2);
+    cairo_rectangle(cr, -(width - width / 16) / 2, height * 3 / 4 - height / 32,
+                    width - width / 16, height / 32);
 
+    cairo_set_antialias(cr, CAIRO_ANTIALIAS_DEFAULT);
+    cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
     cairo_stroke(cr);
+    cairo_pattern_destroy(linear);
 
     static double mc;
 
@@ -1969,6 +1986,8 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     double x = width / 11 * mc * 10;
     cairo_translate(cr, x, height * 3 / 4);
 
+    cairo_scale(cr, height / 56.0, height / 56.0);
+
     linear = cairo_pattern_create_linear(0, 0, 0, 12);
     cairo_pattern_add_color_stop_rgb(linear, 0, 1, 1, 1);
     cairo_pattern_add_color_stop_rgb(linear, 12, 0, 0, 0);
@@ -1976,20 +1995,20 @@ gboolean meter_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 
     cairo_set_source(cr, linear);
 
-    cairo_move_to(cr, 0, -10);
+    cairo_move_to(cr, 0, -12);
     cairo_rel_line_to(cr, -5, 5);
     cairo_rel_line_to(cr, 0, 13);
     cairo_rel_line_to(cr, 10, 0);
     cairo_rel_line_to(cr, 0, -13);
     cairo_rel_line_to(cr, -5, -5);
 
-    // cairo_scale(cr, height / 24, height / 24);
     cairo_fill_preserve(cr);
 
     cairo_set_source_rgb(cr, 0.5, 0.5, 0.5);
     cairo_set_line_width(cr, 1);
 
     cairo_stroke(cr);
+    cairo_pattern_destroy(linear);
 
     return true;
 }
@@ -2543,7 +2562,8 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     for (uint i = 0; i < Length(expansions); i++)
         gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.expand),
                                   NULL, expansions[i]);
-    gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand), 1);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand),
+                             round(log2(spectrum.expand)));
     gtk_box_pack_end(GTK_BOX(expand), options.expand, false, false, 0);
 
     // Expand changed
