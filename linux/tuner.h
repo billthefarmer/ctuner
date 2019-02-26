@@ -134,6 +134,7 @@ typedef struct
     double c;
     gboolean lock;
     gboolean multiple;
+    gint transpose;
     gint count;
     gint n;
 } Display;

@@ -227,6 +227,7 @@ void restoreOptions()
     staff.enable = true;
 
     audio.reference = A5_REFERENCE;
+    audio.temperament = 8;
     audio.correction = 1.0;
 
     // Get user home
@@ -1279,7 +1280,8 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 			       CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cr, small);
 
-        cairo_text_extents(cr, "C#0 +0.00\u00A2 0000.00Hz 0000.00Hz +00.00Hz",
+        cairo_text_extents(cr,
+                           "C\u266F0 +00.00\u00A2 0000.00Hz 0000.00Hz +00.00Hz",
                            &extents);
         cairo_get_font_matrix(cr, &matrix);
 	if (width - 16 < extents.x_advance)
@@ -2024,6 +2026,8 @@ void update_options()
 				 spectrum.zoom);
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(options.strobe),
 				 strobe.enable);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand),
+                             round(log2(spectrum.expand)));
 }
 
 // Key press
@@ -2173,7 +2177,16 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
 	display.lock = !display.lock;
 
     if (strcmp(name, "strobe") == 0)
+    {
 	strobe.enable = !strobe.enable;
+        staff.enable = !strobe.enable;
+    }
+
+    if (strcmp(name, "staff") == 0)
+    {
+	staff.enable = !staff.enable;
+        strobe.enable = !staff.enable;
+    }
 
     if (strcmp(name, "meter") == 0)
 	display.lock = !display.lock;
@@ -2286,44 +2299,47 @@ void note_toggled(GtkWidget *widget, gpointer data)
 // Expand changed
 void expand_changed(GtkWidget *widget, gpointer data)
 {
+    spectrum.expand =
+        round(pow(2, gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget))));
 }
 
 // Colours changed
 void colours_changed(GtkWidget *widget, gpointer data)
 {
+    strobe.colours = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Transpose changed
 void transpose_changed(GtkWidget *widget, gpointer data)
 {
+    display.transpose = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget)) - 6;
+    staff.transpose = display.transpose;
 }
 
 // Temperament changed
 void temperament_changed(GtkWidget *widget, gpointer data)
 {
+    audio.temperament = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Key changed
 void key_changed(GtkWidget *widget, gpointer data)
 {
+    audio.key = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Note filter toggled
-void note_filter_toggled(GtkWidget *widget, gpointer data)
+void note_filter_toggled(GtkWidget *widget, uint *index)
 {
-    // uint id = (uint) *data;
-    // switch (id)
-    // {
-    // }
+    filters.note[*index] =
+        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Octave filter toggled
-void octave_filter_toggled(GtkWidget *widget, gpointer data)
+void octave_filter_toggled(GtkWidget *widget, uint *index)
 {
-    // uint id = (uint *) *data;
-    // switch (id)
-    // {
-    // }
+    filters.octave[*index] =
+        gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Note filter callback
@@ -2342,7 +2358,7 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
          "Octave 8"
         };
 
-    static const uint ids[] =
+    static const uint index[] =
         {
          0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
         };
@@ -2386,7 +2402,7 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
         gtk_box_pack_start(GTK_BOX(vbox), button, false, false, 0);
 
         g_signal_connect(G_OBJECT(button), "toggled",
-                         G_CALLBACK(note_filter_toggled), (gpointer) &ids[i]);
+                         G_CALLBACK(note_filter_toggled), (gpointer) &index[i]);
     }
 
     // V box
@@ -2407,7 +2423,7 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
         gtk_box_pack_start(GTK_BOX(vbox), button, false, false, 0);
 
         g_signal_connect(G_OBJECT(button), "toggled",
-                         G_CALLBACK(octave_filter_toggled), (gpointer) &ids[i]);
+                         G_CALLBACK(octave_filter_toggled), (gpointer) &index[i]);
     }
 
     // Close box
