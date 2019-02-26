@@ -2300,45 +2300,45 @@ void note_toggled(GtkWidget *widget, gpointer data)
 void expand_changed(GtkWidget *widget, gpointer data)
 {
     spectrum.expand =
-        round(pow(2, gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget))));
+        round(pow(2, gtk_combo_box_get_active(GTK_COMBO_BOX(widget))));
 }
 
 // Colours changed
 void colours_changed(GtkWidget *widget, gpointer data)
 {
-    strobe.colours = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
+    strobe.colours = gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
 }
 
 // Transpose changed
 void transpose_changed(GtkWidget *widget, gpointer data)
 {
-    display.transpose = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget)) - 6;
+    display.transpose = gtk_combo_box_get_active(GTK_COMBO_BOX(widget)) - 6;
     staff.transpose = display.transpose;
 }
 
 // Temperament changed
 void temperament_changed(GtkWidget *widget, gpointer data)
 {
-    audio.temperament = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
+    audio.temperament = gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
 }
 
 // Key changed
 void key_changed(GtkWidget *widget, gpointer data)
 {
-    audio.key = gtk_combo_box_get_active(GTK_TOGGLE_BUTTON(widget));
+    audio.key = gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
 }
 
 // Note filter toggled
 void note_filter_toggled(GtkWidget *widget, uint *index)
 {
-    filters.note[*index] =
+    filters.notes[*index] =
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
 // Octave filter toggled
 void octave_filter_toggled(GtkWidget *widget, uint *index)
 {
-    filters.octave[*index] =
+    filters.octaves[*index] =
         gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(widget));
 }
 
