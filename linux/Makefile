@@ -14,7 +14,7 @@ all:	tuner
 clean:
 	rm tuner
 
-tuner:	tuner.cpp tuner.h Makefile
+tuner:	tuner.cpp tuner.h temperaments.h Makefile
 
 %:	%.cpp
 	$(GXX) $< -o $@ $(CFLAGS) $(LIBS) \

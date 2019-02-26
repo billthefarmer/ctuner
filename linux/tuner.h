@@ -22,6 +22,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#ifndef TUNER_H
+#define TUNER_H
+
 #include <math.h>
 
 #include <gtk/gtk.h>
@@ -206,9 +209,9 @@ typedef struct
     gboolean fundamental;
     gint temperament;
     gint key;
-    double correction;
     double reference;
-    gboolean save;
+    double temperaments[32][12] =
+#include "temperaments.h"
 } Audio;
 
 // Data
@@ -248,3 +251,5 @@ void saveOptions(void);
 void restoreOptions(void);
 
 void fftr(complex[], int);
+
+#endif

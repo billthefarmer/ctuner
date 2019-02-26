@@ -228,7 +228,6 @@ void restoreOptions()
 
     audio.reference = A5_REFERENCE;
     audio.temperament = 8;
-    audio.correction = 1.0;
 
     // Get user home
     char *home = getenv("HOME");
@@ -311,16 +310,6 @@ void restoreOptions()
 		sscanf(line, "reference=%lf", &audio.reference);
 		continue;
 	    }
-
-	    if (strncmp(line, "correction", strlen("correction")) == 0)
-	    {
-		sscanf(line, "correction=%lf", &audio.correction);
-
-		if (audio.correction != 1.0)
-		    audio.save = true;
-
-		continue;
-	    }
 	}
     }
 
@@ -347,9 +336,6 @@ void saveOptions()
     fprintf(file, "colours=%d\n", strobe.colours);
     fprintf(file, "zoom=%d\n", spectrum.zoom);
     fprintf(file, "reference=%1.2f\n", audio.reference);
-
-    if (audio.save)
-	fprintf(file, "correction=%1.6f\n", audio.correction);
 
     fclose(file);
 }
@@ -546,7 +532,7 @@ void *readAudio(void *)
 
 	    // Calculate actual frequency from slot frequency plus
 	    // frequency difference and correction value
-	    xf[i] = (i * fps + df * fps) / audio.correction;
+	    xf[i] = i * fps + df * fps;
 
 	    // Calculate differences for finding maxima
 	    dx[i] = xa[i] - xa[i - 1];
@@ -723,16 +709,16 @@ void *readAudio(void *)
 
 	    // Update spectrum window
 	    for (uint i = 0; i < count; i++)
-		values[i].f = maxima[i].f / fps * audio.correction;
+		values[i].f = maxima[i].f / fps;
 
 	    spectrum.count = count;
 
 	    if (found)
 	    {
-		spectrum.f = f  / fps * audio.correction;
-		spectrum.r = fr / fps * audio.correction;
-		spectrum.l = fl / fps * audio.correction;
-		spectrum.h = fh / fps * audio.correction;
+		spectrum.f = f  / fps;
+		spectrum.r = fr / fps;
+		spectrum.l = fl / fps;
+		spectrum.h = fh / fps;
 	    }
 
 	    // Update spectrum
@@ -2151,13 +2137,6 @@ void zoom_clicked(GtkWidget widget, gpointer data)
 {
     spectrum.zoom =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(options.zoom));
-}
-
-// Correction changed
-void correction_changed(GtkWidget widget, gpointer data)
-{
-    audio.correction =
-        gtk_spin_button_get_value(GTK_SPIN_BUTTON(options.correction));
 }
 
 // Widget clicked
