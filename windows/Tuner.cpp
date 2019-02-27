@@ -109,6 +109,7 @@ VOID GetSavedStatus()
 
     // Initial values
     audio.filter = false;
+    audio.reference = A5_REFNCE;
     audio.temperament = 8;
     display.transpose = 0;
     spectrum.expand = 1;
@@ -116,9 +117,6 @@ VOID GetSavedStatus()
     staff.enable = true;
     strobe.colours = 1;
     strobe.enable = false;
-
-    // Reference initial value
-    audio.reference = A5_REFNCE;
 
     // Open user key
     error = RegOpenKeyEx(HKEY_CURRENT_USER, "SOFTWARE\\CTuner", 0,
@@ -2873,7 +2871,7 @@ BOOL DrawDisplay(HDC hdc, RECT rect)
 	    sprintf(s, "%s%s%d", notes[(display.n - display.transpose +
                                         OCTAVE) % OCTAVE],
                 sharps[(display.n - display.transpose +
-                                        OCTAVE) % OCTAVE], display.n / 12);
+                        OCTAVE) % OCTAVE], display.n / 12);
 	    TextOut(hbdc, x, 0, s, lstrlen(s));
 
             GetTextExtentPoint32(hbdc, s, lstrlen(s), &size);

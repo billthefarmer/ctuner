@@ -222,12 +222,15 @@ void activate(GtkApplication *app, gpointer data)
 void restoreOptions()
 {
     // Initial values
-    spectrum.zoom = true;
-    spectrum.expand = 1;
-    staff.enable = true;
-
+    audio.filter = false;
     audio.reference = A5_REFERENCE;
     audio.temperament = 8;
+    display.transpose = 0;
+    spectrum.expand = 1;
+    spectrum.zoom = true;
+    staff.enable = true;
+    strobe.colours = 1;
+    strobe.enable = false;
 
     // Get user home
     char *home = getenv("HOME");
@@ -424,7 +427,7 @@ void *readAudio(void *)
     static double dx[RANGE];
 
     static maximum maxima[MAXIMA];
-    static value   values[MAXIMA];
+    static double  values[MAXIMA];
 
     static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
     static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
@@ -633,16 +636,16 @@ void *readAudio(void *)
             if (audio.note)
             {
                 // Get note and octave
-                int n = note % OCTAVE;
-                int o = note / OCTAVE;
+                uint n = note % OCTAVE;
+                uint o = note / OCTAVE;
 
                 // Ignore too high
-                if (o >= Length(filter.octave))
+                if (o >= Length(filters.octaves))
                     continue;
 
                 // Ignore if filtered
-                if (!filter.note[n] ||
-                    !filter.octave[o])
+                if (!filters.notes[n] ||
+                    !filters.octaves[o])
                     continue;
             }
 
@@ -696,7 +699,7 @@ void *readAudio(void *)
 	double fh = 0.0;
 
 	// Note number
-	int n = 0;
+	int note = 0;
 
 	// Found flag and cents value
 	gboolean found = false;
@@ -784,7 +787,7 @@ void *readAudio(void *)
 
 	    // Update spectrum window
 	    for (uint i = 0; i < count; i++)
-		values[i].f = maxima[i].f / fps;
+		values[i] = maxima[i].f / fps;
 
 	    spectrum.count = count;
 
@@ -811,11 +814,11 @@ void *readAudio(void *)
 		display.f = f;
 		display.fr = fr;
 		display.c = c;
-		display.n = n;
+		display.n = note;
 		display.count = count;
 
                 // Update staff
-                staff.n = n;
+                staff.n = note;
 
 		// Update meter
 		meter.c = c;
@@ -1094,6 +1097,14 @@ gboolean scope_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_show_text(cr, "F");
     }
 
+    // Show FF for fundamental filter
+    if (audio.fundamental)
+    {
+	cairo_set_source_rgb(cr, 1, 1, 0);
+	cairo_move_to(cr, 2, (height / 2) - 2);
+	cairo_show_text(cr, "FF");
+    }
+
     return true;
 }
 
@@ -1195,10 +1206,10 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each that are in range
-	    if (spectrum.values[i].f > spectrum.l &&
-		spectrum.values[i].f < spectrum.h)
+	    if (spectrum.values[i] > spectrum.l &&
+		spectrum.values[i] < spectrum.h)
 	    {
-		double x = (spectrum.values[i].f - spectrum.l) * xscale;
+		double x = (spectrum.values[i] - spectrum.l) * xscale;
 		cairo_move_to(cr, x, 0);
 		cairo_line_to(cr, x, -height);
 
@@ -1262,7 +1273,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	for (int i = 0; i < spectrum.count; i++)
 	{
 	    // Draw line for each
-	    double x = spectrum.values[i].f / xscale;
+	    double x = spectrum.values[i] / xscale;
 	    cairo_move_to(cr, x, 0);
 	    cairo_line_to(cr, x, -height);
 
@@ -1284,7 +1295,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	if (spectrum.expand > 1)
 	{
 	    sprintf(s, "x%d", spectrum.expand);
-	    cairo_move_to(cr, 0, -2);
+	    cairo_move_to(cr, 10, -2);
 	    cairo_show_text(cr, s);
 	}
     }
@@ -1294,11 +1305,17 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Show D for downsample
     if (audio.downsample)
     {
-	cairo_move_to(cr, 0, 10 - height);
+	cairo_move_to(cr, 2, -height + 10);
 	cairo_show_text(cr, "D");
     }
 
-    // cairo_destroy(cr);
+    // Show N for downsample
+    if (audio.note)
+    {
+	cairo_move_to(cr, 2, -2);
+	cairo_show_text(cr, "N");
+    }
+
 
     return true;
 }
@@ -1356,8 +1373,10 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	if (display.count == 0)
 	{
 	    // Display note
-	    sprintf(s, "%s%s%d", notes[display.n % Length(notes)],
-		    sharps[display.n % Length(notes)], display.n / 12);
+	    sprintf(s, "%s%s%d", notes[(display.n  - display.transpose +
+                                        OCTAVE) % OCTAVE],
+		    sharps[(display.n - display.transpose +
+                            OCTAVE) % OCTAVE], display.n / 12);
 	    cairo_move_to(cr, 8, small);
 	    cairo_show_text(cr, s);
 
@@ -1397,8 +1416,10 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 		continue;
 
 	    // Display note
-	    sprintf(s, "%s%s%d", notes[n % Length(notes)],
-		    sharps[n % Length(notes)], n / 12);
+	    sprintf(s, "%s%s%d", notes[(n - display.transpose +
+                                        OCTAVE) % OCTAVE],
+		    sharps[(n - display.transpose +
+                            OCTAVE) % OCTAVE], n / 12);
 	    cairo_move_to(cr, 8, small + (small * i));
 	    cairo_show_text(cr, s);
 
@@ -1434,7 +1455,8 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_set_font_size(cr, xlarge);
 
 	// Display note
-	sprintf(s, "%s", notes[display.n % Length(notes)]);
+	sprintf(s, "%s", notes[(display.n  - display.transpose +
+                                OCTAVE) % OCTAVE]);
 	cairo_move_to(cr, 8, xlarge);
 	cairo_show_text(cr, s);
 
@@ -1449,7 +1471,8 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
         // Save context
 	cairo_save(cr);
 
-	sprintf(s, "%s", sharps[display.n % Length(sharps)]);
+	sprintf(s, "%s", sharps[(display.n  - display.transpose +
+                                 OCTAVE) % OCTAVE]);
 	cairo_move_to(cr, x, half);
 	cairo_show_text(cr, s);
 
@@ -2108,6 +2131,8 @@ void update_options()
 				 strobe.enable);
     gtk_combo_box_set_active(GTK_COMBO_BOX(options.expand),
                              round(log2(spectrum.expand)));
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.colours),
+                             strobe.colours);
 }
 
 // Key press
@@ -2152,6 +2177,19 @@ gboolean key_press(GtkWidget *window, GdkEventKey *event, gpointer data)
     case GDK_KEY_s:
     case GDK_KEY_S:
 	strobe.enable = !strobe.enable;
+        if (strobe.enable)
+        {
+            gtk_widget_show(strobe.widget);
+            gtk_widget_hide(staff.widget);
+        }
+
+        else
+        {
+            gtk_widget_show(staff.widget);
+            gtk_widget_hide(strobe.widget);
+        }
+
+        staff.enable = !strobe.enable;
 	break;
 
     case GDK_KEY_z:
@@ -2210,6 +2248,19 @@ void strobe_clicked(GtkWidget widget, gpointer data)
 {
     strobe.enable =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(options.strobe));
+    if (strobe.enable)
+    {
+        gtk_widget_show(strobe.widget);
+        gtk_widget_hide(staff.widget);
+    }
+
+    else
+    {
+        gtk_widget_show(staff.widget);
+        gtk_widget_hide(strobe.widget);
+    }
+
+    staff.enable = !strobe.enable;
 }
 
 // Downsample clicked
@@ -2252,12 +2303,36 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
     if (strcmp(name, "strobe") == 0)
     {
 	strobe.enable = !strobe.enable;
+        if (strobe.enable)
+        {
+            gtk_widget_show(strobe.widget);
+            gtk_widget_hide(staff.widget);
+        }
+
+        else
+        {
+            gtk_widget_show(staff.widget);
+            gtk_widget_hide(strobe.widget);
+        }
+
         staff.enable = !strobe.enable;
     }
 
     if (strcmp(name, "staff") == 0)
     {
 	staff.enable = !staff.enable;
+        if (staff.enable)
+        {
+            gtk_widget_show(staff.widget);
+            gtk_widget_hide(strobe.widget);
+        }
+
+        else
+        {
+            gtk_widget_show(strobe.widget);
+            gtk_widget_hide(staff.widget);
+        }
+
         strobe.enable = !staff.enable;
     }
 
@@ -2385,7 +2460,7 @@ void colours_changed(GtkWidget *widget, gpointer data)
 // Transpose changed
 void transpose_changed(GtkWidget *widget, gpointer data)
 {
-    display.transpose = gtk_combo_box_get_active(GTK_COMBO_BOX(widget)) - 6;
+    display.transpose = 6 - gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
     staff.transpose = display.transpose;
 }
 
@@ -2484,7 +2559,7 @@ void note_clicked(GtkWidget *widget, GtkWindow *window)
 
     for (uint i = 0; i < Length(octaves); i++)
     {
-        if (i == 6)
+        if (i == 5)
         {
             vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
             gtk_box_pack_start(GTK_BOX(hbox), vbox, false, false, 0);
@@ -2683,6 +2758,33 @@ void options_clicked(GtkWidget *widget, GtkWindow *window)
     // Reference changed
     g_signal_connect(G_OBJECT(options.reference), "value-changed",
 		     G_CALLBACK(reference_changed), window);
+
+    // Transpose
+    GtkWidget *transpose = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+    gtk_box_pack_start(GTK_BOX(vbox), transpose, false, false, 0);
+
+    // Label
+    label = gtk_label_new("Transpose display:");
+    gtk_box_pack_start(GTK_BOX(transpose), label, false, false, 0);
+
+    options.transpose = gtk_combo_box_text_new();
+    const char *transpositions[] =
+        {" +6 [Key:F#]", " +5 [Key:F]", " +4 [Key:E]",
+         " +3 [Key:Eb]", " +2 [Key:D]",
+         " +1 [Key:C#]", " +0 [Key:C]", " -1 [Key:B]",
+         " -2 [Key:Bb]", " -3 [Key:A]",
+         " -4 [Key:Ab]", " -5 [Key:G]",
+         " -6 [Key:F#]"};
+    for (uint i = 0; i < Length(transpositions); i++)
+        gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(options.transpose),
+                                  NULL, transpositions[i]);
+    gtk_combo_box_set_active(GTK_COMBO_BOX(options.transpose),
+                             6 - display.transpose);
+    gtk_box_pack_end(GTK_BOX(transpose), options.transpose, false, false, 0);
+
+    // Transpose changed
+    g_signal_connect(G_OBJECT(options.transpose), "changed",
+		     G_CALLBACK(transpose_changed), window);
 
     // Temperament
     GtkWidget *temperament = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);

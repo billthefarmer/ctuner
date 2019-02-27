@@ -2,15 +2,13 @@
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
-melodeons. The strobe display may be disabled, if
-required. Windows and
-[Mac](http://code.google.com/p/ctuner/wiki/Mac) versions have
-been released. An
-[Android](http://code.google.com/p/ctuner/wiki/Android) version
-has been released. The android version may also be found on
-[Github](https://github.com/billthefarmer/tuner).
+melodeons. The strobe display may be replaed with the staff, if
+required.
 
-![http://ctuner.googlecode.com/svn/wiki/images/Tuner.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner.png)  ![http://ctuner.googlecode.com/svn/wiki/images/Options.png](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options.png)
+|     |     |
+| --- | --- |
+| ![Tuner](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Tuner-linux.png) | ![Options](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Options-linux.png) |
+|     | ![Filters](https://github.com/billthefarmer/billthefarmer.github.io/raw/master/images/ctuner/Filters-linux.png) |
 
 
 ## Using

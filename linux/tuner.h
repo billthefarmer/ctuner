@@ -44,7 +44,6 @@
 #define Length(a) (sizeof(a) / sizeof(a[0]))
 
 #define APP_ID "org.billthefarmer.tuner"
-#define OCTAVE  12
 #define MINIMUM 0.5
 
 // Layout values
@@ -76,7 +75,10 @@ enum
 // Tuner reference values
 enum
     {A5_REFERENCE = 440,
-     C5_OFFSET    = 57};
+     C5_OFFSET    = 57,
+     A_OFFSET     = 9,
+     OCTAVE       = 12,
+     EQUAL        = 8};
 
 // Strobe colours
 enum
@@ -100,14 +102,6 @@ typedef struct
 
 typedef struct
 {
-    double f;
-    double r;
-    double l;
-    double h;
-} value;
-
-typedef struct
-{
     GtkWidget *widget;
     short *data;
     gint length;
@@ -125,7 +119,7 @@ typedef struct
     double l;
     double h;
     double *data;
-    value *values;
+    double *values;
 } Spectrum;
 
 typedef struct
