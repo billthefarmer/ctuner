@@ -347,7 +347,7 @@ void saveOptions()
 void initAudio(void)
 {
     int err, dir;
-    unsigned rate_min, rate_max;
+    uint rate_min, rate_max;
     snd_pcm_hw_params_t *hwparams;
 
     if ((err = snd_pcm_open(&audio.handle, "default",
@@ -399,7 +399,6 @@ void initAudio(void)
 
     // Create the audio thread
     pthread_create(&audio.thread, NULL, readAudio, NULL);
-
 }
 
 // Read audio
@@ -429,8 +428,8 @@ void *readAudio(void *)
     static maximum maxima[MAXIMA];
     static double  values[MAXIMA];
 
-    static double fps = (double)SAMPLE_RATE / (double)SAMPLES;
-    static double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
+    static const double fps = (double)SAMPLE_RATE / (double)SAMPLES;
+    static const double expect = 2.0 * M_PI * (double)STEP / (double)SAMPLES;
 
     static short data[STEP];
 
@@ -458,8 +457,8 @@ void *readAudio(void *)
 	// Butterworth filter, 3dB/octave
 	for (int i = 0; i < STEP; i++)
 	{
-	    static double G = 3.023332184e+01;
-	    static double K = 0.9338478249;
+	    static const double G = 3.023332184e+01;
+	    static const double K = 0.9338478249;
 
 	    static double xv[2];
 	    static double yv[2];
@@ -1309,7 +1308,7 @@ gboolean spectrum_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
 	cairo_show_text(cr, "D");
     }
 
-    // Show N for downsample
+    // Show N for note filter
     if (audio.note)
     {
 	cairo_move_to(cr, 2, -2);

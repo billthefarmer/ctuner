@@ -235,8 +235,8 @@ gboolean strobe_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean staff_draw_callback(GtkWidget *, cairo_t *, gpointer);
 gboolean meter_draw_callback(GtkWidget *, cairo_t *, gpointer);
 
-gboolean key_press(GtkWidget*, GdkEventKey*, gpointer);
-gboolean button_press(GtkWidget*, GdkEventButton*, gpointer);
+gboolean key_press(GtkWidget *, GdkEventKey *, gpointer);
+gboolean button_press(GtkWidget *, GdkEventButton *, gpointer);
 
 void widget_queue_draw(gpointer);
 void activate(GtkApplication *, gpointer);
