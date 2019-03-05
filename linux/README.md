@@ -2,7 +2,7 @@
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
-melodeons. The strobe display may be replaed with the staff, if
+melodeons. The strobe display may be replaced with the staff, if
 required.
 
 |     |     |
@@ -20,3 +20,11 @@ waveform. The display below shows the spectrum of the input. It
 may be zoomed in and out by clicking on the pane. When zoomed in
 the display shows about ±50 cents around the current note and
 includes all concurrent notes within that range.
+
+## Building
+
+Use the simple makefile provided. The convoluted GNU autoconfig/automake system appears to work, but overwrites the makefile with one that doesn't work. There is a backup in `Makefile.de`.
+
+### Raspberry Pi
+
+The app builds ok on a pi, but will not work because of the lack of an audio input. It should work fine with one - untested.
