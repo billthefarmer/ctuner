@@ -175,6 +175,8 @@ void activate(GtkApplication *app, gpointer data)
     g_signal_connect(G_OBJECT(meter.widget), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
+    gtk_widget_add_events(meter.widget, GDK_BUTTON_PRESS_MASK);
+
     // H box
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_end(GTK_BOX(vbox), hbox, false, false, 0);
@@ -271,24 +273,6 @@ void restoreOptions()
 		continue;
 	    }
 
-	    if (strncmp(line, "downsample", strlen("downsample")) == 0)
-	    {
-		sscanf(line, "downsample=%d", &audio.downsample);
-		continue;
-	    }
-
-	    if (strncmp(line, "lock", strlen("lock")) == 0)
-	    {
-		sscanf(line, "lock=%d", &display.lock);
-		continue;
-	    }
-
-	    if (strncmp(line, "multiple", strlen("multiple")) == 0)
-	    {
-		sscanf(line, "multiple=%d", &display.multiple);
-		continue;
-	    }
-
 	    if (strncmp(line, "strobe", strlen("strobe")) == 0)
 	    {
 		sscanf(line, "strobe=%d", &strobe.enable);
@@ -332,9 +316,6 @@ void saveOptions()
 
     fputs("# Tuner options\n#\n[Options]\n", file);
     fprintf(file, "filter=%d\n", audio.filter);
-    fprintf(file, "downsample=%d\n", audio.downsample);
-    fprintf(file, "lock=%d\n", display.lock);
-    fprintf(file, "multiple=%d\n", display.multiple);
     fprintf(file, "strobe=%d\n", strobe.enable);
     fprintf(file, "colours=%d\n", strobe.colours);
     fprintf(file, "zoom=%d\n", spectrum.zoom);
@@ -1518,7 +1499,8 @@ gboolean display_draw_callback(GtkWidget *widget, cairo_t *cr, gpointer)
     // Show L for lock
     if (display.lock)
     {
-	cairo_move_to(cr, 0, 10 - height);
+	cairo_set_font_size(cr, small);
+	cairo_move_to(cr, 4, height - 4);
 	cairo_show_text(cr, "L");
     }
 
@@ -2166,6 +2148,7 @@ gboolean key_press(GtkWidget *window, GdkEventKey *event, gpointer data)
     case GDK_KEY_l:
     case GDK_KEY_L:
 	display.lock = !display.lock;
+        widget_queue_draw(display.widget);
 	break;
 
     case GDK_KEY_m:
@@ -2240,6 +2223,7 @@ void lock_clicked(GtkWidget widget, gpointer data)
 {
     display.lock =
 	gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(options.lock));
+    widget_queue_draw(display.widget);
 }
 
 // Strobe clicked
@@ -2297,7 +2281,10 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
 	spectrum.zoom = !spectrum.zoom;
 
     if (strcmp(name, "display") == 0)
+    {
 	display.lock = !display.lock;
+        widget_queue_draw(display.widget);
+    }
 
     if (strcmp(name, "strobe") == 0)
     {
@@ -2336,7 +2323,10 @@ void widget_clicked(GtkWidget *widget, GdkEventButton *event, gpointer data)
     }
 
     if (strcmp(name, "meter") == 0)
+    {
 	display.lock = !display.lock;
+        widget_queue_draw(display.widget);
+    }
 
     update_options();
 }
@@ -2461,6 +2451,8 @@ void transpose_changed(GtkWidget *widget, gpointer data)
 {
     display.transpose = 6 - gtk_combo_box_get_active(GTK_COMBO_BOX(widget));
     staff.transpose = display.transpose;
+    widget_queue_draw(display.widget);
+    widget_queue_draw(staff.widget);
 }
 
 // Temperament changed
