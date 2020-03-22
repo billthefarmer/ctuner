@@ -75,11 +75,6 @@ class MeterView: TunerView
         // Move the origin
         context.cgContext.translateBy(x: rect.midX, y: rect.maxY - textSize -
                                           tickSize2)
-        // var transform = AffineTransform(translationByX: rect.midX,
-        //                                 byY: rect.maxY - textSize -
-        //                                   tickSize2)
-        // (transform as NSAffineTransform).concat()
-
         // Draw the meter scale
         for i in 0 ..< 6
         {
@@ -104,9 +99,6 @@ class MeterView: TunerView
 
         // Move the origin
         context.cgContext.translateBy(x: 0, y: -tickSize)
-        // transform = AffineTransform(translationByX: 0, byY: -tickSize)
-        // (transform as NSAffineTransform).concat()
-
         context.shouldAntialias = false;
 
         for i in 0 ..< 6
@@ -138,9 +130,6 @@ class MeterView: TunerView
 
         // Move the origin
         context.cgContext.translateBy(x: 0, y: -tickSize)
-        // transform = AffineTransform(translationByX: 0, byY: -tickSize)
-        // (transform as NSAffineTransform).concat()
-
         NSColor.gray.set()
 
         // Draw bar
