@@ -50,9 +50,10 @@ class ScopeView: TunerView
         darkGreen.set()
 
         // Move the origin
-        let transform = AffineTransform(translationByX: 0, byY: rect.midY)
-        (transform as NSAffineTransform).concat()
         let context = NSGraphicsContext.current!
+        context.cgContext.translateBy(x: 0, y: rect.midY)
+        // let transform = AffineTransform(translationByX: 0, byY: rect.midY)
+        // (transform as NSAffineTransform).concat()
         context.shouldAntialias = false;
 
         // Draw graticule

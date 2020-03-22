@@ -54,9 +54,9 @@ class MeterView: TunerView
         let context = NSGraphicsContext.current!
 
         // Text and tick sizes
-        let textSize: CGFloat = CGFloat(height / 3)
-        let tickSize: CGFloat = CGFloat(height / 6)
-        let tickSize2: CGFloat = tickSize / 2
+        let textSize = CGFloat(height / 3)
+        let tickSize = CGFloat(height / 6)
+        let tickSize2 = tickSize / 2
 
         // Font
         let font = NSFont.systemFont(ofSize: textSize)
@@ -73,10 +73,12 @@ class MeterView: TunerView
         NSEraseRect(rect)
 
         // Move the origin
-        var transform = AffineTransform(translationByX: rect.midX,
-                                        byY: rect.maxY - textSize -
+        context.cgContext.translateBy(x: rect.midX, y: rect.maxY - textSize -
                                           tickSize2)
-        (transform as NSAffineTransform).concat()
+        // var transform = AffineTransform(translationByX: rect.midX,
+        //                                 byY: rect.maxY - textSize -
+        //                                   tickSize2)
+        // (transform as NSAffineTransform).concat()
 
         // Draw the meter scale
         for i in 0 ..< 6
@@ -84,8 +86,7 @@ class MeterView: TunerView
 	    if (i == 0)
             {
                 let offset = "0".size(withAttributes: attribs).width / 2
-	        "0".draw(at: NSMakePoint(-offset, 0),
-                       withAttributes: attribs)
+	        "0".draw(at: NSMakePoint(-offset, 0), withAttributes: attribs)
             }
 
 	    else
@@ -102,8 +103,9 @@ class MeterView: TunerView
         }
 
         // Move the origin
-        transform = AffineTransform(translationByX: 0, byY: -tickSize)
-        (transform as NSAffineTransform).concat()
+        context.cgContext.translateBy(x: 0, y: -tickSize)
+        // transform = AffineTransform(translationByX: 0, byY: -tickSize)
+        // (transform as NSAffineTransform).concat()
 
         context.shouldAntialias = false;
 
@@ -135,8 +137,9 @@ class MeterView: TunerView
         }
 
         // Move the origin
-        transform = AffineTransform(translationByX: 0, byY: -tickSize)
-        (transform as NSAffineTransform).concat()
+        context.cgContext.translateBy(x: 0, y: -tickSize)
+        // transform = AffineTransform(translationByX: 0, byY: -tickSize)
+        // (transform as NSAffineTransform).concat()
 
         NSColor.gray.set()
 
@@ -159,11 +162,11 @@ class MeterView: TunerView
 
         // Transform
         let scale = AffineTransform(scale: height / 16)
-        transform =
+        let translate =
           AffineTransform(translationByX: CGFloat(cents) * (width * 10 / 11),
                           byY: 0)
         thumb.transform(using: scale)
-        thumb.transform(using: transform)
+        thumb.transform(using: translate)
         context.shouldAntialias = true;
         gradient.draw(in: thumb, angle: 90)
         thumb.stroke()

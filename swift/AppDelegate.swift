@@ -697,6 +697,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         setOctave((sender.state == .on) ? true: false, Int32(sender.tag))
     }
 
+    // print
     @objc func print(sender: Any)
     {
         window.printWindow(sender)
