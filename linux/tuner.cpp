@@ -429,8 +429,13 @@ void *readAudio(void *)
 
     while (!audio.done)
     {
+      // Get the data
 	if ((frames = snd_pcm_readi(audio.handle, data, STEP)) < 0)
 	    break;
+
+	// Check if done
+	if (audio.done)
+	  break;
 
 	// Copy the input data
 	memmove(buffer, buffer + STEP, (SAMPLES - STEP) * sizeof(double));
@@ -986,7 +991,7 @@ void cairo_centre_text(cairo_t *cr, char *t)
     cairo_get_current_point(cr, &x, &y);
     cairo_text_extents(cr, t, &extents);
 
-    cairo_move_to(cr, x - extents.width / 2, y);
+    cairo_move_to(cr, x - extents.x_advance / 2, y);
     cairo_show_text(cr, t);
 }
 
