@@ -124,9 +124,7 @@ Scope scope;
 typedef struct
 {
     int length;
-    int expand;
     int count;
-    bool zoom;
     double f;
     double r;
     double l;

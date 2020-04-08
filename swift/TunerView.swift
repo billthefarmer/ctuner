@@ -171,43 +171,37 @@ class TunerView: NSView
 
         case "z":
             // Update zoom
-            spectrum.zoom = !spectrum.zoom
+            spectrumView.zoom = !spectrumView.zoom
             if (zoomBox != nil)
             {
-                zoomBox.state = spectrum.zoom ? .on: .off
+                zoomBox.state = spectrumView.zoom ? .on: .off
             }
-            // Update spectrum view
-            spectrumView.needsDisplay = true
 
         case "+":
             // Expand spectrum
-            spectrum.expand *= 2
-            if (spectrum.expand > kMaxExpand)
+            spectrumView.expand *= 2
+            if (spectrumView.expand > kMaxExpand)
             {
-                spectrum.expand = kMinExpand
+                spectrumView.expand = Int(kMinExpand)
             }
             if (expandPopUp != nil)
             {
                 expandPopUp
-                  .selectItem(at: Int(log2(Float(spectrum.expand))))
+                  .selectItem(at: Int(log2(Float(spectrumView.expand))))
             }
-            // Update spectrum view
-            spectrumView.needsDisplay = true
 
         case "-":
             // Contract spectrum
-            spectrum.expand /= 2
-            if (spectrum.expand < kMinExpand)
+            spectrumView.expand /= 2
+            if (spectrumView.expand < kMinExpand)
             {
-                spectrum.expand = kMaxExpand
+                spectrumView.expand = Int(kMaxExpand)
             }
             if (expandPopUp != nil)
             {
                 expandPopUp.selectItem(at:
-                                         Int(log2(Float(spectrum.expand))))
+                                         Int(log2(Float(spectrumView.expand))))
             }
-            // Update spectrum view
-            spectrumView.needsDisplay = true
 
         default:
             NSLog("Key %@ %@", key, event.charactersIgnoringModifiers ?? "")

@@ -34,14 +34,15 @@ class SpectrumView: TunerView
     let kTextSize: CGFloat = 10
     var max: Double = 0
 
+    // mouseDown
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
-            spectrum.zoom = !spectrum.zoom
+            zoom = !zoom
             if (zoomBox != nil)
             {
-                zoomBox.state = spectrum.zoom ? .on: .off
+                zoomBox.state = zoom ? .on: .off
             }
             needsDisplay = true
         }
@@ -77,12 +78,6 @@ class SpectrumView: TunerView
             return
         }
 
-        if (spectrum.expand == 0)
-        {
-            spectrum.expand = 1
-            spectrum.zoom = true
-        }
-
         if (width < 1)
         {
             return
@@ -100,7 +95,7 @@ class SpectrumView: TunerView
         // Green trace
         NSColor.green.set()
 
-        if (spectrum.zoom)
+        if (zoom)
         {
 	    // Calculate scale
 	    let xscale = (Double(width) / (spectrum.r -
@@ -214,7 +209,7 @@ class SpectrumView: TunerView
 
             // Scale
 	    let xscale = log(Double(spectrum.length) /
-			       Double(spectrum.expand)) / Double(width)
+			       Double(expand)) / Double(width)
 
             // Draw the spectrum
             let path = NSBezierPath()
@@ -317,9 +312,9 @@ class SpectrumView: TunerView
                        withAttributes: attribs)
 	    }
 
-	    if (spectrum.expand > 1)
+	    if (expand > 1)
 	    {
-	        let s = String(format: "x %d", spectrum.expand)
+	        let s = String(format: "x %d", expand)
                 let dx = s.size(withAttributes: attribs).width
 	        s.draw(at: NSMakePoint(rect.maxX - dx - 2,
                                        rect.minY),

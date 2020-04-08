@@ -214,7 +214,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "Display strobe", "Downsample",
                       "Lock display", "Note filter"]
 
-        let values = [spectrum.zoom, audio.filt,
+        let values = [spectrumView.zoom, audio.filt,
                       displayView.mult, audio.fund,
                       strobeView.enable, audio.down,
                       displayView.lock, audio.note]
@@ -306,7 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandPopUp.pullsDown = false
         expandPopUp.addItems(withTitles:
                                ["x 1", "x 2", "x 4", "x 8", "x 16"])
-        expandPopUp.selectItem(at: Int(log2(Float(spectrum.expand))))
+        expandPopUp.selectItem(at: Int(log2(Float(spectrumView.expand))))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
@@ -589,7 +589,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         switch sender.tag
         {
         case kZoom:
-            spectrum.zoom = (sender.state == .on) ? true: false
+            spectrumView.zoom = (sender.state == .on) ? true: false
             spectrumView.needsDisplay = true
 
         case kFilt:
@@ -716,8 +716,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
             audio.reference = Double(kA5Reference)
             audio.temper = 8
             disp.trans = 6
-            spectrum.zoom = true
-            spectrum.expand = 1
+            spectrumView.zoom = true
+            spectrumView.expand = 1
             strobeView.colour = 1
             return
         }
@@ -732,7 +732,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             switch index
             {
             case 0:
-                spectrum.zoom = defaults.bool(forKey: key)
+                spectrumView.zoom = defaults.bool(forKey: key)
                 spectrumView.needsDisplay = true
 
             case 1:
@@ -760,7 +760,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func savePreferences()
     {
         let keys = ["Zoom", "Filter", "Strobe", "Down"]
-        let values = [spectrum.zoom, audio.filt,
+        let values = [spectrumView.zoom, audio.filt,
                       strobeView.enable, audio.down]
 
         let defaults = UserDefaults.standard
