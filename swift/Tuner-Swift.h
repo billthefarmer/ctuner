@@ -238,7 +238,7 @@ SWIFT_CLASS("_TtC5Tuner11DisplayView")
 
 SWIFT_CLASS("_TtC5Tuner9MeterView")
 @interface MeterView : TunerView
-@property (nonatomic) double cents;
+@property (nonatomic) double c;
 - (void)mouseDown:(NSEvent * _Nonnull)event;
 - (void)drawRect:(NSRect)dirtyRect;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect OBJC_DESIGNATED_INITIALIZER;
@@ -282,7 +282,7 @@ SWIFT_CLASS("_TtC5Tuner9StaffView")
 
 SWIFT_CLASS("_TtC5Tuner10StrobeView")
 @interface StrobeView : TunerView
-@property (nonatomic) double cents;
+@property (nonatomic) double c;
 @property (nonatomic) NSInteger colour;
 @property (nonatomic) BOOL enable;
 @property (nonatomic) BOOL changed;

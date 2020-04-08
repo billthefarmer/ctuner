@@ -26,7 +26,7 @@ import Cocoa
 // TunerView
 class MeterView: TunerView
 {
-    @objc var cents = Double(0)
+    @objc var c = Double(0)
 
     var mc = Double(0)
 
@@ -50,7 +50,7 @@ class MeterView: TunerView
         super.draw(dirtyRect)
 
         // Do the inertia calculation
-        mc = ((mc * 19) + meter.c) / 20
+        mc = ((mc * 19) + c) / 20
 
         // Context
         let context = NSGraphicsContext.current!

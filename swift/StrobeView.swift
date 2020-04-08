@@ -34,7 +34,7 @@ class StrobeView: TunerView
 
     let kMaxColours: Int32 = 3
 
-    @objc var cents = Double(0)
+    @objc var c = Double(0)
     @objc var colour = 1
     @objc var enable = false
     {
@@ -76,7 +76,7 @@ class StrobeView: TunerView
         // Drawing code here.
 
         // Create patterns
-        if (gradient == nil || strobe.changed)
+        if (gradient == nil || changed)
         {
 	    // Create colours
 	    foreground = NSColor(red: colours[colour][0][0],
@@ -89,10 +89,10 @@ class StrobeView: TunerView
                                  alpha: colours[colour][1][3])
 	    // Create gradient
 	    gradient = NSGradient(colors: [foreground, background, foreground])
-	    strobe.changed = false;
+	    changed = false;
         }
 
-	mc = ((7 * mc) + strobe.c) / 8
+	mc = ((7 * mc) + c) / 8
 	mx += CGFloat(mc * 50)
 
         let size = height / 4

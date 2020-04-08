@@ -849,10 +849,10 @@ void (^ProcessAudio)() = ^
 	    staffView.note = note;
 
 	    // Update meter
-	    meter.c = c;
+	    meterView.c = c;
 
 	    // Update strobe
-	    strobe.c = c;
+	    strobeView.c = c;
 	}
 
         // Increment delay
@@ -884,10 +884,10 @@ void (^ProcessAudio)() = ^
 		staffView.note = 0;
 
 		// Update meter
-		meter.c = 0.0;
+		meterView.c = 0.0;
 
 		// Update strobe
-		strobe.c = 0.0;
+		strobeView.c = 0.0;
 
 		// Update spectrum
 		spectrum.f = 0.0;

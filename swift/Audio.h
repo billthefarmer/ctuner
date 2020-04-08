@@ -149,22 +149,6 @@ typedef struct
 } Display;
 Display disp;
 
-// Strobe data
-typedef struct
-{
-    bool changed;
-    int colours;
-    double c;
-} Strobe;
-Strobe strobe;
-
-// Meter data
-typedef struct
-{
-    double c;
-} Meter;
-Meter meter;
-
 // Temperaments data
 double temperamentValues[32][12] =
 #include "Temperaments.h"

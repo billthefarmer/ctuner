@@ -639,7 +639,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         case kColour:
             // Update strobe view
             strobeView.colour = index
-            strobe.changed = true
+            strobeView.changed = true
             strobeView.needsDisplay = true
 
         case kTrans:

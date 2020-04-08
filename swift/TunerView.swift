@@ -116,7 +116,7 @@ class TunerView: NSView
             }
 
             // Update strobe view
-            strobe.changed = true
+            strobeView.changed = true
             strobeView.needsDisplay = true
 
         case "d":
