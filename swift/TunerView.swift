@@ -103,16 +103,16 @@ class TunerView: NSView
 
         case "k":
             // Change colour
-            strobe.colours += 1
-            if (strobe.colours >= strobeView.kMaxColours)
+            strobeView.colour += 1
+            if (strobeView.colour >= strobeView.kMaxColours)
             {
-                strobe.colours = 0
+                strobeView.colour = 0
             }
 
             // Update popup
             if (colourPopUp != nil)
             {
-                colourPopUp.selectItem(at: Int(strobe.colours))
+                colourPopUp.selectItem(at: strobeView.colour)
             }
 
             // Update strobe view
@@ -141,38 +141,33 @@ class TunerView: NSView
 
         case "l":
             // Update display lock
-            disp.lock = !disp.lock
+            displayView.lock = !displayView.lock
             if (lockBox != nil)
             {
-                lockBox.state = disp.lock ? .on: .off
+                lockBox.state = displayView.lock ? .on: .off
             }
             // Update display
             displayView.needsDisplay = true
 
         case "m":
             // Update multiple notes
-            disp.mult = !disp.mult
+            displayView.mult = !displayView.mult
             if (multBox != nil)
             {
-                multBox.state = disp.mult ? .on: .off
+                multBox.state = displayView.mult ? .on: .off
             }
             // Update display
             displayView.needsDisplay = true
 
         case "s":
             // Switch views
-            strobe.enable = !strobe.enable
-            staff.enable = !strobe.enable
+            strobeView.enable = !strobeView.enable
+            staffView.enable = !strobeView.enable
             // Hide views, animation here
-            strobeView.isHidden = !strobe.enable
-            staffView.isHidden = !staff.enable
             if (strbBox != nil)
             {
-                strbBox.state = strobe.enable ? .on: .off
+                strbBox.state = strobeView.enable ? .on: .off
             }
-            // Update views
-            strobeView.needsDisplay = true
-            staffView.needsDisplay = true
 
         case "z":
             // Update zoom

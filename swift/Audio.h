@@ -143,9 +143,6 @@ typedef struct
     double f;
     double fr;
     double c;
-    bool lock;
-    bool zoom;
-    bool mult;
     int count;
     int trans;
     int n;
@@ -156,19 +153,10 @@ Display disp;
 typedef struct
 {
     bool changed;
-    bool enable;
     int colours;
     double c;
 } Strobe;
 Strobe strobe;
-
-// Staff data
-typedef struct
-{
-    bool enable;
-    int note;
-} Staff;
-Staff staff;
 
 // Meter data
 typedef struct

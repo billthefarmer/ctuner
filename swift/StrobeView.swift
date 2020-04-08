@@ -26,9 +26,6 @@ import Cocoa
 
 class StrobeView: TunerView
 {
-    @objc var cents = Double(0)
-    @objc var enable = false
-
     // Colours
     let colours: [[[CGFloat]]] =
       [[[0.25, 0.25, 1, 1], [0.25, 1, 1, 1]],
@@ -36,6 +33,18 @@ class StrobeView: TunerView
        [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]]
 
     let kMaxColours: Int32 = 3
+
+    @objc var cents = Double(0)
+    @objc var colour = 1
+    @objc var enable = false
+    {
+        didSet
+        {
+            isHidden = !enable
+            needsDisplay = true
+        }
+    }
+    @objc var changed = false
 
     var foreground: NSColor!
     var background: NSColor!
@@ -50,16 +59,12 @@ class StrobeView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            strobe.enable = !strobe.enable
-            staff.enable = !strobe.enable
+            enable = !enable
+            staffView.enable = !enable
             if (strbBox != nil)
             {
-                strbBox.state = strobe.enable ? .on: .off
+                strbBox.state = enable ? .on: .off
             }
-
-            isHidden = !strobe.enable
-            staffView.isHidden = !staff.enable
-            needsDisplay = true
         }
     }
 
@@ -74,14 +79,14 @@ class StrobeView: TunerView
         if (gradient == nil || strobe.changed)
         {
 	    // Create colours
-	    foreground = NSColor(red: colours[Int(strobe.colours)][0][0],
-                                 green: colours[Int(strobe.colours)][0][1],
-                                 blue: colours[Int(strobe.colours)][0][2],
-                                 alpha: colours[Int(strobe.colours)][0][3])
-	    background = NSColor(red: colours[Int(strobe.colours)][1][0],
-                                 green: colours[Int(strobe.colours)][1][1],
-                                 blue: colours[Int(strobe.colours)][1][2],
-                                 alpha: colours[Int(strobe.colours)][1][3])
+	    foreground = NSColor(red: colours[colour][0][0],
+                                 green: colours[colour][0][1],
+                                 blue: colours[colour][0][2],
+                                 alpha: colours[colour][0][3])
+	    background = NSColor(red: colours[colour][1][0],
+                                 green: colours[colour][1][1],
+                                 blue: colours[colour][1][2],
+                                 alpha: colours[colour][1][3])
 	    // Create gradient
 	    gradient = NSGradient(colors: [foreground, background, foreground])
 	    strobe.changed = false;

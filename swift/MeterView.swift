@@ -35,10 +35,10 @@ class MeterView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            disp.lock = !disp.lock
+            displayView.lock = !displayView.lock
             if (lockBox != nil)
             {
-                lockBox.state = disp.lock ? .on: .off
+                lockBox.state = displayView.lock ? .on: .off
             }
             displayView.needsDisplay = true
         }

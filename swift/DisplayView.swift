@@ -38,10 +38,10 @@ class DisplayView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            disp.lock = !disp.lock
+            lock = !lock
             if (lockBox != nil)
             {
-                lockBox.state = disp.lock ? .on: .off
+                lockBox.state = lock ? .on: .off
             }
             needsDisplay = true
         }
@@ -61,7 +61,7 @@ class DisplayView: TunerView
         // Drawing code here.
         NSEraseRect(rect)
 
-        if (disp.mult)
+        if (mult)
         {
 	    // Select font
             let font = NSFont.systemFont(ofSize: textSizeSmall)
@@ -251,7 +251,7 @@ class DisplayView: TunerView
         }
 
         // Display L if locked
-        if (disp.lock == true)
+        if (lock == true)
         {
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedString.Key: Any] = [.font: font]

@@ -676,7 +676,7 @@ void (^ProcessAudio)() = ^
         }
 
         // If display not locked, find maxima and add to list
-	if (!disp.lock && count < Length(maxima) &&
+	if (!displayView.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 4) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	{
@@ -802,7 +802,7 @@ void (^ProcessAudio)() = ^
     }
 
     // If display not locked
-    if (!disp.lock)
+    if (!displayView.lock)
     {
         // Update scope window
         scopeView.needsDisplay = true;
@@ -833,7 +833,7 @@ void (^ProcessAudio)() = ^
         static long delay;
 
 	// If display not locked
-	if (!disp.lock && (delay % audio.divisor) == 0)
+	if (!displayView.lock && (delay % audio.divisor) == 0)
 	{
 	    // Update the display struct
 	    disp.f = f;
@@ -846,8 +846,7 @@ void (^ProcessAudio)() = ^
             displayView.needsDisplay = true;
 
 	    // Update staff
-	    staff.note = note;
-	    staffView.needsDisplay = true;
+	    staffView.note = note;
 
 	    // Update meter
 	    meter.c = c;
@@ -867,7 +866,7 @@ void (^ProcessAudio)() = ^
     else
     {
 	// If display not locked
-	if (!disp.lock)
+	if (!displayView.lock)
 	{
 
 	    if (timer == kTimerCount)
@@ -882,8 +881,7 @@ void (^ProcessAudio)() = ^
                 displayView.needsDisplay = true;
 
 		// Update staff
-		staff.note = 0;
-		staffView.needsDisplay = true;
+		staffView.note = 0;
 
 		// Update meter
 		meter.c = 0.0;

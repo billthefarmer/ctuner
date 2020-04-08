@@ -23,9 +23,6 @@ import Cocoa
 
 class StaffView: TunerView
 {
-    @objc var note = 0
-    @objc var enable = true
-
     // Treble clef
     let tc: [[CGFloat]] =
     [
@@ -159,21 +156,33 @@ class StaffView: TunerView
         kSharp, kNatural, kFlat, kNatural, kFlat, kNatural
       ]
 
+    @objc var note = 0 as Int32
+    {
+        didSet
+        {
+            needsDisplay = true
+        }
+    }
+    @objc var enable = true
+    {
+        didSet
+        {
+            isHidden = !enable
+            needsDisplay = true
+        }
+    }
+
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
-            staff.enable = !staff.enable
-            strobe.enable = !staff.enable
+            enable = !enable
+            strobeView.enable = !enable
             if (strbBox != nil)
             {
-                strbBox.state = strobe.enable ? .on: .off
+                strbBox.state = strobeView.enable ? .on: .off
             }
-
-            isHidden = !staff.enable
-            strobeView.isHidden = !strobe.enable
-            needsDisplay = true
         }
     }
 
@@ -364,7 +373,7 @@ class StaffView: TunerView
         // Calculate transform for note
         let xBase = CGFloat(lineWidth) * 14;
         let yBase = CGFloat(lineHeight) * 14;
-        let note = staff.note - trans[Int(disp.trans)];
+        let note = self.note - trans[Int(disp.trans)];
         var octave = note / kOctave;
         let index = (note + kOctave) % kOctave;
 

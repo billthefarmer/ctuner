@@ -215,9 +215,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "Lock display", "Note filter"]
 
         let values = [spectrum.zoom, audio.filt,
-                      disp.mult, audio.fund,
-                      strobe.enable, audio.down,
-                      disp.lock, audio.note]
+                      displayView.mult, audio.fund,
+                      strobeView.enable, audio.down,
+                      displayView.lock, audio.note]
 
         let tags = [kZoom, kFilt, kMult, kFund,
                     kStrobe, kDown, kLock, kNote]
@@ -324,7 +324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourPopUp.pullsDown = false
         colourPopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
-        colourPopUp.selectItem(at: Int(strobe.colours))
+        colourPopUp.selectItem(at: strobeView.colour)
         colourPopUp.tag = kColour
         colourPopUp.target = self
         colourPopUp.action = #selector(popUpChanged)
@@ -597,7 +597,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             scopeView.needsDisplay = true
 
         case kMult:
-            disp.mult = (sender.state == .on) ? true: false
+            displayView.mult = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kFund:
@@ -605,11 +605,11 @@ class AppDelegate: NSObject, NSApplicationDelegate
             scopeView.needsDisplay = true
 
         case kStrobe:
-            strobe.enable = (sender.state == .on) ? true: false
-            staff.enable = !strobe.enable
+            strobeView.enable = (sender.state == .on) ? true: false
+            staffView.enable = !strobeView.enable
             // Hide views, animation here
-            strobeView.isHidden = !strobe.enable
-            staffView.isHidden = !staff.enable
+            strobeView.isHidden = !strobeView.enable
+            staffView.isHidden = !staffView.enable
             strobeView.needsDisplay = true
             staffView.needsDisplay = true
 
@@ -618,7 +618,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             spectrumView.needsDisplay = true
 
         case kLock:
-            disp.lock = (sender.state == .on) ? true: false
+            displayView.lock = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kNote:
@@ -638,7 +638,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
         case kColour:
             // Update strobe view
-            strobe.colours = Int32(index)
+            strobeView.colour = index
             strobe.changed = true
             strobeView.needsDisplay = true
 
@@ -718,7 +718,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             disp.trans = 6
             spectrum.zoom = true
             spectrum.expand = 1
-            strobe.colours = 1
+            strobeView.colour = 1
             return
         }
 
@@ -726,7 +726,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         audio.temper = Int32(defaults.integer(forKey: "Temper"))
         audio.key = Int32(defaults.integer(forKey: "Key"))
         disp.trans = Int32(defaults.integer(forKey: "Trans"))
-        strobe.colours = Int32(defaults.integer(forKey: "Colours"))
+        strobeView.colour = defaults.integer(forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
             switch index
@@ -740,10 +740,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
                 scopeView.needsDisplay = true
 
             case 2:
-                strobe.enable = defaults.bool(forKey: key)
-                staff.enable = !strobe.enable
-                strobeView.isHidden = !strobe.enable
-                staffView.isHidden = !staff.enable
+                strobeView.enable = defaults.bool(forKey: key)
+                staffView.enable = !strobeView.enable
+                strobeView.isHidden = !strobeView.enable
+                staffView.isHidden = !staffView.enable
                 strobeView.needsDisplay = true
                 staffView.needsDisplay = true
 
@@ -761,14 +761,14 @@ class AppDelegate: NSObject, NSApplicationDelegate
     {
         let keys = ["Zoom", "Filter", "Strobe", "Down"]
         let values = [spectrum.zoom, audio.filt,
-                      strobe.enable, audio.down]
+                      strobeView.enable, audio.down]
 
         let defaults = UserDefaults.standard
         defaults.set(audio.reference, forKey: "Ref")
         defaults.set(audio.temper, forKey: "Temper")
         defaults.set(audio.key, forKey: "Key")
         defaults.set(disp.trans, forKey: "Trans")
-        defaults.set(strobe.colours, forKey: "Colours")
+        defaults.set(strobeView.colour, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
             defaults.set(values[index], forKey: key)
