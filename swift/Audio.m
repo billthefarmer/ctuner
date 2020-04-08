@@ -476,7 +476,7 @@ void (^ProcessAudio)() = ^
 	spectrum.length = kRange;
 	spectrum.values = values;
 
-	display.maxima = maxima;
+	disp.maxima = maxima;
 
 	fps = audio.sample / (double)kSamples;
 	expect = 2.0 * M_PI * (double)(audio.frames / audio.divisor) /
@@ -666,17 +666,17 @@ void (^ProcessAudio)() = ^
             int o = note / kOctave;
 
             // Ignore too high
-            if (o >= Length(filter.octave))
+            if (o >= Length(filters.octave))
                 continue;
 
             // Ignore if filtered
-            if (!filter.note[n] ||
-                !filter.octave[o])
+            if (!filters.note[n] ||
+                !filters.octave[o])
                 continue;
         }
 
         // If display not locked, find maxima and add to list
-	if (!display.lock && count < Length(maxima) &&
+	if (!disp.lock && count < Length(maxima) &&
 	    xa[i] > kMin && xa[i] > (max / 4) &&
 	    dxa[i] > 0.0 && dxa[i + 1] < 0.0)
 	{
@@ -802,7 +802,7 @@ void (^ProcessAudio)() = ^
     }
 
     // If display not locked
-    if (!display.lock)
+    if (!disp.lock)
     {
         // Update scope window
         scopeView.needsDisplay = true;
@@ -833,14 +833,14 @@ void (^ProcessAudio)() = ^
         static long delay;
 
 	// If display not locked
-	if (!display.lock && (delay % audio.divisor) == 0)
+	if (!disp.lock && (delay % audio.divisor) == 0)
 	{
 	    // Update the display struct
-	    display.f = f;
-	    display.fr = fr;
-	    display.c = c;
-	    display.n = note;
-	    display.count = count;
+	    disp.f = f;
+	    disp.fr = fr;
+	    disp.c = c;
+	    disp.n = note;
+	    disp.count = count;
 
 	    // Update display
             displayView.needsDisplay = true;
@@ -867,16 +867,16 @@ void (^ProcessAudio)() = ^
     else
     {
 	// If display not locked
-	if (!display.lock)
+	if (!disp.lock)
 	{
 
 	    if (timer == kTimerCount)
 	    {
-		display.f = 0.0;
-		display.fr = 0.0;
-		display.c = 0.0;
-		display.n = 0;
-		display.count = 0;
+		disp.f = 0.0;
+		disp.fr = 0.0;
+		disp.c = 0.0;
+		disp.n = 0;
+		disp.count = 0;
 
 		// Update display
                 displayView.needsDisplay = true;
@@ -908,25 +908,25 @@ void (^ProcessAudio)() = ^
 // getNote
 bool getNote(int index)
 {
-    return filter.note[index];
+    return filters.note[index];
 }
 
 // setNote
 void setNote(bool value, int index)
 {
-    filter.note[index] = value;
+    filters.note[index] = value;
 }
 
 // getOctave
 bool getOctave(int index)
 {
-    return filter.octave[index];
+    return filters.octave[index];
 }
 
 // setOctave
 void setOctave(bool value, int index)
 {
-    filter.octave[index] = value;
+    filters.octave[index] = value;
 }
 
 // AudioUnitErrString

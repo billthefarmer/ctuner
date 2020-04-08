@@ -88,13 +88,13 @@ class TunerView: NSView
             let string =
               String(format:
                        "%@%@%d %+4.2lf\u{00A2} %4.2lfHz %4.2lfHz %4.2lfHz\n",
-                     notes[Int(displayData.n - trans[Int(displayData.trans)] +
+                     notes[Int(disp.n - trans[Int(disp.trans)] +
                                  kOctave) % notes.endIndex],
-		     sharps[Int(displayData.n - trans[Int(displayData.trans)] +
+		     sharps[Int(disp.n - trans[Int(disp.trans)] +
                                   kOctave) % sharps.endIndex],
-                     displayData.n / kOctave, displayData.c * 100.0,
-                     displayData.fr, displayData.f,
-                     displayData.f - displayData.fr)
+                     disp.n / kOctave, disp.c * 100.0,
+                     disp.fr, disp.f,
+                     disp.f - disp.fr)
 
             // Put it on the pasteboard
             let pboard = NSPasteboard.general
@@ -103,72 +103,72 @@ class TunerView: NSView
 
         case "k":
             // Change colour
-            strobeData.colours += 1
-            if (strobeData.colours >= strobeView.kMaxColours)
+            strobe.colours += 1
+            if (strobe.colours >= strobeView.kMaxColours)
             {
-                strobeData.colours = 0
+                strobe.colours = 0
             }
 
             // Update popup
             if (colourPopUp != nil)
             {
-                colourPopUp.selectItem(at: Int(strobeData.colours))
+                colourPopUp.selectItem(at: Int(strobe.colours))
             }
 
             // Update strobe view
-            strobeData.changed = true
+            strobe.changed = true
             strobeView.needsDisplay = true
 
         case "d":
             // Update downsampling
-            audioData.down = !audioData.down
+            audio.down = !audio.down
             if (downBox != nil)
             {
-                downBox.state = audioData.down ? .on: .off
+                downBox.state = audio.down ? .on: .off
             }
             // Update spectrum view
             spectrumView.needsDisplay = true
 
         case "f":
             // Update filter
-            audioData.filt = !audioData.filt
+            audio.filt = !audio.filt
             if (filtBox != nil)
             {
-                filtBox.state = audioData.filt ? .on: .off
+                filtBox.state = audio.filt ? .on: .off
             }
             // Update scope view
             scopeView.needsDisplay = true
 
         case "l":
             // Update display lock
-            displayData.lock = !displayData.lock
+            disp.lock = !disp.lock
             if (lockBox != nil)
             {
-                lockBox.state = displayData.lock ? .on: .off
+                lockBox.state = disp.lock ? .on: .off
             }
             // Update display
             displayView.needsDisplay = true
 
         case "m":
             // Update multiple notes
-            displayData.mult = !displayData.mult
+            disp.mult = !disp.mult
             if (multBox != nil)
             {
-                multBox.state = displayData.mult ? .on: .off
+                multBox.state = disp.mult ? .on: .off
             }
             // Update display
             displayView.needsDisplay = true
 
         case "s":
             // Switch views
-            strobeData.enable = !strobeData.enable
-            staffData.enable = !strobeData.enable
+            strobe.enable = !strobe.enable
+            staff.enable = !strobe.enable
             // Hide views, animation here
-            strobeView.isHidden = !strobeData.enable
-            staffView.isHidden = !staffData.enable
+            strobeView.isHidden = !strobe.enable
+            staffView.isHidden = !staff.enable
             if (strbBox != nil)
             {
-                strbBox.state = strobeData.enable ? .on: .off
+                strbBox.state = strobe.enable ? .on: .off
             }
             // Update views
             strobeView.needsDisplay = true
@@ -176,40 +176,40 @@ class TunerView: NSView
 
         case "z":
             // Update zoom
-            spectrumData.zoom = !spectrumData.zoom
+            spectrum.zoom = !spectrum.zoom
             if (zoomBox != nil)
             {
-                zoomBox.state = spectrumData.zoom ? .on: .off
+                zoomBox.state = spectrum.zoom ? .on: .off
             }
             // Update spectrum view
             spectrumView.needsDisplay = true
 
         case "+":
             // Expand spectrum
-            spectrumData.expand *= 2
-            if (spectrumData.expand > kMaxExpand)
+            spectrum.expand *= 2
+            if (spectrum.expand > kMaxExpand)
             {
-                spectrumData.expand = kMinExpand
+                spectrum.expand = kMinExpand
             }
             if (expandPopUp != nil)
             {
                 expandPopUp
-                  .selectItem(at: Int(log2(Float(spectrumData.expand))))
+                  .selectItem(at: Int(log2(Float(spectrum.expand))))
             }
             // Update spectrum view
             spectrumView.needsDisplay = true
 
         case "-":
             // Contract spectrum
-            spectrumData.expand /= 2
-            if (spectrumData.expand < kMinExpand)
+            spectrum.expand /= 2
+            if (spectrum.expand < kMinExpand)
             {
-                spectrumData.expand = kMaxExpand
+                spectrum.expand = kMaxExpand
             }
             if (expandPopUp != nil)
             {
                 expandPopUp.selectItem(at:
-                                         Int(log2(Float(spectrumData.expand))))
+                                         Int(log2(Float(spectrum.expand))))
             }
             // Update spectrum view
             spectrumView.needsDisplay = true

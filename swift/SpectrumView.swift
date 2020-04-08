@@ -183,10 +183,10 @@ class SpectrumView: TunerView
 	        if (spectrum.values[i] > spectrum.l &&
 		      spectrum.values[i] < spectrum.h)
 	        {
-		    let f = display.maxima[i].f
+		    let f = disp.maxima[i].f
 
 		    // Reference freq
-		    let fr = display.maxima[i].fr
+		    let fr = disp.maxima[i].fr
 
 		    let c = -12.0 * log2(fr / f)
 
@@ -295,11 +295,11 @@ class SpectrumView: TunerView
 	    {
 	        // Show value for values
 
-	        let f = display.maxima[i].f
+	        let f = disp.maxima[i].f
 
 	        // Reference freq
 
-	        let fr = display.maxima[i].fr
+	        let fr = disp.maxima[i].fr
 
 	        let c = -12.0 * log2(fr / f)
 

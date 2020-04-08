@@ -150,7 +150,7 @@ typedef struct
     int trans;
     int n;
 } Display;
-Display display;
+Display disp;
 
 // Strobe data
 typedef struct
@@ -205,8 +205,8 @@ typedef struct
 {
     bool note[12];
     bool octave[9];
-} Filter;
-Filter filter;
+} Filters;
+Filters filters;
 
 // Functions
 OSStatus SetupAudio(void);

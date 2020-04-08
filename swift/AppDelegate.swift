@@ -116,42 +116,42 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                     strobeView, staffView, meterView])
 
         // View height constraints
-        let spectrumHeight = NSLayoutConstraint(item: spectrumView,
+        let spectrumHeight = NSLayoutConstraint(item: spectrumView as Any,
                                                 attribute: .height,
                                                 relatedBy: .equal,
-                                                toItem: scopeView,
+                                                toItem: scopeView as Any,
                                                 attribute: .height,
                                                 multiplier: 1,
                                                 constant: 0)
 
-        let displayHeight = NSLayoutConstraint(item: displayView,
+        let displayHeight = NSLayoutConstraint(item: displayView as Any,
                                                attribute: .height,
                                                relatedBy: .equal,
-                                               toItem: spectrumView,
+                                               toItem: spectrumView as Any,
                                                attribute: .height,
                                                multiplier: 3.25,
                                                constant: 0)
 
-        let strobeHeight = NSLayoutConstraint(item: strobeView,
+        let strobeHeight = NSLayoutConstraint(item: strobeView as Any,
                                               attribute: .height,
                                               relatedBy: .equal,
-                                              toItem: spectrumView,
+                                              toItem: spectrumView as Any,
                                               attribute: .height,
                                               multiplier: 1.375,
                                               constant: 0)
 
-        let staffHeight = NSLayoutConstraint(item: staffView,
+        let staffHeight = NSLayoutConstraint(item: staffView as Any,
                                              attribute: .height,
                                              relatedBy: .equal,
-                                             toItem: spectrumView,
+                                             toItem: spectrumView as Any,
                                              attribute: .height,
                                              multiplier: 1.375,
                                              constant: 0)
 
-        let meterHeight = NSLayoutConstraint(item: meterView,
+        let meterHeight = NSLayoutConstraint(item: meterView as Any,
                                              attribute: .height,
                                              relatedBy: .equal,
-                                             toItem: strobeView,
+                                             toItem: strobeView as Any,
                                              attribute: .height,
                                              multiplier: 1.625,
                                              constant: 0)
@@ -215,9 +215,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "Lock display", "Note filter"]
 
         let values = [spectrum.zoom, audio.filt,
-                      display.mult, audio.fund,
+                      disp.mult, audio.fund,
                       strobe.enable, audio.down,
-                      display.lock, audio.note]
+                      disp.lock, audio.note]
 
         let tags = [kZoom, kFilt, kMult, kFund,
                     kStrobe, kDown, kLock, kNote]
@@ -369,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 			       "-2[Key:B\u{266D}]", "-3[Key:A]",
 			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
-        transPopUp.selectItem(at: Int(display.trans))
+        transPopUp.selectItem(at: Int(disp.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
@@ -597,7 +597,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             scopeView.needsDisplay = true
 
         case kMult:
-            display.mult = (sender.state == .on) ? true: false
+            disp.mult = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kFund:
@@ -618,7 +618,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             spectrumView.needsDisplay = true
 
         case kLock:
-            display.lock = (sender.state == .on) ? true: false
+            disp.lock = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kNote:
@@ -644,7 +644,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         case kTrans:
             // Update display
-            display.trans = Int32(index)
+            disp.trans = Int32(index)
             displayView.needsDisplay = true
             staffView.needsDisplay = true
 
@@ -715,7 +715,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             audio.reference = Double(kA5Reference)
             audio.temper = 8
-            display.trans = 6
+            disp.trans = 6
             spectrum.zoom = true
             spectrum.expand = 1
             strobe.colours = 1
@@ -725,7 +725,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         audio.reference = ref
         audio.temper = Int32(defaults.integer(forKey: "Temper"))
         audio.key = Int32(defaults.integer(forKey: "Key"))
-        display.trans = Int32(defaults.integer(forKey: "Trans"))
+        disp.trans = Int32(defaults.integer(forKey: "Trans"))
         strobe.colours = Int32(defaults.integer(forKey: "Colours"))
         for (index, key) in keys.enumerated()
         {
@@ -767,7 +767,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         defaults.set(audio.reference, forKey: "Ref")
         defaults.set(audio.temper, forKey: "Temper")
         defaults.set(audio.key, forKey: "Key")
-        defaults.set(display.trans, forKey: "Trans")
+        defaults.set(disp.trans, forKey: "Trans")
         defaults.set(strobe.colours, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
@@ -787,9 +787,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
           .takeRetainedValue() as String:
           String(utf8String: AudioUnitErrString(status))!
 
-        alert.informativeText = informativeText + ": " + error +
-          " (" + String(status) + ")"
-
+        alert.informativeText = String(format: "%@ %@ (%x)", informativeText,
+                                       error, status)
         alert.runModal()
     }
 
