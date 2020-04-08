@@ -23,6 +23,8 @@ import Cocoa
 
 class StaffView: TunerView
 {
+    @objc var note = 0
+    @objc var enable = true
 
     // Treble clef
     let tc: [[CGFloat]] =
@@ -162,15 +164,15 @@ class StaffView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            staffData.enable = !staffData.enable
-            strobeData.enable = !staffData.enable
+            staff.enable = !staff.enable
+            strobe.enable = !staff.enable
             if (strbBox != nil)
             {
-                strbBox.state = strobeData.enable ? .on: .off
+                strbBox.state = strobe.enable ? .on: .off
             }
 
-            isHidden = !staffData.enable
-            strobeView.isHidden = !strobeData.enable
+            isHidden = !staff.enable
+            strobeView.isHidden = !strobe.enable
             needsDisplay = true
         }
     }
@@ -362,7 +364,7 @@ class StaffView: TunerView
         // Calculate transform for note
         let xBase = CGFloat(lineWidth) * 14;
         let yBase = CGFloat(lineHeight) * 14;
-        let note = staffData.note - trans[Int(displayData.trans)];
+        let note = staff.note - trans[Int(display.trans)];
         var octave = note / kOctave;
         let index = (note + kOctave) % kOctave;
 

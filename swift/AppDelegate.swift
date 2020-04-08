@@ -214,10 +214,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
                       "Display strobe", "Downsample",
                       "Lock display", "Note filter"]
 
-        let values = [spectrumData.zoom, audioData.filt,
-                      displayData.mult, audioData.fund,
-                      strobeData.enable, audioData.down,
-                      displayData.lock, audioData.note]
+        let values = [spectrum.zoom, audio.filt,
+                      display.mult, audio.fund,
+                      strobe.enable, audio.down,
+                      display.lock, audio.note]
 
         let tags = [kZoom, kFilt, kMult, kFund,
                     kStrobe, kDown, kLock, kNote]
@@ -306,7 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandPopUp.pullsDown = false
         expandPopUp.addItems(withTitles:
                                ["x 1", "x 2", "x 4", "x 8", "x 16"])
-        expandPopUp.selectItem(at: Int(log2(Float(spectrumData.expand))))
+        expandPopUp.selectItem(at: Int(log2(Float(spectrum.expand))))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
         expandPopUp.action = #selector(popUpChanged)
@@ -324,7 +324,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourPopUp.pullsDown = false
         colourPopUp.addItems(withTitles:
                          ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
-        colourPopUp.selectItem(at: Int(strobeData.colours))
+        colourPopUp.selectItem(at: Int(strobe.colours))
         colourPopUp.tag = kColour
         colourPopUp.target = self
         colourPopUp.action = #selector(popUpChanged)
@@ -340,7 +340,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refLabel.drawsBackground = false
         refText = NSTextField()
         refText.tag = kRefText
-        refText.doubleValue = audioData.reference
+        refText.doubleValue = audio.reference
         refText.target = self
         refText.action = #selector(refChanged)
         refStep = NSStepper()
@@ -348,7 +348,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         refStep.maxValue = 480.0
         refStep.minValue = 420.0
         refStep.increment = 1.0
-        refStep.doubleValue = audioData.reference
+        refStep.doubleValue = audio.reference
         refStep.target = self
         refStep.action = #selector(refChanged)
 
@@ -369,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 			       "-2[Key:B\u{266D}]", "-3[Key:A]",
 			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
-        transPopUp.selectItem(at: Int(displayData.trans))
+        transPopUp.selectItem(at: Int(display.trans))
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
@@ -402,7 +402,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                               "Barnes 1977", "Lambert 1774",
                               "Schlick (H. Vogel)", "Meantone # (-1/4)",
                               "Meantone b (-1/4)", "Lehman-Bach"])
-        tempPopUp.selectItem(at: Int(audioData.temper))
+        tempPopUp.selectItem(at: Int(audio.temper))
         tempPopUp.tag = kTemp
         tempPopUp.target = self
         tempPopUp.action = #selector(popUpChanged)
@@ -422,7 +422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
                             ["C", "C\u{266F}", "D", "E\u{266D}",
                              "E", "F", "F\u{266F}", "G",
                              "A\u{266D}", "A", "B\u{266D}", "B"])
-        keyPopUp.selectItem(at: Int(audioData.key))
+        keyPopUp.selectItem(at: Int(audio.key))
         keyPopUp.tag = kKey
         keyPopUp.target = self
         keyPopUp.action = #selector(popUpChanged)
@@ -589,40 +589,40 @@ class AppDelegate: NSObject, NSApplicationDelegate
         switch sender.tag
         {
         case kZoom:
-            spectrumData.zoom = (sender.state == .on) ? true: false
+            spectrum.zoom = (sender.state == .on) ? true: false
             spectrumView.needsDisplay = true
 
         case kFilt:
-            audioData.filt = (sender.state == .on) ? true: false
+            audio.filt = (sender.state == .on) ? true: false
             scopeView.needsDisplay = true
 
         case kMult:
-            displayData.mult = (sender.state == .on) ? true: false
+            display.mult = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kFund:
-            audioData.fund = (sender.state == .on) ? true: false
+            audio.fund = (sender.state == .on) ? true: false
             scopeView.needsDisplay = true
 
         case kStrobe:
-            strobeData.enable = (sender.state == .on) ? true: false
-            staffData.enable = !strobeData.enable
+            strobe.enable = (sender.state == .on) ? true: false
+            staff.enable = !strobe.enable
             // Hide views, animation here
-            strobeView.isHidden = !strobeData.enable
-            staffView.isHidden = !staffData.enable
+            strobeView.isHidden = !strobe.enable
+            staffView.isHidden = !staff.enable
             strobeView.needsDisplay = true
             staffView.needsDisplay = true
 
         case kDown:
-            audioData.down = (sender.state == .on) ? true: false
+            audio.down = (sender.state == .on) ? true: false
             spectrumView.needsDisplay = true
 
         case kLock:
-            displayData.lock = (sender.state == .on) ? true: false
+            display.lock = (sender.state == .on) ? true: false
             displayView.needsDisplay = true
 
         case kNote:
-            audioData.note = (sender.state == .on) ? true: false
+            audio.note = (sender.state == .on) ? true: false
             spectrumView.needsDisplay = true
 
         default:
@@ -638,25 +638,25 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
         case kColour:
             // Update strobe view
-            strobeData.colours = Int32(index)
-            strobeData.changed = true
+            strobe.colours = Int32(index)
+            strobe.changed = true
             strobeView.needsDisplay = true
 
         case kTrans:
             // Update display
-            displayData.trans = Int32(index)
+            display.trans = Int32(index)
             displayView.needsDisplay = true
             staffView.needsDisplay = true
 
         case kTemp:
             // Update display
-            audioData.temper = Int32(index)
+            audio.temper = Int32(index)
             displayView.needsDisplay = true
             staffView.needsDisplay = true
 
         case kKey:
             // Update display
-            audioData.key = Int32(index)
+            audio.key = Int32(index)
             displayView.needsDisplay = true
             staffView.needsDisplay = true
 
@@ -681,7 +681,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             break
         }
 
-        audioData.reference = value
+        audio.reference = value
         displayView.needsDisplay = true
     }
 
@@ -713,42 +713,42 @@ class AppDelegate: NSObject, NSApplicationDelegate
         let ref = defaults.double(forKey: "Ref")
         if (ref == 0)
         {
-            audioData.reference = Double(kA5Reference)
-            audioData.temper = 8
-            displayData.trans = 6
-            spectrumData.zoom = true
-            spectrumData.expand = 1
-            strobeData.colours = 1
+            audio.reference = Double(kA5Reference)
+            audio.temper = 8
+            display.trans = 6
+            spectrum.zoom = true
+            spectrum.expand = 1
+            strobe.colours = 1
             return
         }
 
-        audioData.reference = ref
-        audioData.temper = Int32(defaults.integer(forKey: "Temper"))
-        audioData.key = Int32(defaults.integer(forKey: "Key"))
-        displayData.trans = Int32(defaults.integer(forKey: "Trans"))
-        strobeData.colours = Int32(defaults.integer(forKey: "Colours"))
+        audio.reference = ref
+        audio.temper = Int32(defaults.integer(forKey: "Temper"))
+        audio.key = Int32(defaults.integer(forKey: "Key"))
+        display.trans = Int32(defaults.integer(forKey: "Trans"))
+        strobe.colours = Int32(defaults.integer(forKey: "Colours"))
         for (index, key) in keys.enumerated()
         {
             switch index
             {
             case 0:
-                spectrumData.zoom = defaults.bool(forKey: key)
+                spectrum.zoom = defaults.bool(forKey: key)
                 spectrumView.needsDisplay = true
 
             case 1:
-                audioData.filt = defaults.bool(forKey: key)
+                audio.filt = defaults.bool(forKey: key)
                 scopeView.needsDisplay = true
 
             case 2:
-                strobeData.enable = defaults.bool(forKey: key)
-                staffData.enable = !strobeData.enable
-                strobeView.isHidden = !strobeData.enable
-                staffView.isHidden = !staffData.enable
+                strobe.enable = defaults.bool(forKey: key)
+                staff.enable = !strobe.enable
+                strobeView.isHidden = !strobe.enable
+                staffView.isHidden = !staff.enable
                 strobeView.needsDisplay = true
                 staffView.needsDisplay = true
 
             case 3:
-                audioData.down = defaults.bool(forKey: key)
+                audio.down = defaults.bool(forKey: key)
 
             default:
                 break
@@ -760,15 +760,15 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func savePreferences()
     {
         let keys = ["Zoom", "Filter", "Strobe", "Down"]
-        let values = [spectrumData.zoom, audioData.filt,
-                      strobeData.enable, audioData.down]
+        let values = [spectrum.zoom, audio.filt,
+                      strobe.enable, audio.down]
 
         let defaults = UserDefaults.standard
-        defaults.set(audioData.reference, forKey: "Ref")
-        defaults.set(audioData.temper, forKey: "Temper")
-        defaults.set(audioData.key, forKey: "Key")
-        defaults.set(displayData.trans, forKey: "Trans")
-        defaults.set(strobeData.colours, forKey: "Colours")
+        defaults.set(audio.reference, forKey: "Ref")
+        defaults.set(audio.temper, forKey: "Temper")
+        defaults.set(audio.key, forKey: "Key")
+        defaults.set(display.trans, forKey: "Trans")
+        defaults.set(strobe.colours, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
             defaults.set(values[index], forKey: key)

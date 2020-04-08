@@ -117,8 +117,8 @@ typedef struct
 {
     double *data;
     int length;
-} ScopeData;
-ScopeData scopeData;
+} Scope;
+Scope scope;
 
 // Spectrum data
 typedef struct
@@ -133,8 +133,8 @@ typedef struct
     double h;
     double *data;
     double *values;
-} SpectrumData;
-SpectrumData spectrumData;
+} Spectrum;
+Spectrum spectrum;
 
 // Display data
 typedef struct
@@ -149,8 +149,8 @@ typedef struct
     int count;
     int trans;
     int n;
-} DisplayData;
-DisplayData displayData;
+} Display;
+Display display;
 
 // Strobe data
 typedef struct
@@ -159,23 +159,23 @@ typedef struct
     bool enable;
     int colours;
     double c;
-} StrobeData;
-StrobeData strobeData;
+} Strobe;
+Strobe strobe;
 
 // Staff data
 typedef struct
 {
     bool enable;
     int note;
-} StaffData;
-StaffData staffData;
+} Staff;
+Staff staff;
 
 // Meter data
 typedef struct
 {
     double c;
-} MeterData;
-MeterData meterData;
+} Meter;
+Meter meter;
 
 // Temperaments data
 double temperamentValues[32][12] =
@@ -197,16 +197,16 @@ typedef struct
     bool filt;
     bool note;
     bool down;
-} AudioData;
-AudioData audioData;
+} Audio;
+Audio audio;
 
 // Audio filter
 typedef struct
 {
     bool note[12];
     bool octave[9];
-} FilterData;
-FilterData filterData;
+} Filter;
+Filter filter;
 
 // Functions
 OSStatus SetupAudio(void);

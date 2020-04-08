@@ -26,6 +26,9 @@ import Cocoa
 
 class StrobeView: TunerView
 {
+    @objc var cents = Double(0)
+    @objc var enable = false
+
     // Colours
     let colours: [[[CGFloat]]] =
       [[[0.25, 0.25, 1, 1], [0.25, 1, 1, 1]],
@@ -40,22 +43,22 @@ class StrobeView: TunerView
     var gradient: NSGradient!
 
     var mc = 0.0
-    var mx: CGFloat = 0
+    var mx = CGFloat(0)
 
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
-            strobeData.enable = !strobeData.enable
-            staffData.enable = !strobeData.enable
+            strobe.enable = !strobe.enable
+            staff.enable = !strobe.enable
             if (strbBox != nil)
             {
-                strbBox.state = strobeData.enable ? .on: .off
+                strbBox.state = strobe.enable ? .on: .off
             }
 
-            isHidden = !strobeData.enable
-            staffView.isHidden = !staffData.enable
+            isHidden = !strobe.enable
+            staffView.isHidden = !staff.enable
             needsDisplay = true
         }
     }
@@ -68,23 +71,23 @@ class StrobeView: TunerView
         // Drawing code here.
 
         // Create patterns
-        if (gradient == nil || strobeData.changed)
+        if (gradient == nil || strobe.changed)
         {
 	    // Create colours
-	    foreground = NSColor(red: colours[Int(strobeData.colours)][0][0],
-                                 green: colours[Int(strobeData.colours)][0][1],
-                                 blue: colours[Int(strobeData.colours)][0][2],
-                                 alpha: colours[Int(strobeData.colours)][0][3])
-	    background = NSColor(red: colours[Int(strobeData.colours)][1][0],
-                                 green: colours[Int(strobeData.colours)][1][1],
-                                 blue: colours[Int(strobeData.colours)][1][2],
-                                 alpha: colours[Int(strobeData.colours)][1][3])
+	    foreground = NSColor(red: colours[Int(strobe.colours)][0][0],
+                                 green: colours[Int(strobe.colours)][0][1],
+                                 blue: colours[Int(strobe.colours)][0][2],
+                                 alpha: colours[Int(strobe.colours)][0][3])
+	    background = NSColor(red: colours[Int(strobe.colours)][1][0],
+                                 green: colours[Int(strobe.colours)][1][1],
+                                 blue: colours[Int(strobe.colours)][1][2],
+                                 alpha: colours[Int(strobe.colours)][1][3])
 	    // Create gradient
 	    gradient = NSGradient(colors: [foreground, background, foreground])
-	    strobeData.changed = false;
+	    strobe.changed = false;
         }
 
-	mc = ((7 * mc) + strobeData.c) / 8
+	mc = ((7 * mc) + strobe.c) / 8
 	mx += CGFloat(mc * 50)
 
         let size = height / 4

@@ -26,17 +26,19 @@ import Cocoa
 // TunerView
 class MeterView: TunerView
 {
-    var cents: Double = 0
+    @objc var cents = Double(0)
+
+    var mc = Double(0)
 
     // mouseDown
     override func mouseDown(with event: NSEvent)
     {
         if (event.type == .leftMouseDown)
         {
-            displayData.lock = !displayData.lock
+            display.lock = !display.lock
             if (lockBox != nil)
             {
-                lockBox.state = displayData.lock ? .on: .off
+                lockBox.state = display.lock ? .on: .off
             }
             displayView.needsDisplay = true
         }
@@ -48,7 +50,7 @@ class MeterView: TunerView
         super.draw(dirtyRect)
 
         // Do the inertia calculation
-        cents = ((cents * 19) + meterData.c) / 20
+        mc = ((mc * 19) + meter.c) / 20
 
         // Context
         let context = NSGraphicsContext.current!
@@ -152,7 +154,7 @@ class MeterView: TunerView
         // Transform
         let scale = AffineTransform(scale: height / 16)
         let translate =
-          AffineTransform(translationByX: CGFloat(cents) * (width * 10 / 11),
+          AffineTransform(translationByX: CGFloat(mc) * (width * 10 / 11),
                           byY: 0)
         thumb.transform(using: scale)
         thumb.transform(using: translate)

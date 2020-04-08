@@ -29,10 +29,10 @@ class ScopeView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            audioData.filt = !audioData.filt
+            audio.filt = !audio.filt
             if (filtBox != nil)
             {
-                filtBox.state = audioData.filt ? .on: .off
+                filtBox.state = audio.filt ? .on: .off
             }
             needsDisplay = true;
         }
@@ -69,7 +69,7 @@ class ScopeView: TunerView
                                     to: NSMakePoint(rect.maxX, -y))
         }
 
-        if (scopeData.data == nil)
+        if (scope.data == nil)
         {
             return
         }
@@ -86,7 +86,7 @@ class ScopeView: TunerView
 
         for i in 1 ..< Int(width)
         {
-	    dx = scopeData.data[i] - scopeData.data[i - 1]
+	    dx = scope.data[i] - scope.data[i - 1]
 	    if (maxdx < dx)
 	    {
 	        maxdx = dx
@@ -118,12 +118,12 @@ class ScopeView: TunerView
 
         for i in 0 ..< Int(width)
         {
-	    if (max < abs(scopeData.data[n + i]))
+	    if (max < abs(scope.data[n + i]))
             {
-	        max = abs(scopeData.data[n + i])
+	        max = abs(scope.data[n + i])
             }
 
-	    let y = scopeData.data[n + i] / yscale
+	    let y = scope.data[n + i] / yscale
 	    path.line(to: NSMakePoint(rect.minX + CGFloat(i), CGFloat(y)))
         }
 
@@ -136,7 +136,7 @@ class ScopeView: TunerView
            .font: font]
 
         // Show F if filtered
-        if (audioData.filt)
+        if (audio.filt)
         {
             "F".draw(at: NSMakePoint(rect.minX + 2,
                                      rect.midY - kTextSize - 5),
@@ -144,7 +144,7 @@ class ScopeView: TunerView
         }
 
         // Show FF if fundamental filter
-        if (audioData.fund)
+        if (audio.fund)
         {
             "FF".draw(at: NSMakePoint(rect.minX + 2, -rect.midY + 2),
                      withAttributes: attribs)

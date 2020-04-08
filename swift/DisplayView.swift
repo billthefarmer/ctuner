@@ -23,6 +23,14 @@ import Cocoa
 
 class DisplayView: TunerView
 {
+    @objc var lock = false
+    @objc var mult = false
+    @objc var trans = 0
+    @objc var n = 0
+    @objc var c = 0.0
+    @objc var f = 0.0
+    @objc var fr = 0.0
+
     let kTextSize: CGFloat = 12
 
     // mouseDown
@@ -30,10 +38,10 @@ class DisplayView: TunerView
     {
         if (event.type == .leftMouseDown)
         {
-            displayData.lock = !displayData.lock
+            display.lock = !display.lock
             if (lockBox != nil)
             {
-                lockBox.state = displayData.lock ? .on: .off
+                lockBox.state = display.lock ? .on: .off
             }
             needsDisplay = true
         }
@@ -53,7 +61,7 @@ class DisplayView: TunerView
         // Drawing code here.
         NSEraseRect(rect)
 
-        if (displayData.mult)
+        if (display.mult)
         {
 	    // Select font
             let font = NSFont.systemFont(ofSize: textSizeSmall)
@@ -64,54 +72,54 @@ class DisplayView: TunerView
             var y = rect.maxY - textSizeSmall - 2
 
             // No data, probably
-	    if (displayData.count == 0)
+	    if (display.count == 0)
 	    {
 	        // Display note
                 s = String(format: "%@%@%d",
-                           notes[Int(displayData.n -
-                                       trans[Int(displayData.trans)] +
+                           notes[Int(display.n -
+                                       trans[Int(display.trans)] +
                                        kOctave) % notes.endIndex],
-		           sharps[Int(displayData.n -
-                                        trans[Int(displayData.trans)] +
+		           sharps[Int(display.n -
+                                        trans[Int(display.trans)] +
                                        kOctave) % sharps.endIndex],
-                                  displayData.n / kOctave)
+                                  display.n / kOctave)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display cents
-                s = String(format: "%+4.2lf\u{00A2}", displayData.c * 100.0)
+                s = String(format: "%+4.2lf\u{00A2}", display.c * 100.0)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display reference
-	        s = String(format: "%4.2lfHz", displayData.fr);
+	        s = String(format: "%4.2lfHz", display.fr);
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display frequency
-	        s = String(format: "%4.2lfHz", displayData.f);
+	        s = String(format: "%4.2lfHz", display.f);
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
                 x += s.size(withAttributes: attribs).width +
                   "  ".size(withAttributes: attribs).width
 
 	        // Display difference
-	        s = String(format: "%+4.2lfHz", displayData.f - displayData.fr);
+	        s = String(format: "%+4.2lfHz", display.f - display.fr);
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
             }
 
-            for i in 0 ..< Int(displayData.count)
+            for i in 0 ..< Int(display.count)
             {
                 // Actual freq
-	        let f = displayData.maxima[i].f
+	        let f = display.maxima[i].f
 
 	        // Reference freq
-	        let fr = displayData.maxima[i].fr
+	        let fr = display.maxima[i].fr
 
                 // Note number
-	        let n = displayData.maxima[i].n
+	        let n = display.maxima[i].n
 
                 // Ignore negative
 	        if (n < 0)
@@ -130,9 +138,9 @@ class DisplayView: TunerView
 
 	        // Display note
 	        s = String(format: "%@%@%d",
-                           notes[Int(n - trans[Int(displayData.trans)] +
+                           notes[Int(n - trans[Int(display.trans)] +
                                        kOctave) % notes.endIndex],
-		           sharps[Int(n - trans[Int(displayData.trans)] +
+		           sharps[Int(n - trans[Int(display.trans)] +
                                         kOctave) % sharps.endIndex],
                            n / kOctave)
                 s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
@@ -175,8 +183,8 @@ class DisplayView: TunerView
             var attribs: [NSAttributedString.Key: Any] = [.font: font]
 
 	    s = String(format: "%@",
-                       notes[Int(displayData.n -
-                                   trans[Int(displayData.trans)] +
+                       notes[Int(display.n -
+                                   trans[Int(display.trans)] +
                                    kOctave) % notes.endIndex])
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
             x += s.size(withAttributes: attribs).width
@@ -185,7 +193,7 @@ class DisplayView: TunerView
             font = NSFont.boldSystemFont(ofSize: textSizeLarger / 2)
             attribs = [.font: font]
 
-	    s = String(format: "%d", displayData.n / kOctave) 
+	    s = String(format: "%d", display.n / kOctave) 
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    // Select font
@@ -193,8 +201,8 @@ class DisplayView: TunerView
             attribs = [.font: font]
 
 	    s = String(format: "%@",
-                       sharps[Int(displayData.n -
-                                    trans[Int(displayData.trans)] +
+                       sharps[Int(display.n -
+                                    trans[Int(display.trans)] +
                                     kOctave) % sharps.endIndex])
             s.draw(at: NSMakePoint(x, y + textSizeLarger / 2),
                    withAttributes: attribs)
@@ -210,7 +218,7 @@ class DisplayView: TunerView
             }
 
             // Right justify
-	    s = String(format: "%+4.2f\u{00A2}", displayData.c * 100.0)
+	    s = String(format: "%+4.2f\u{00A2}", display.c * 100.0)
             x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
@@ -221,29 +229,29 @@ class DisplayView: TunerView
 	    y -= textSizeMedium + 4
             x = rect.minX + 2
 
-	    s = String(format: "%4.2lfHz", displayData.fr)
+	    s = String(format: "%4.2lfHz", display.fr)
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
             // Right justify
-	    s = String(format: "%4.2lfHz", displayData.f)
+	    s = String(format: "%4.2lfHz", display.f)
             x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
 	    y -= textSizeMedium
             x = rect.minX + 2
 
-	    s = String(format: "%4.2lfHz", (audioData.reference == 0) ?
-		    kA5Reference : audioData.reference)
+	    s = String(format: "%4.2lfHz", (audio.reference == 0) ?
+		    kA5Reference : audio.reference)
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
 
             // Right justify
-	    s = String(format: "%+4.2lfHz", displayData.f - displayData.fr)
+	    s = String(format: "%+4.2lfHz", display.f - display.fr)
             x = rect.maxX - s.size(withAttributes: attribs).width - 2
             s.draw(at: NSMakePoint(x, y), withAttributes: attribs)
         }
 
         // Display L if locked
-        if (displayData.lock == true)
+        if (display.lock == true)
         {
             let font = NSFont.boldSystemFont(ofSize: kTextSize)
             let attribs: [NSAttributedString.Key: Any] = [.font: font]
