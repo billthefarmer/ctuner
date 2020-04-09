@@ -374,7 +374,7 @@ void (^ProcessAudio)() = ^
 {
     enum
     {kTimerCount = 64,
-     kDelay = 16};
+     kDelayCount = 16};
 
     // Arrays for processing input
     static double xa[kRange];
@@ -747,10 +747,10 @@ void (^ProcessAudio)() = ^
         static long delay;
 
         // Update scope window
-	if ((delay % kDelay) == 0)
+	if ((delay % kDelayCount) == 0)
 	    scopeView.needsDisplay = true;
 
-        if (found && (delay % kDelay) == 0)
+        if (found && (delay % kDelayCount) == 0)
         {
             // Update spectrum window
             for (int i = 0; i < count; i++)
@@ -764,7 +764,7 @@ void (^ProcessAudio)() = ^
 	    spectrumView.h = fh / fps;
 	}
 
-	if ((delay % kDelay) == 0)
+	if ((delay % kDelayCount) == 0)
 	    spectrumView.needsDisplay = true;
 
         // Increment delay
@@ -780,7 +780,7 @@ void (^ProcessAudio)() = ^
         static long delay;
 
 	// If display not locked
-	if (!displayView.lock && (delay % kDelay) == 0)
+	if (!displayView.lock && (delay % kDelayCount) == 0)
 	{
 	    // Update the display struct
 	    displayView.f = f;
