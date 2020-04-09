@@ -156,7 +156,7 @@ class StaffView: TunerView
         kSharp, kNatural, kFlat, kNatural, kFlat, kNatural
       ]
 
-    @objc var note = 0 as Int32
+    @objc var note = 0 as Int
     {
         didSet
         {

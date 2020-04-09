@@ -815,10 +815,10 @@ void (^ProcessAudio)() = ^
 
             spectrum.count = count;
 
-	    spectrum.f = f  / fps;
-	    spectrum.r = fr / fps;
-	    spectrum.l = fl / fps;
-	    spectrum.h = fh / fps;
+	    spectrumView.f = f  / fps;
+	    spectrumView.r = fr / fps;
+	    spectrumView.l = fl / fps;
+	    spectrumView.h = fh / fps;
 	}
 
 	spectrumView.needsDisplay = true;
@@ -836,10 +836,10 @@ void (^ProcessAudio)() = ^
 	if (!displayView.lock && (delay % audio.divisor) == 0)
 	{
 	    // Update the display struct
-	    disp.f = f;
-	    disp.fr = fr;
-	    disp.c = c;
-	    disp.n = note;
+	    displayView.f = f;
+	    displayView.fr = fr;
+	    displayView.c = c;
+	    displayView.n = note;
 	    disp.count = count;
 
 	    // Update display
@@ -871,10 +871,10 @@ void (^ProcessAudio)() = ^
 
 	    if (timer == kTimerCount)
 	    {
-		disp.f = 0.0;
-		disp.fr = 0.0;
-		disp.c = 0.0;
-		disp.n = 0;
+		displayView.f = 0.0;
+		displayView.fr = 0.0;
+		displayView.c = 0.0;
+		displayView.n = 0;
 		disp.count = 0;
 
 		// Update display
@@ -890,10 +890,10 @@ void (^ProcessAudio)() = ^
 		strobeView.c = 0.0;
 
 		// Update spectrum
-		spectrum.f = 0.0;
-		spectrum.r = 0.0;
-		spectrum.l = 0.0;
-		spectrum.h = 0.0;
+		spectrumView.f = 0.0;
+		spectrumView.r = 0.0;
+		spectrumView.l = 0.0;
+		spectrumView.h = 0.0;
                 spectrumView.needsDisplay = true;
 	    }
 	}

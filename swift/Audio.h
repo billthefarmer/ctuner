@@ -125,10 +125,6 @@ typedef struct
 {
     int length;
     int count;
-    double f;
-    double r;
-    double l;
-    double h;
     double *data;
     double *values;
 } Spectrum;
@@ -138,12 +134,7 @@ Spectrum spectrum;
 typedef struct
 {
     maximum *maxima;
-    double f;
-    double fr;
-    double c;
     int count;
-    int trans;
-    int n;
 } Display;
 Display disp;
 
