@@ -22,8 +22,10 @@ import Cocoa
 
 class ScopeView: TunerView
 {
-    let kTextSize: CGFloat = 10
-    var max = 0.0
+    let kScale = 4
+    let kTextSize = CGFloat(10)
+
+    var max: Double = 0
 
     override func mouseDown(with event: NSEvent)
     {
@@ -118,12 +120,12 @@ class ScopeView: TunerView
 
         for i in 0 ..< Int(width)
         {
-	    if (max < abs(scope.data[n + i]))
+	    if (max < abs(scope.data[n + i * kScale]))
             {
-	        max = abs(scope.data[n + i])
+	        max = abs(scope.data[n + i * kScale])
             }
 
-	    let y = scope.data[n + i] / yscale
+	    let y = scope.data[n + i * kScale] / yscale
 	    path.line(to: NSMakePoint(rect.minX + CGFloat(i), CGFloat(y)))
         }
 
