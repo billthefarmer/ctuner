@@ -39,64 +39,64 @@
 
 // Audio in values
 enum
-  {kSampleRate       = 44100,
-   kSampleRate1      = 11025,
-   kSampleRate2      = 12000,
-   kBytesPerPacket   = 4,
-   kBytesPerFrame    = 4,
-   kChannelsPerFrame = 1};
+    {kSampleRate       = 44100,
+     kSampleRate1      = 11025,
+     kSampleRate2      = 12000,
+     kBytesPerPacket   = 4,
+     kBytesPerFrame    = 4,
+     kChannelsPerFrame = 1};
 
 // Audio processing values
 enum
-  {kOversample = 16,
-   kSamples = 16384,
-   kLog2Samples = 14,
-   kSamples2 = kSamples / 2,
-   kMaxima = 8,
-   kFrames = 512,
-   kRange = kSamples * 7 / 16,
-   kStep = kSamples / kOversample};
+    {kOversample = 16,
+     kSamples = 16384,
+     kLog2Samples = 14,
+     kSamples2 = kSamples / 2,
+     kMaxima = 8,
+     kFrames = 512,
+     kRange = kSamples * 7 / 16,
+     kStep = kSamples / kOversample};
 
 // Tuner reference values
 enum
-  {kA5Reference = 440,
-   kC5Offset    = 57,
-   kAOffset     = 9,
-   kOctave      = 12,
-   kEqual       = 8};
+    {kA5Reference = 440,
+     kC5Offset    = 57,
+     kAOffset     = 9,
+     kOctave      = 12,
+     kEqual       = 8};
 
 // Checkbox tags
 enum
-  {kZoom   = 'Zoom',
-   kFilt   = 'Filt',
-   kMult   = 'Mult',
-   kFund   = 'Fund',
-   kStrobe = 'Strb',
-   kDown   = 'Down',
-   kLock   = 'Lock',
-   kNote   = 'Note'};
+    {kZoom   = 'Zoom',
+     kFilt   = 'Filt',
+     kMult   = 'Mult',
+     kFund   = 'Fund',
+     kStrobe = 'Strb',
+     kDown   = 'Down',
+     kLock   = 'Lock',
+     kNote   = 'Note'};
 
 // Expand and colour tags
 enum
-  {kExpand = 'Expd',
-   kColour = 'Colr'};
+    {kExpand = 'Expd',
+     kColour = 'Colr'};
 
 // Reference tags
 enum
-  {kRefText = 'RefT',
-   kRefStep = 'RefS'};
+    {kRefText = 'RefT',
+     kRefStep = 'RefS'};
 
 // Transpose and temperament tags
 enum
-  {kTrans = 'Tran',
-   kTemp  = 'Temp',
-   kKey   = 'Key '};
+    {kTrans = 'Tran',
+     kTemp  = 'Temp',
+     kKey   = 'Key '};
 
 // Accidentals
 enum
-  {kNatural = 'Nat ',
-   kSharp   = 'Shrp',
-   kFlat    = 'Flat'};
+    {kNatural = 'Nat ',
+     kSharp   = 'Shrp',
+     kFlat    = 'Flat'};
 
 // Maximum
 typedef struct
@@ -116,8 +116,8 @@ MeterView *meterView;
 // Scope data
 typedef struct
 {
-    double *data;
     int length;
+    double *data;
 } Scope;
 Scope scope;
 
@@ -134,8 +134,8 @@ Spectrum spectrum;
 // Display data
 typedef struct
 {
-    maximum *maxima;
     int count;
+    maximum *maxima;
 } Display;
 Display disp;
 
@@ -148,7 +148,6 @@ typedef struct
 {
     AudioUnit output;
     AudioDeviceID id;
-    int divisor;
     int frames;
     int temper;
     int key;

@@ -119,83 +119,19 @@ OSStatus SetupAudio()
               AudioUnitErrString(status), status);
         return status;
     }
-    /*
-    // Get nominal sample rates size
-    AudioObjectPropertyAddress audioDeviceAOPA =
-        {kAudioDevicePropertyAvailableNominalSampleRates,
-         kAudioObjectPropertyScopeGlobal,
-         kAudioObjectPropertyElementMaster};
 
-    status = AudioObjectGetPropertyDataSize(id, &audioDeviceAOPA,
-                                            0, nil, &size);
-    if (status != noErr)
-    {
-        // AudioObjectGetPropertyDataSize
-        NSLog(@"Error in AudioObjectGetPropertyDataSize: " 
-                    "kAudioDevicePropertyAvailableNominalSampleRates %s (%d)",
-              AudioUnitErrString(status), status);
-        return status;
-    }
-
-    // Get nominal sample rates
-    AudioValueRange *rates = malloc(size);
-
-    if (rates == nil)
-        return -1;
-
-    status = AudioObjectGetPropertyData(id, &audioDeviceAOPA, 0, nil,
-                                        &size, rates);
-    if (status != noErr)
-    {
-        // AudioObjectGetPropertyDataSize
-        NSLog(@"Error in AudioObjectGetPropertyData: " 
-                    "kAudioDevicePropertyAvailableNominalSampleRates %s (%d)",
-              AudioUnitErrString(status), status);
-	free(rates);
-        return status;
-    }
-
-    // See if we can change the sample rate
-    bool inrange = false;
-    Float64 rate;
-
-    for (int i = 0; i < size / sizeof(AudioValueRange); i++)
-    {
-        if ((rates[i].mMinimum <= kSampleRate1) &&
-            (rates[i].mMaximum >= kSampleRate1))
-        {
-            inrange = true;
-            rate = kSampleRate1;
-            break;
-        }
-
-        if ((rates[i].mMinimum <= kSampleRate2) &&
-            (rates[i].mMaximum >= kSampleRate2))
-        {
-            inrange = true;
-            rate = kSampleRate2;
-            break;
-        }
-    }
-
-    // Free rates range
-    free(rates);
-
-    // Get sample rate
-    audioDeviceAOPA.mSelector = kAudioDevicePropertyNominalSampleRate;
-    */
     Float64 nominal = kSampleRate;
     size = sizeof(nominal);
 
+    // AudioObjectPropertyAddress
     AudioObjectPropertyAddress audioDeviceAOPA =
         {kAudioDevicePropertyNominalSampleRate,
          kAudioObjectPropertyScopeGlobal,
          kAudioObjectPropertyElementMaster};
 
     // Set the sample rate, if in range, ignore errors
-    // if (inrange)
-	status = AudioObjectSetPropertyData(id, &audioDeviceAOPA, 0, nil,
-                                            size, &nominal);
+    status = AudioObjectSetPropertyData(id, &audioDeviceAOPA, 0, nil,
+                                        size, &nominal);
     // Get the sample rate
     status = AudioObjectGetPropertyData(id, &audioDeviceAOPA, 0, nil,
                                         &size, &nominal);
@@ -208,15 +144,11 @@ OSStatus SetupAudio()
         return status;
     }
 
-    // Set the divisor
-    // audio.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
-
     // Set the rate
-    audio.sample = nominal; // audio.divisor;
+    audio.sample = nominal;
     audio.divisor = 1;
 
     // Get the buffer size range
-
     AudioValueRange sizes;
     size = sizeof(sizes);
 
@@ -230,12 +162,12 @@ OSStatus SetupAudio()
     {
         // AudioObjectGetPropertyData
         NSLog(@"Error in AudioObjectGetPropertyData: " 
-                    "kAudioDevicePropertyNominalSampleRate %s (%d)",
+                    "kAudioDevicePropertyBufferFrameSizeRange %s (%d)",
               AudioUnitErrString(status), status);
         return status;
     }
 
-    UInt32 frames = kStep * audio.divisor;
+    UInt32 frames = kStep;
     size = sizeof(frames);
 
     while (!((sizes.mMaximum >= frames) &&
@@ -263,9 +195,13 @@ OSStatus SetupAudio()
     AudioObjectSetPropertyData(id, &audioDeviceAOPA, 0, nil,
                                size, &frames);
     if (status != noErr)
+    {
+        // AudioUnitSetProperty
+        NSLog(@"Error in AudioUnitSetProperty: " 
+                    "kAudioUnitProperty_MaximumFramesPerSlice %s (%d)",
+              AudioUnitErrString(status), status);
         return status;
-
-    audio.frames = frames;
+    }
 
     // Get the frames
     status = AudioUnitGetProperty(audio.output,
@@ -403,14 +339,13 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
     }
 
     // Copy the input data
-    memmove(buffer, buffer + (audio.frames / audio.divisor),
-	    (kSamples - (audio.frames / audio.divisor)) *
-            sizeof(double));
+    memmove(buffer, buffer + inNumberFrames,
+	    (kSamples - inNumberFrames) * sizeof(double));
 
     Float32 *data = abl.mBuffers[0].mData;
 
     // Butterworth filter, 3dB/octave
-    for (int i = 0; i < (audio.frames / audio.divisor); i++)
+    for (int i = 0; i < inNumberFrames; i++)
     {
 	static double G = 3.023332184e+01;
 	static double K = 0.9338478249;
@@ -419,14 +354,14 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 	static double yv[2];
 
 	xv[0] = xv[1];
-	xv[1] = data[i * audio.divisor] / G;
+	xv[1] = data[i] / G;
 
 	yv[0] = yv[1];
 	yv[1] = (xv[0] + xv[1]) + (K * yv[0]);
 
 	// Choose filtered/unfiltered data
-	buffer[(kSamples - (audio.frames / audio.divisor)) + i] =
-	    audio.filt? yv[1]: data[i * audio.divisor];
+	buffer[(kSamples - inNumberFrames) + i] =
+	    audio.filt? yv[1]: data[i];
     }
 
     // Run in main queue
@@ -476,7 +411,7 @@ void (^ProcessAudio)() = ^
     if (scope.data == nil)
     {
 	scope.data = audio.buffer + kSamples2;
-	scope.length = audio.frames / audio.divisor;
+	scope.length = audio.frames;
 
 	spectrum.data = xa;
 	spectrum.length = kRange;
@@ -485,8 +420,7 @@ void (^ProcessAudio)() = ^
 	disp.maxima = maxima;
 
 	fps = audio.sample / (double)kSamples;
-	expect = 2.0 * M_PI * (double)(audio.frames / audio.divisor) /
-	    (double)kSamples;
+	expect = 2.0 * M_PI * (double)audio.frames / (double)kSamples;
 
 	// Init Hamming window
 	vDSP_hamm_windowD(window, kSamples, 0);
@@ -839,7 +773,7 @@ void (^ProcessAudio)() = ^
         static long delay;
 
 	// If display not locked
-	if (!displayView.lock && (delay % audio.divisor) == 0)
+	if (!displayView.lock && (delay % 4) == 0)
 	{
 	    // Update the display struct
 	    displayView.f = f;
