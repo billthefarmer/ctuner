@@ -40,8 +40,6 @@
 // Audio in values
 enum
     {kSampleRate       = 44100,
-     kSampleRate1      = 11025,
-     kSampleRate2      = 12000,
      kBytesPerPacket   = 4,
      kBytesPerFrame    = 4,
      kChannelsPerFrame = 1};

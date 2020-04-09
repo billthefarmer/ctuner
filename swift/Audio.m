@@ -373,7 +373,8 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 void (^ProcessAudio)() = ^
 {
     enum
-    {kTimerCount = 16};
+    {kTimerCount = 16,
+     kDelay = 8};
 
     // Arrays for processing input
     static double xa[kRange];
@@ -743,10 +744,13 @@ void (^ProcessAudio)() = ^
     // If display not locked
     if (!displayView.lock)
     {
-        // Update scope window
-        scopeView.needsDisplay = true;
+        static long delay;
 
-        if (found)
+        // Update scope window
+	if ((delay % kDelay) == 0)
+	    scopeView.needsDisplay = true;
+
+        if (found && (delay % kDelay) == 0)
         {
             // Update spectrum window
             for (int i = 0; i < count; i++)
@@ -760,7 +764,11 @@ void (^ProcessAudio)() = ^
 	    spectrumView.h = fh / fps;
 	}
 
-	spectrumView.needsDisplay = true;
+	if ((delay % kDelay) == 0)
+	    spectrumView.needsDisplay = true;
+
+        // Increment delay
+        delay++;
     }
 
     // Timer
@@ -772,7 +780,7 @@ void (^ProcessAudio)() = ^
         static long delay;
 
 	// If display not locked
-	if (!displayView.lock && (delay % 4) == 0)
+	if (!displayView.lock && (delay % kDelay) == 0)
 	{
 	    // Update the display struct
 	    displayView.f = f;
