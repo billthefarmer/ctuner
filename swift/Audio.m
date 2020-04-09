@@ -374,7 +374,7 @@ void (^ProcessAudio)() = ^
 {
     enum
     {kTimerCount = 64,
-     kDelay = 8};
+     kDelay = 16};
 
     // Arrays for processing input
     static double xa[kRange];

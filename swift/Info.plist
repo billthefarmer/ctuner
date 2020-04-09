@@ -9,10 +9,6 @@
     <string>en</string>
     <key>CFBundleExecutable</key>
     <string>Tuner</string>
-    <key>CFBundleHelpBookFolder</key>
-    <string>.</string>
-    <key>CFBundleHelpBookName</key>
-    <string>Help.rtf</string>
     <key>CFBundleIconFile</key>
     <string>Tuner.icns</string>
     <key>CFBundleIdentifier</key>
@@ -48,9 +44,9 @@
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.music</string>
     <key>LSMinimumSystemVersion</key>
-    <string>10.9</string>
+    <string>10.10</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2019 Bill Farmer. All rights reserved.</string>
+    <string>Copyright © 2020 Bill Farmer. All rights reserved.</string>
     <key>NSMainNibFile</key>
     <string>MainMenu</string>
     <key>NSPrincipalClass</key>
