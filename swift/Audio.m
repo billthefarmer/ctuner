@@ -373,7 +373,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 void (^ProcessAudio)() = ^
 {
     enum
-    {kTimerCount = 16,
+    {kTimerCount = 64,
      kDelay = 8};
 
     // Arrays for processing input
