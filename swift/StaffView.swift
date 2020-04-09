@@ -143,7 +143,7 @@ class StaffView: TunerView
       ]
 
     // Scale offsets
-    let offset =
+    let offset: [CGFloat] =
       [
         0, 0, 1, 2, 2, 3,
         3, 4, 5, 5, 6, 6
@@ -156,7 +156,7 @@ class StaffView: TunerView
         kSharp, kNatural, kFlat, kNatural, kFlat, kNatural
       ]
 
-    @objc var note = 0 as Int
+    @objc var note = 0
     {
         didSet
         {
@@ -293,8 +293,8 @@ class StaffView: TunerView
                                         byY: rect.midY)
         (transform as NSAffineTransform).concat()
 
-        let lineHeight = Int(height / 14)
-        let lineWidth = Int(width / 16)
+        let lineHeight = height / 14
+        let lineWidth = width / 16
         let margin = width / 32
 
         // Draw staff
@@ -309,38 +309,36 @@ class StaffView: TunerView
 
         // Draw leger lines
         NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 - CGFloat(lineWidth) / 2, 0),
-                      to: NSMakePoint(width / 2 + CGFloat(lineWidth) / 2, 0))
+          .strokeLine(from: NSMakePoint(width / 2 - lineWidth / 2, 0),
+                      to: NSMakePoint(width / 2 + lineWidth / 2, 0))
         NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 + CGFloat(lineWidth) * 5.5,
-                                        CGFloat(lineHeight) * 6),
-                      to: NSMakePoint(width / 2 + CGFloat(lineWidth) * 6.5,
-                                      CGFloat(lineHeight) * 6))
+          .strokeLine(from: NSMakePoint(width / 2 + lineWidth * 5.5,
+                                        lineHeight * 6),
+                      to: NSMakePoint(width / 2 + lineWidth * 6.5,
+                                      lineHeight * 6))
         NSBezierPath
-          .strokeLine(from: NSMakePoint(width / 2 - CGFloat(lineWidth) * 5.5,
-                                        -CGFloat(lineHeight) * 6),
+          .strokeLine(from: NSMakePoint(width / 2 - lineWidth * 5.5,
+                                        -lineHeight * 6),
                       to: NSMakePoint(width / 2 - CGFloat(lineWidth) * 6.5,
-                                      -CGFloat(lineHeight) * 6))
+                                      -lineHeight * 6))
 
         // Scale treble clef
         var bounds = treble.bounds
         var scale = (height / 2) / (bounds.height)
         transform = AffineTransform(scale: scale)
         treble.transform(using: transform)
-        transform = AffineTransform(translationByX:
-                                      margin + CGFloat(lineWidth) / 2,
-                                    byY: CGFloat(lineHeight))
+        transform = AffineTransform(translationByX: margin + lineWidth / 2,
+                                    byY: lineHeight)
         treble.transform(using: transform)
         treble.fill()
 
         // Scale bass clef
         bounds = bass.bounds
-        scale = (CGFloat(lineHeight) * 4) / (bounds.height)
+        scale = (lineHeight * 4) / (bounds.height)
         transform = AffineTransform(scale: scale)
         bass.transform(using: transform)
-        transform = AffineTransform(translationByX:
-                                      margin + CGFloat(lineWidth) / 4,
-                                    byY: -CGFloat(lineHeight) * 5.4)
+        transform = AffineTransform(translationByX: margin + lineWidth / 4,
+                                    byY: -lineHeight * 5.4)
         bass.transform(using: transform)
         bass.fill()
 
@@ -366,13 +364,13 @@ class StaffView: TunerView
                                       -(bounds.minX + bounds.maxX) / 2,
                                     byY: -(bounds.minY + bounds.maxY) / 2)
         flat.transform(using: transform)
-        scale = (CGFloat(lineHeight) * 3) / (bounds.height)
+        scale = (lineHeight * 3) / (bounds.height)
         transform = AffineTransform(scale: scale)
         flat.transform(using: transform)
 
         // Calculate transform for note
-        let xBase = CGFloat(lineWidth) * 14;
-        let yBase = CGFloat(lineHeight) * 14;
+        let xBase = lineWidth * 14;
+        let yBase = lineHeight * 14;
         let note = self.note - translate[displayView.trans];
         var octave = note / kOctave;
         let index = (note + kOctave) % kOctave;
@@ -395,10 +393,10 @@ class StaffView: TunerView
             octave += 2;
         }
 
-        let dx = (CGFloat(octave) * CGFloat(lineWidth) * 3.5) +
-          (CGFloat(offset[Int(index)]) * (CGFloat(lineWidth) / 2));
-        let dy = (CGFloat(octave) * CGFloat(lineHeight) * 3.5) +
-          (CGFloat(offset[Int(index)]) * (CGFloat(lineHeight) / 2));
+        let dx = (CGFloat(octave) * lineWidth * 3.5) +
+          (offset[Int(index)] * (lineWidth / 2));
+        let dy = (CGFloat(octave) * lineHeight * 3.5) +
+          (offset[Int(index)] * (lineHeight / 2));
 
         // Draw note
         transform = AffineTransform(translationByX: width / 2 - xBase + dx,

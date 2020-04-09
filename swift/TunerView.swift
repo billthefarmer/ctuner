@@ -182,7 +182,7 @@ class TunerView: NSView
             spectrumView.expand *= 2
             if (spectrumView.expand > kMaxExpand)
             {
-                spectrumView.expand = Int(kMinExpand)
+                spectrumView.expand = kMinExpand
             }
             if (expandPopUp != nil)
             {
@@ -195,12 +195,12 @@ class TunerView: NSView
             spectrumView.expand /= 2
             if (spectrumView.expand < kMinExpand)
             {
-                spectrumView.expand = Int(kMaxExpand)
+                spectrumView.expand = kMaxExpand
             }
             if (expandPopUp != nil)
             {
-                expandPopUp.selectItem(at:
-                                         Int(log2(Float(spectrumView.expand))))
+                expandPopUp
+                  .selectItem(at: Int(log2(Float(spectrumView.expand))))
             }
 
         default:

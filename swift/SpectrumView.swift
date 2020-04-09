@@ -20,8 +20,8 @@
 
 import Cocoa
 
-let kMaxExpand: Int32 = 16
-let kMinExpand: Int32 = 1
+let kMaxExpand = 16
+let kMinExpand = 1
 
 class SpectrumView: TunerView
 {
@@ -32,8 +32,8 @@ class SpectrumView: TunerView
     @objc var h = 0.0
     @objc var r = 0.0
 
-    let kTextSize: CGFloat = 10
-    var max: Double = 0
+    let kTextSize = CGFloat(10)
+    var max = 0.0
 
     // mouseDown
     override func mouseDown(with event: NSEvent)
