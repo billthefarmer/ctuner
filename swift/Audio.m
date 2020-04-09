@@ -119,7 +119,7 @@ OSStatus SetupAudio()
               AudioUnitErrString(status), status);
         return status;
     }
-
+    /*
     // Get nominal sample rates size
     AudioObjectPropertyAddress audioDeviceAOPA =
         {kAudioDevicePropertyAvailableNominalSampleRates,
@@ -183,12 +183,17 @@ OSStatus SetupAudio()
 
     // Get sample rate
     audioDeviceAOPA.mSelector = kAudioDevicePropertyNominalSampleRate;
-
-    Float64 nominal;
+    */
+    Float64 nominal = kSampleRate;
     size = sizeof(nominal);
 
+    AudioObjectPropertyAddress audioDeviceAOPA =
+        {kAudioDevicePropertyNominalSampleRate,
+         kAudioObjectPropertyScopeGlobal,
+         kAudioObjectPropertyElementMaster};
+
     // Set the sample rate, if in range, ignore errors
-    if (inrange)
+    // if (inrange)
 	status = AudioObjectSetPropertyData(id, &audioDeviceAOPA, 0, nil,
                                             size, &nominal);
     // Get the sample rate
@@ -204,10 +209,11 @@ OSStatus SetupAudio()
     }
 
     // Set the divisor
-    audio.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
+    // audio.divisor = round(nominal / ((kSampleRate1 + kSampleRate2) / 2));
 
     // Set the rate
-    audio.sample = nominal / audio.divisor;
+    audio.sample = nominal; // audio.divisor;
+    audio.divisor = 1;
 
     // Get the buffer size range
 
