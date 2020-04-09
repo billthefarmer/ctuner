@@ -146,7 +146,6 @@ OSStatus SetupAudio()
 
     // Set the rate
     audio.sample = nominal;
-    audio.divisor = 1;
 
     // Get the buffer size range
     AudioValueRange sizes;
