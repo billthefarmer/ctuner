@@ -300,7 +300,7 @@ class StaffView: TunerView
         // Draw staff
         for i in 1 ... 5
         {
-            let y = CGFloat(i * lineHeight)
+            let y = CGFloat(i) * lineHeight
             NSBezierPath.strokeLine(from: NSMakePoint(margin, y),
                                     to: NSMakePoint(width - margin, y))
             NSBezierPath.strokeLine(from: NSMakePoint(margin, -y),
