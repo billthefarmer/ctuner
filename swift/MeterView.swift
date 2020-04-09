@@ -26,9 +26,9 @@ import Cocoa
 // TunerView
 class MeterView: TunerView
 {
-    @objc var c = Double(0)
+    @objc var c = 0.0
 
-    var mc = Double(0)
+    var mc = 0.0
 
     // mouseDown
     override func mouseDown(with event: NSEvent)

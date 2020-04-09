@@ -32,9 +32,9 @@ class StrobeView: TunerView
        [[0.5, 0.5, 0, 1], [0.5, 1, 0.85, 1]],
        [[1, 0.25, 1, 1], [1, 1, 0.25, 1]]]
 
-    let kMaxColours: Int32 = 3
+    let kMaxColours = 3
 
-    @objc var c = Double(0)
+    @objc var c = 0.0
     @objc var colour = 1
     @objc var enable = false
     {

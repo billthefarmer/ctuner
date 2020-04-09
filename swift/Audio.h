@@ -140,7 +140,6 @@ typedef struct
 Display disp;
 
 // Temperaments data
-double temperamentValues[32][12] =
 #include "Temperaments.h"
 
 // Audio data

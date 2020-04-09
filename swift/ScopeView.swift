@@ -23,7 +23,7 @@ import Cocoa
 class ScopeView: TunerView
 {
     let kTextSize: CGFloat = 10
-    var max: Double = 0
+    var max = 0.0
 
     override func mouseDown(with event: NSEvent)
     {
