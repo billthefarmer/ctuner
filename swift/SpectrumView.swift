@@ -27,6 +27,7 @@ class SpectrumView: TunerView
 {
     @objc var zoom = true
     @objc var expand = 1
+    @objc var f = 0.0
     @objc var l = 0.0
     @objc var h = 0.0
     @objc var r = 0.0
@@ -98,8 +99,7 @@ class SpectrumView: TunerView
         if (zoom)
         {
 	    // Calculate scale
-	    let xscale = (Double(width) / (spectrum.r -
-                                             spectrum.l)) / 2.0
+	    let xscale = (Double(width) / (r - l)) / 2.0
 
             // Draw vertical centre line
             NSBezierPath.strokeLine(from: NSMakePoint(rect.midX,
@@ -114,7 +114,7 @@ class SpectrumView: TunerView
             context.shouldAntialias = true;
 
 	    // Draw trace
-	    for i in Int(floor(spectrum.l)) ... Int(ceil(spectrum.h))
+	    for i in Int(floor(l)) ... Int(ceil(h))
 	    {
 	        if (i > 0 && i < spectrum.length)
 	        {
@@ -126,8 +126,7 @@ class SpectrumView: TunerView
                     }
 
 		    let y = rect.minY + CGFloat(value * yscale)
-		    let x = rect.minX + CGFloat((Double(i) -
-                                                      spectrum.l) * xscale)
+		    let x = rect.minX + CGFloat((Double(i) - l) * xscale)
 
 		    path.line(to: NSMakePoint(x, y))
 	        }
@@ -154,12 +153,10 @@ class SpectrumView: TunerView
 	    for i in 0 ..< Int(spectrum.count)
 	    {
 	        // Draw line for values that are in range
-	        if (spectrum.values[i] > spectrum.l &&
-		      spectrum.values[i] < spectrum.h)
+	        if (spectrum.values[i] > l && spectrum.values[i] < h)
 	        {
 		    let x = rect.minX +
-                      CGFloat((spectrum.values[i] -
-                                 spectrum.l) * xscale)
+                      CGFloat((spectrum.values[i] - l) * xscale)
 		    NSBezierPath.strokeLine(from: NSMakePoint(x, rect.minY),
 		                            to: NSMakePoint(x, rect.maxY))
 	        }
@@ -175,8 +172,7 @@ class SpectrumView: TunerView
 	    {
 	        // Show value for values that are in range
 
-	        if (spectrum.values[i] > spectrum.l &&
-		      spectrum.values[i] < spectrum.h)
+	        if (spectrum.values[i] > l && spectrum.values[i] < h)
 	        {
 		    let f = disp.maxima[i].f
 
@@ -192,8 +188,7 @@ class SpectrumView: TunerView
                     }
 
 		    let x = rect.minX +
-                      CGFloat((spectrum.values[i] -
-                                 spectrum.l) * xscale)
+                      CGFloat((spectrum.values[i] - l) * xscale)
 
 		    let s = String(format: "%+0.0f", c * 100.0)
 		    s.draw(at: NSMakePoint(x, rect.minY - 2),

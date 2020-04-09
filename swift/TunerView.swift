@@ -22,9 +22,9 @@ import Cocoa
 
 class TunerView: NSView
 {
-    let kOctave: Int32 = 12
+    let kOctave = 12
 
-    let trans: [Int32] =
+    let translate =
       [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
 
     let notes =
@@ -88,13 +88,13 @@ class TunerView: NSView
             let string =
               String(format:
                        "%@%@%d %+4.2lf\u{00A2} %4.2lfHz %4.2lfHz %4.2lfHz\n",
-                     notes[Int(disp.n - trans[Int(disp.trans)] +
-                                 kOctave) % notes.endIndex],
-		     sharps[Int(disp.n - trans[Int(disp.trans)] +
-                                  kOctave) % sharps.endIndex],
-                     disp.n / kOctave, disp.c * 100.0,
-                     disp.fr, disp.f,
-                     disp.f - disp.fr)
+                     notes[(displayView.n - translate[displayView.trans] +
+                              kOctave) % notes.endIndex],
+		     sharps[(displayView.n - translate[displayView.trans] +
+                               kOctave) % sharps.endIndex],
+                     displayView.n / kOctave, displayView.c * 100.0,
+                     displayView.fr, displayView.f,
+                     displayView.f - displayView.fr)
 
             // Put it on the pasteboard
             let pboard = NSPasteboard.general

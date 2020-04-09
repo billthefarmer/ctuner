@@ -373,7 +373,7 @@ class StaffView: TunerView
         // Calculate transform for note
         let xBase = CGFloat(lineWidth) * 14;
         let yBase = CGFloat(lineHeight) * 14;
-        let note = self.note - trans[Int(disp.trans)];
+        let note = self.note - translate[displayView.trans];
         var octave = note / kOctave;
         let index = (note + kOctave) % kOctave;
 

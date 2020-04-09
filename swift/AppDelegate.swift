@@ -369,7 +369,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 			       "-2[Key:B\u{266D}]", "-3[Key:A]",
 			       "-4[Key:A\u{266D}]", "-5[Key:G]",
                                "-6[Key:F\u{266F}]"])
-        transPopUp.selectItem(at: Int(disp.trans))
+        transPopUp.selectItem(at: displayView.trans)
         transPopUp.tag = kTrans
         transPopUp.target = self
         transPopUp.action = #selector(popUpChanged)
@@ -644,7 +644,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
         case kTrans:
             // Update display
-            disp.trans = Int32(index)
+            displayView.trans = index
             displayView.needsDisplay = true
             staffView.needsDisplay = true
 
@@ -715,7 +715,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         {
             audio.reference = Double(kA5Reference)
             audio.temper = 8
-            disp.trans = 6
+            displayView.trans = 6
             spectrumView.zoom = true
             spectrumView.expand = 1
             strobeView.colour = 1
@@ -725,7 +725,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         audio.reference = ref
         audio.temper = Int32(defaults.integer(forKey: "Temper"))
         audio.key = Int32(defaults.integer(forKey: "Key"))
-        disp.trans = Int32(defaults.integer(forKey: "Trans"))
+        displayView.trans = defaults.integer(forKey: "Trans")
         strobeView.colour = defaults.integer(forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
@@ -767,7 +767,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         defaults.set(audio.reference, forKey: "Ref")
         defaults.set(audio.temper, forKey: "Temper")
         defaults.set(audio.key, forKey: "Key")
-        defaults.set(disp.trans, forKey: "Trans")
+        defaults.set(displayView.trans, forKey: "Trans")
         defaults.set(strobeView.colour, forKey: "Colours")
         for (index, key) in keys.enumerated()
         {
