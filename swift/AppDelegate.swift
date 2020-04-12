@@ -718,6 +718,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             displayView.trans = 6
             spectrumView.zoom = true
             spectrumView.expand = 1
+            strobeView.enable = false
             strobeView.colour = 1
             return
         }
