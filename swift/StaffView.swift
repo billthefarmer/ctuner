@@ -178,11 +178,11 @@ class StaffView: TunerView
         if (event.type == .leftMouseDown)
         {
             enable = !enable
-            strobeView.enable = !enable
             if (strbBox != nil)
             {
                 strbBox.state = strobeView.enable ? .on: .off
             }
+            strobeView.enable = !enable
         }
     }
 
@@ -289,9 +289,8 @@ class StaffView: TunerView
         NSEraseRect(rect)
 
         // Move the origin
-        var transform = AffineTransform(translationByX: 0,
-                                        byY: rect.midY)
-        (transform as NSAffineTransform).concat()
+        let context = NSGraphicsContext.current!
+        context.cgContext.translateBy(x: 0, y: rect.midY)
 
         let lineHeight = height / 14
         let lineWidth = width / 16

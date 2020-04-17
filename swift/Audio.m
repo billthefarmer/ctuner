@@ -31,14 +31,13 @@ OSStatus SetupAudio()
 	 0, 0};
 
     // Find an output unit
-    AudioComponent cp
-	= AudioComponentFindNext(nil, &dc);
+    AudioComponent cp = AudioComponentFindNext(nil, &dc);
 
     if (cp == nil)
     {
         // AudioComponentFindNext
         NSLog(@"Error in AudioComponentFindNext");
-	return -1;
+	return '!obj';
     }
 
     // Open it

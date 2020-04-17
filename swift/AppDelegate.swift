@@ -58,9 +58,9 @@ class AppDelegate: NSObject, NSApplicationDelegate
         // Insert code here to initialize your application
 
         // Set up window
-        window.setContentSize(NSMakeSize(400, 480))
-        window.contentMinSize = NSMakeSize(400, 480)
-        window.contentAspectRatio = NSMakeSize(1.0, 1.2)
+        window.setContentSize(NSMakeSize(kWidth, kHeight))
+        window.contentMinSize = NSMakeSize(kWidth, kHeight)
+        window.contentAspectRatio = NSMakeSize(kWidth, kHeight)
         window.showsResizeIndicator = true
         window.collectionBehavior.insert(.fullScreenNone)
 
@@ -209,6 +209,34 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
+        let kExpand = ["x 1", "x 2", "x 4", "x 8", "x 16"]
+        let kColours = ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"]
+        let kTranspose = ["+6[Key:F\u{266F}]", "+5[Key:F]", "+4[Key:E]",
+                          "+3[Key:E\u{266D}]", "+2[Key:D]",
+		          "+1[Key:C\u{266F}]", "+0[Key:C]", "-1[Key:B]",
+		          "-2[Key:B\u{266D}]", "-3[Key:A]",
+		          "-4[Key:A\u{266D}]", "-5[Key:G]",
+                          "-6[Key:F\u{266F}]"]
+        let kTemperaments = ["Kirnberger II", "Kirnberger III",
+                             "Werckmeister III", "Werckmeister IV",
+                             "Werckmeister V", "Werckmeister VI",
+                             "Bach (Klais)", "Just (Barbour)",
+                             "Equal Temperament", "Pythagorean",
+                             "Van Zwolle", "Meantone (-1/4)",
+                             "Silbermann (-1/6)", "Salinas (-1/3)",
+                             "Zarlino (-2/7)", "Rossi (-1/5)",
+                             "Rossi (-2/9)", "Rameau (-1/4)",
+                             "Kellner", "Vallotti",
+                             "Young II", "Bendeler III",
+                             "Neidhardt I", "Neidhardt II",
+                             "Neidhardt III", "Bruder 1829",
+                             "Barnes 1977", "Lambert 1774",
+                             "Schlick (H. Vogel)", "Meantone # (-1/4)",
+                             "Meantone b (-1/4)", "Lehman-Bach"]
+        let kKeys = ["C", "C\u{266F}", "D", "E\u{266D}",
+                     "E", "F", "F\u{266F}", "G",
+                     "A\u{266D}", "A", "B\u{266D}", "B"]
+
         let labels = ["Zoom spectrum", "Filter audio",
                       "Multiple notes", "Fundamental filter",
                       "Display strobe", "Downsample",
@@ -304,8 +332,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandLabel.drawsBackground = false
         expandPopUp = NSPopUpButton()
         expandPopUp.pullsDown = false
-        expandPopUp.addItems(withTitles:
-                               ["x 1", "x 2", "x 4", "x 8", "x 16"])
+        expandPopUp.addItems(withTitles: kExpand)
         expandPopUp.selectItem(at: Int(log2(Float(spectrumView.expand))))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
@@ -322,8 +349,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         colourLabel.drawsBackground = false
         colourPopUp = NSPopUpButton()
         colourPopUp.pullsDown = false
-        colourPopUp.addItems(withTitles:
-                         ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"])
+        colourPopUp.addItems(withTitles: kColours)
         colourPopUp.selectItem(at: strobeView.colour)
         colourPopUp.tag = kColour
         colourPopUp.target = self
@@ -362,13 +388,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         transLabel.drawsBackground = false
         transPopUp = NSPopUpButton()
         transPopUp.pullsDown = false
-        transPopUp.addItems(withTitles:
-                              ["+6[Key:F\u{266F}]", "+5[Key:F]", "+4[Key:E]",
-                               "+3[Key:E\u{266D}]", "+2[Key:D]",
-			       "+1[Key:C\u{266F}]", "+0[Key:C]", "-1[Key:B]",
-			       "-2[Key:B\u{266D}]", "-3[Key:A]",
-			       "-4[Key:A\u{266D}]", "-5[Key:G]",
-                               "-6[Key:F\u{266F}]"])
+        transPopUp.addItems(withTitles: kTranspose)
         transPopUp.selectItem(at: displayView.trans)
         transPopUp.tag = kTrans
         transPopUp.target = self
@@ -385,23 +405,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         tempLabel.drawsBackground = false
         tempPopUp = NSPopUpButton()
         tempPopUp.pullsDown = false
-        tempPopUp.addItems(withTitles:
-                             ["Kirnberger II", "Kirnberger III",
-                              "Werckmeister III", "Werckmeister IV",
-                              "Werckmeister V", "Werckmeister VI",
-                              "Bach (Klais)", "Just (Barbour)",
-                              "Equal Temperament", "Pythagorean",
-                              "Van Zwolle", "Meantone (-1/4)",
-                              "Silbermann (-1/6)", "Salinas (-1/3)",
-                              "Zarlino (-2/7)", "Rossi (-1/5)",
-                              "Rossi (-2/9)", "Rameau (-1/4)",
-                              "Kellner", "Vallotti",
-                              "Young II", "Bendeler III",
-                              "Neidhardt I", "Neidhardt II",
-                              "Neidhardt III", "Bruder 1829",
-                              "Barnes 1977", "Lambert 1774",
-                              "Schlick (H. Vogel)", "Meantone # (-1/4)",
-                              "Meantone b (-1/4)", "Lehman-Bach"])
+        tempPopUp.addItems(withTitles: kTemperaments)
         tempPopUp.selectItem(at: Int(audio.temper))
         tempPopUp.tag = kTemp
         tempPopUp.target = self
@@ -418,10 +422,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         keyLabel.drawsBackground = false
         keyPopUp = NSPopUpButton()
         keyPopUp.pullsDown = false
-        keyPopUp.addItems(withTitles:
-                            ["C", "C\u{266F}", "D", "E\u{266D}",
-                             "E", "F", "F\u{266F}", "G",
-                             "A\u{266D}", "A", "B\u{266D}", "B"])
+        keyPopUp.addItems(withTitles:kKeys)
         keyPopUp.selectItem(at: Int(audio.key))
         keyPopUp.tag = kKey
         keyPopUp.target = self

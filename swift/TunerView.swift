@@ -204,7 +204,7 @@ class TunerView: NSView
             }
 
         default:
-            NSLog("Key %@ %@", key, event.charactersIgnoringModifiers ?? "")
+            NSLog("Key %@", key)
             break
         }
     }

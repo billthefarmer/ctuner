@@ -60,11 +60,11 @@ class StrobeView: TunerView
         if (event.type == .leftMouseDown)
         {
             enable = !enable
-            staffView.enable = !enable
             if (strbBox != nil)
             {
                 strbBox.state = enable ? .on: .off
             }
+            staffView.enable = !enable
         }
     }
 
