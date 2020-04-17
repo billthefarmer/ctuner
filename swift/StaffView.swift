@@ -291,6 +291,7 @@ class StaffView: TunerView
         // Move the origin
         let context = NSGraphicsContext.current!
         context.cgContext.translateBy(x: 0, y: rect.midY)
+        context.shouldAntialias = false;
 
         let lineHeight = height / 14
         let lineWidth = width / 16
@@ -324,11 +325,12 @@ class StaffView: TunerView
         // Scale treble clef
         var bounds = treble.bounds
         var scale = (height / 2) / (bounds.height)
-        transform = AffineTransform(scale: scale)
+        var transform = AffineTransform(scale: scale)
         treble.transform(using: transform)
         transform = AffineTransform(translationByX: margin + lineWidth / 2,
                                     byY: lineHeight)
         treble.transform(using: transform)
+        context.shouldAntialias = true;
         treble.fill()
 
         // Scale bass clef

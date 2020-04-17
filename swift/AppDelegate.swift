@@ -42,6 +42,9 @@ var keyPopUp: NSPopUpButton!
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
+    let kWidth  = CGFloat(400)
+    let kHeight = CGFloat(480)
+
     @IBOutlet weak var window: NSWindow!
 
     var prefWindow: NSWindow!
@@ -209,7 +212,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
             return
         }
 
-        let kExpand = ["x 1", "x 2", "x 4", "x 8", "x 16"]
+        let kExpanse = ["x 1", "x 2", "x 4", "x 8", "x 16"]
         let kColours = ["Blue/Cyan", "Olive/Aquamarine", "Magenta/Yellow"]
         let kTranspose = ["+6[Key:F\u{266F}]", "+5[Key:F]", "+4[Key:E]",
                           "+3[Key:E\u{266D}]", "+2[Key:D]",
@@ -332,7 +335,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         expandLabel.drawsBackground = false
         expandPopUp = NSPopUpButton()
         expandPopUp.pullsDown = false
-        expandPopUp.addItems(withTitles: kExpand)
+        expandPopUp.addItems(withTitles: kExpanse)
         expandPopUp.selectItem(at: Int(log2(Float(spectrumView.expand))))
         expandPopUp.tag = kExpand
         expandPopUp.target = self
