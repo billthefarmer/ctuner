@@ -170,7 +170,6 @@ int main(int argc, char *argv[])
 		     G_CALLBACK(key_press), NULL);
 
     // Button pressed callback
-
     g_signal_connect(G_OBJECT(window), "button-press-event",
 		     G_CALLBACK(button_press), NULL);
 
@@ -895,7 +894,7 @@ void cairo_centre_text(cairo_t *cr, char *t)
     cairo_get_current_point(cr, &x, &y);
     cairo_text_extents(cr, t, &extents);
 
-    cairo_move_to(cr, x - extents.width / 2, y);
+    cairo_move_to(cr, x - extents.x_advance / 2, y);
     cairo_show_text(cr, t);
 }
 

@@ -221,7 +221,6 @@ Filters filters;
 Audio audio;
 
 // Temperaments
-double temperaments[32][12] =
 #include "temperaments.h"
 
 // Functions
