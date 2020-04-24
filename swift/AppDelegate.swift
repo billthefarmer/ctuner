@@ -50,8 +50,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     var prefWindow: NSWindow!
     var noteWindow: NSWindow!
 
-    var menu: NSMenu!
-
     var stack: NSStackView!
     var timer: Timer!
 
@@ -68,26 +66,23 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.collectionBehavior.insert(.fullScreenNone)
 
         // Find the menu
-        menu = NSApp.mainMenu
-        if (menu != nil)
+        let menu = NSApp.mainMenu!
+        var item = menu.item(withTitle: "Tuner")!
+        if (item.hasSubmenu)
         {
-            var item = menu.item(withTitle: "Tuner")!
-            if (item.hasSubmenu)
-            {
-                let subMenu = item.submenu!
-                let subItem = subMenu.item(withTitle: "Preferences…")!
-                subItem.target = self
-                subItem.action = #selector(showPreferences)
-            }
+            let subMenu = item.submenu!
+            let subItem = subMenu.item(withTitle: "Preferences…")!
+            subItem.target = self
+            subItem.action = #selector(showPreferences)
+        }
 
-            item = menu.item(withTitle: "File")!
-            if (item.hasSubmenu)
-            {
-                let subMenu = item.submenu!
-                let subItem = subMenu.item(withTitle: "Print…")!
-                subItem.target = self
-                subItem.action = #selector(print)
-            }
+        item = menu.item(withTitle: "File")!
+        if (item.hasSubmenu)
+        {
+            let subMenu = item.submenu!
+            let subItem = subMenu.item(withTitle: "Print…")!
+            subItem.target = self
+            subItem.action = #selector(print)
         }
 
         // Views
