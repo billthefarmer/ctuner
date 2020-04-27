@@ -1,5 +1,5 @@
 //
-//  StaffView.swift
+//  TunerView.swift
 //  Tuner
 //
 //  Created by Bill Farmer on 27/04/2020.
@@ -8,7 +8,7 @@
 
 import UIKit
 
-class StaffView: UIView {
+class DisplayView: UIView {
 
     /*
     // Only override draw() if you perform custom drawing.
