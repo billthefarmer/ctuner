@@ -14,8 +14,7 @@ required.
 ## Using
 
 Play your instrument into your microphone and observe the
-display. The slider at the top left adjusts the microphone input
-level, the oscilloscope display at the top shows the input
+display. The oscilloscope display at the top shows the input
 waveform. The display below shows the spectrum of the input. It
 may be zoomed in and out by clicking on the pane. When zoomed in
 the display shows about ±50 cents around the current note and
