@@ -1,4 +1,4 @@
-# Musical instrument strobe tuner [![Build Status](https://travis-ci.org/billthefarmer/ctuner.svg?branch=master)](https://travis-ci.org/billthefarmer/ctuner)
+# Musical instrument strobe tuner [![Build Status](https://travis-ci.org/billthefarmer/ctuner.svg?branch=master)](https://travis-ci.org/billthefarmer/ctuner) ![.github/workflows/build.yml](https://github.com/billthefarmer/ctuner/workflows/.github/workflows/build.yml/badge.svg)
 
 A musical instrument strobe tuner with cents and frequency
 display. With additional features useful for tuning accordions or
