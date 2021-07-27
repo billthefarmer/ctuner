@@ -1105,7 +1105,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	    x2[i] = 0.0;
 
 	    for (int j = 0; j < 2; j++)
-		x2[i] += xa[(i * 2) + j] / 2.0;
+		x2[i] += xa[(i * 2) + j];
 	}
 
 	// x3 = xa << 3
@@ -1114,7 +1114,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	    x3[i] = 0.0;
 
 	    for (int j = 0; j < 3; j++)
-		x3[i] += xa[(i * 3) + j] / 3.0;
+		x3[i] += xa[(i * 3) + j];
 	}
 
 	// x4 = xa << 4
@@ -1123,7 +1123,7 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	    x4[i] = 0.0;
 
 	    for (int j = 0; j < 4; j++)
-		x2[i] += xa[(i * 4) + j] / 4.0;
+		x4[i] += xa[(i * 4) + j];
 	}
 
 	// x5 = xa << 5
@@ -1132,23 +1132,16 @@ OSStatus AudioEventHandler(EventHandlerCallRef next,
 	    x5[i] = 0.0;
 
 	    for (int j = 0; j < 5; j++)
-		x5[i] += xa[(i * 5) + j] / 5.0;
+		x5[i] += xa[(i * 5) + j];
 	}
 
 	// Add downsamples
 	for (int i = 0; i < Length(xa); i++)
 	{
-	    if (i < Length(x2))
-		xa[i] += x2[i];
-
-	    if (i < Length(x3))
-		xa[i] += x3[i];
-
-	    if (i < Length(x4))
-		xa[i] += x4[i];
-
-	    if (i < Length(x5))
-		xa[i] += x5[i];
+            xa[i] *= (i < Length(x2))? x2[i]: 0.0;
+            xa[i] *= (i < Length(x3))? x3[i]: 0.0;
+            xa[i] *= (i < Length(x4))? x4[i]: 0.0;
+            xa[i] *= (i < Length(x5))? x5[i]: 0.0;
 
 	    // Calculate differences for finding maxima
 	    dxa[i] = xa[i] - xa[i - 1];
