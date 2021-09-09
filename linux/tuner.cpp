@@ -2115,7 +2115,6 @@ void update_options()
 }
 
 // Key press
-
 gboolean key_press(GtkWidget *window, GdkEventKey *event, gpointer data)
 {
     switch (event->keyval)
