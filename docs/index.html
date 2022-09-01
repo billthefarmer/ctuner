@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-gb" lang="en-gb">
 <head>
-  <meta name="generator" content="Hugo 0.101.0" />
+  <meta name="generator" content="Hugo 0.102.0" />
 
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
@@ -13,7 +13,13 @@
   <link rel="stylesheet" href="https://billthefarmer.github.io/ctuner/css/styles.css">
   <link rel="stylesheet" href="https://billthefarmer.github.io/ctuner/css/custom.css">
   <link href="/ctuner/index.xml" rel="alternate" type="application/rss+xml" title="Tuner" />
-
+  <script type="text/javascript">
+    window.onload = function() {
+        let p = document.getElementById("version");
+        let d = new Date().getFullYear();
+        p.innerHTML = p.innerHTML.replace(/\d{4}/, d);
+    }
+  </script>
 </head>
 <body>
 
@@ -49,39 +55,45 @@
       <ul>
     
         
-            
-    <li>
+                <li>
         <a href="#introduction">Introduction</a>
+
         <ul>
             
                 
                     <li><a href="#displays">Displays</a></li>
                 
+            
+                
                     <li><a href="#options">Options</a></li>
                 
             
         </ul>
+
     </li>
 
 
-
         
-            
-    <li>
+                <li>
         <a href="#using">Using</a>
+
         <ul>
             
                 
                     <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
                 
+            
+                
                     <li><a href="#temperaments">Temperaments</a></li>
+                
+            
                 
                     <li><a href="#custom">Custom Temperaments</a></li>
                 
             
         </ul>
-    </li>
 
+    </li>
 
 
         
@@ -97,7 +109,7 @@
   </div>
 
   <div class="version">
-    <p>
+    <p id="version">
   Copyright &copy; 2022 Bill Farmer
 </p>
 
@@ -107,8 +119,7 @@
 <div class="content">
     
         
-            
-    <section class="page" id="introduction">
+                <section class="page" id="introduction">
     
     <h1>
         <a href="#introduction">Introduction</a>
@@ -140,9 +151,10 @@ also available from <a href="https://f-droid.org/packages/org.billthefarmer.tune
     </div>
 </section>
 
+
     
-            
-                <section class="page" id="displays">
+        
+            <section class="page" id="displays">
     
     <h3>
         <a href="#displays">Displays</a>
@@ -163,8 +175,10 @@ error, reference note frequency and actual measured frequency</li>
     </div>
 </section>
 
-            
-                <section class="page" id="options">
+        
+    
+        
+            <section class="page" id="options">
     
     <h3>
         <a href="#options">Options</a>
@@ -189,14 +203,13 @@ error, reference note frequency and actual measured frequency</li>
     </div>
 </section>
 
-            
+        
     
 
 
 
         
-            
-    <section class="page" id="using">
+                <section class="page" id="using">
     
     <h1>
         <a href="#using">Using</a>
@@ -221,9 +234,10 @@ clicking on them. The meter below shows the deviation in cents.</p>
     </div>
 </section>
 
+
     
-            
-                <section class="page" id="shortcuts">
+        
+            <section class="page" id="shortcuts">
     
     <h3>
         <a href="#shortcuts">Keyboard Shortcuts</a>
@@ -251,8 +265,10 @@ options. Some may not be implemented on all versions.</p>
     </div>
 </section>
 
-            
-                <section class="page" id="temperaments">
+        
+    
+        
+            <section class="page" id="temperaments">
     
     <h3>
         <a href="#temperaments">Temperaments</a>
@@ -326,8 +342,10 @@ to choose a key, as the scale will change according to the key.</p>
     </div>
 </section>
 
-            
-                <section class="page" id="custom">
+        
+    
+        
+            <section class="page" id="custom">
     
     <h3>
         <a href="#custom">Custom Temperaments</a>
@@ -352,7 +370,7 @@ or replaced with ones (1.0).</p>
     </div>
 </section>
 
-            
+        
     
 
 
