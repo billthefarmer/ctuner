@@ -6,19 +6,15 @@
     <description>Recent content on Tuner</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-gb</language>
-    <copyright>Copyright &amp;copy; 2018 Bill Farmer</copyright>
-    <lastBuildDate>Mon, 04 Feb 2019 16:35:44 +0000</lastBuildDate>
-    
-	<atom:link href="https://billthefarmer.github.io/ctuner/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <copyright>Copyright &amp;copy; 2006 Bill Farmer</copyright>
+    <lastBuildDate>Mon, 04 Feb 2019 16:35:44 +0000</lastBuildDate><atom:link href="https://billthefarmer.github.io/ctuner/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Displays</title>
       <link>https://billthefarmer.github.io/ctuner/introduction/displays/</link>
       <pubDate>Sat, 02 Feb 2019 14:51:53 +0000</pubDate>
       
       <guid>https://billthefarmer.github.io/ctuner/introduction/displays/</guid>
-      <description> Scope display, showing the waveform picked up by the microphone Spectrum display, showing the spectrum generated, which may be zoomed in to show the tuning of up to eight reeds. Data display showing the current note, cents error, frequency error, reference note frequency and actual measured frequency Strobe display, which may be hidden to remove distraction Staff display, which replaces the strobe display when hidden Meter display, showing the cents error  </description>
+      <description> Scope display, showing the waveform picked up by the microphone Spectrum display, showing the spectrum generated, which may be zoomed in to show the tuning of up to eight reeds. Data display showing the current note, cents error, frequency error, reference note frequency and actual measured frequency Strobe display, which may be hidden to remove distraction Staff display, which replaces the strobe display when hidden Meter display, showing the cents error </description>
     </item>
     
     <item>
@@ -28,7 +24,7 @@
       
       <guid>https://billthefarmer.github.io/ctuner/introduction/options/</guid>
       <description>Some options may not be implemented on all versions.
- Low pass filter option for tuning bass reeds Fundamental filter option to remove spurious results Note filter - show only one note Downsampling option - use with caution Spectrum zoom - show just the current note Display lock - locks all the displays Multiple results - show up to eight results Copy results to clipboard Adjustable reference frequency Transpose the results display Multiple temperaments  </description>
+Low pass filter option for tuning bass reeds Fundamental filter option to remove spurious results Note filter - show only one note Downsampling option - use with caution Spectrum zoom - show just the current note Display lock - locks all the displays Multiple results - show up to eight results Copy results to clipboard Adjustable reference frequency Transpose the results display Multiple temperaments </description>
     </item>
     
     <item>
@@ -38,8 +34,8 @@
       
       <guid>https://billthefarmer.github.io/ctuner/using/shortcuts/</guid>
       <description>There are a number of keyboard shortcuts for toggling the options. Some may not be implemented on all versions.
- F - Low pass filter L - Display lock D - Downsampling M - Multiple notes Z - Spectrum zoom S - Strobe or Staff display K - Change strobe colours C - Copy results to clipboard  The spectrum expand/contract options apply to the non-zoomed spectrum.
- + - Expand the spectrum display – - Contract the spectrum display  </description>
+F - Low pass filter L - Display lock D - Downsampling M - Multiple notes Z - Spectrum zoom S - Strobe or Staff display K - Change strobe colours C - Copy results to clipboard The spectrum expand/contract options apply to the non-zoomed spectrum.
++ - Expand the spectrum display – - Contract the spectrum display </description>
     </item>
     
     <item>
@@ -49,7 +45,7 @@
       
       <guid>https://billthefarmer.github.io/ctuner/using/temperaments/</guid>
       <description>There is a choice of 32 temperaments including Just, Equal, Meantone. If you choose a temperament other than Equal, you will need to choose a key, as the scale will change according to the key.
-           Kirnberger II Kirnberger III Werckmeister III Werckmeister IV   Werckmeister V Werckmeister VI Bach (Klais) Just (Barbour)   Equal Temperament  Pythagorean Van Zwolle Meantone (-1/4)   Silbermann (-1/6) Salinas (-1/3) Zarlino (-2/7) Rossi (-1/5)   Rossi (-2/9) Rameau (-1/4) Kellner Vallotti   Young II Bendeler III Neidhardt I Neidhardt II   Neidhardt III Bruder 1829 Barnes 1977 Lambert 1774   Schlick (H.</description>
+Kirnberger II Kirnberger III Werckmeister III Werckmeister IV Werckmeister V Werckmeister VI Bach (Klais) Just (Barbour) Equal Temperament Pythagorean Van Zwolle Meantone (-1/4) Silbermann (-1/6) Salinas (-1/3) Zarlino (-2/7) Rossi (-1/5) Rossi (-2/9) Rameau (-1/4) Kellner Vallotti Young II Bendeler III Neidhardt I Neidhardt II Neidhardt III Bruder 1829 Barnes 1977 Lambert 1774 Schlick (H.</description>
     </item>
     
     <item>
@@ -60,7 +56,7 @@
       <guid>https://billthefarmer.github.io/ctuner/using/custom/</guid>
       <description>Some versions have the option of custom temperaments, loaded from a file or the app defaults.
 Android Use a text editor to create a file in Tuner/Custom.txt in the user area. The file should contain one or more entries formatted as property entries. The format is documented in Android Java Properties.
-# Custom TemperamentsCustom: 1.000000000, 1.067871094, 1.125000000, 1.185185185, \1.265625000, 1.333333333, 1.423828125, 1.500000000, \1.601806641, 1.687500000, 1.777777778, 1.898437500 Entries will be loaded and displayed in Settings in alphabetical order at the end of the list.</description>
+# Custom TemperamentsCustom: 1.000000000, 1.067871094, 1.125000000, 1.185185185, \1.265625000, 1.333333333, 1.423828125, 1.500000000, \1.601806641, 1.687500000, 1.777777778, 1.898437500Entries will be loaded and displayed in Settings in alphabetical order at the end of the list.</description>
     </item>
     
   </channel>

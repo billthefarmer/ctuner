@@ -252,7 +252,7 @@ void restoreOptions()
     while (!feof(file))
     {
 	char line[64];
-	gboolean found = false;
+	gboolean options = false;
 
 	if (fgets(line, sizeof(line), file) == 0)
 	    continue;
@@ -260,13 +260,13 @@ void restoreOptions()
 	// Look for [Options]
 	if (strncmp(line, "[Options]", strlen("[Options]")) == 0)
 	{
-	    found = true;
+	    options = true;
 	    continue;
 	}
 
-	// Look for option values
-	if (found)
-	{
+        // Look for option values
+        if (options)
+        {
 	    if (strncmp(line, "filter", strlen("filter")) == 0)
 	    {
 		sscanf(line, "filter=%d", &audio.filter);
@@ -297,7 +297,7 @@ void restoreOptions()
 		sscanf(line, "reference=%lf", &audio.reference);
 		continue;
 	    }
-	}
+        }
     }
 
     fclose(file);
