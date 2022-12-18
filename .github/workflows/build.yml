@@ -51,5 +51,5 @@ jobs:
       - name: Upload Dmg
         uses: actions/upload-artifact@v2
         with:
-          name: Tuner-08.dmg
-          path: swift/Tuner-08.dmg
+          name: Tuner-1.08.dmg
+          path: swift/Tuner-1.08.dmg
