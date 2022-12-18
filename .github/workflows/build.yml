@@ -43,6 +43,7 @@ jobs:
           cd swift
           make
           gcc --version
+          find /Library -name 'libswift*.dylib'
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
