@@ -42,7 +42,7 @@ jobs:
         run: |
           cd swift
           make dmg
-          find '/Applications/Xcode*' -name 'libswift*.dylib'
+          find /Applications/Xcode -name 'libswift*.dylib'
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
