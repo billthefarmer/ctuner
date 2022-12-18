@@ -42,6 +42,7 @@ jobs:
         run: |
           cd swift
           make
+          llc --version
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
