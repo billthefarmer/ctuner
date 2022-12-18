@@ -42,7 +42,7 @@ jobs:
         run: |
           cd swift
           make dmg
-          clang --version
+          clang -print-targets
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
