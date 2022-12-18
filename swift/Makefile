@@ -40,9 +40,9 @@ SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 
 SFLAGS = -target x86_64-apple-macosx10.10 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
-	-Xlinker -rpath -Xlinker @loader_path/../Frameworks -v
+	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
-CFLAGS = -target x86_64-apple-macosx10.10
+CFLAGS = -target x86_64-apple-macosx10.10 -v
 
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(RM) -rf $(APPBUNDLE)
