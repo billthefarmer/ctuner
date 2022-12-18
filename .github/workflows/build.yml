@@ -41,11 +41,14 @@ jobs:
       - name: Build tools
         run: |
           cd swift
-          make
-          gcc --version
-          find /Library -name 'libswift*.dylib'
+          make dmg
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
           name: Tuner.app
           path: swift/Tuner.app
+      - name: Upload Dmg
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tuner.dmg
+          path: swift/Tuner.dmg
