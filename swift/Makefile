@@ -138,5 +138,4 @@ $(APPVDMG): $(APPBUNDLE)
 
 dmg:	$(APPVDMG)
 
-%.o: %.m
-	$(CC) -c $(CFLAGS) $< -o $@
+.PHONY:	$(FRAMEWORKS)
