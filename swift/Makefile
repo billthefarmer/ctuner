@@ -45,7 +45,7 @@ SWIFTH = Tuner-Swift.h
 
 SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
-		StaffView.swift TunerView.swift $(AUDIOOBJ)
+		StaffView.swift TunerView.swift
 
 LIBRARIES = libswiftAccelerate.dylib libswiftCoreGraphics.dylib \
 	libswiftMetal.dylib libswiftAppKit.dylib libswiftCoreImage.dylib \
@@ -93,10 +93,10 @@ $(FRAMEWORKS): $(XCODELIB)
 $(APPNAME): $(APPNAMEX86) $(APPNAMEARM)
 	$(LIPO) -create -output $(APPNAME) $(APPNAMEX86) $(APPNAMEARM)
 
-$(APPNAMEX86): $(SOURCES)
+$(APPNAMEX86): $(SOURCES) $(AUDIOOBJX86)
 	$(SWIFTC) $(SOURCES) -o $(APPNAMEX86) $(SFLAGSX86)
 
-$(APPNAMEARM): $(SOURCES)
+$(APPNAMEARM): $(SOURCES) $(AUDIOOBJARM)
 	$(SWIFTC) $(SOURCES) -o $(APPNAMEARM) $(SFLAGSARM)
 
 $(AUDIOOBJX86):	$(AUDIO).m Audio.h Temperaments.h Makefile
