@@ -86,8 +86,8 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
 
 $(FRAMEWORKS): $(XCODELIB)
-	$(FOR) f $(IN) $(LIBRARIES); \
-	$(DO) $(CP) $(XCODELIB)${f} $(FRAMEWORKS); \
+	$(FOR) file $(IN) $(LIBRARIES); \
+	$(DO) $(CP) $(XCODELIB)$$file $(FRAMEWORKS); \
 	$(DONE);
 
 $(APPNAME): $(APPNAMEX86) $(APPNAMEARM)
