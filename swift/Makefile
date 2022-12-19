@@ -11,15 +11,24 @@ MD = mkdir
 CP = cp
 LN = ln
 CC = gcc
+FOR = for
+IN = in
+DO = do
+DONE = done
 
 HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
+LIPO = lipo
 
 AUDIO = Audio
-AUDIOOBJ = $(AUDIO).o
+AUDIOX86OBJ = $(AUDIO).x86.o
+AUDIOARMOBJ = $(AUDIO).arm.o
 
 APPNAME = Tuner
+APPNAMEX86 = $(APPNAME)_x86
+APPNAMEARM = $(APPNAME)_arm
+
 APPVERSION = $(shell $(PLB) -c 'print :CFBundleShortVersionString' Info.plist)
 
 APPBUNDLE = $(APPNAME).app
@@ -38,13 +47,31 @@ SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
 		StaffView.swift TunerView.swift $(AUDIOOBJ)
 
-SFLAGS = -target x86_64-apple-macosx10.10 \
+LIBRARIES = libswiftAccelerate.dylib libswiftCoreGraphics.dylib \
+	libswiftMetal.dylib libswiftAppKit.dylib libswiftCoreImage.dylib \
+	libswiftObjectiveC.dylib libswiftCore.dylib libswiftDarwin.dylib \
+	libswiftos.dylib libswiftCoreAudio.dylib libswiftDispatch.dylib \
+	libswiftQuartzCore.dylib libswiftCoreData.dylib \
+	libswiftFoundation.dylib libswiftSwiftOnoneSupport.dylib \
+	libswiftCoreFoundation.dylib libswiftIOKit.dylib libswiftXPC.dylib
+
+XCODELIB = /Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/macosx/
+
+FRAMEWORKS = Frameworks
+
+SFLAGSX86 = -target x86_64-apple-macosx10.10 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
 	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
-CFLAGS = -target x86_64-apple-macosx10.10
+SFLAGSARM = -target arm64-apple-macosx10.10 \
+	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
+	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
-$(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
+CFLAGSX86 = -target x86_64-apple-macosx10.10
+
+CFLAGSARM = -target arm64-apple-macosx10.10
+
+$(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(RM) -rf $(APPBUNDLE)
 	$(MD) $(APPBUNDLE)
 	$(MD) $(APPBUNDLECONTENTS)
@@ -52,16 +79,30 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist Frameworks
 	$(MD) $(APPBUNDLERESOURCES)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
-	$(CP) -r Frameworks $(APPBUNDLECONTENTS)/
+	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
 	$(CP) MainMenu.nib $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).entitlements $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
 
-$(APPNAME): $(SOURCES)
-	$(SWIFTC) $(SOURCES) -o $(APPNAME) $(SFLAGS)
+$(FRAMEWORKS): $(XCODELIB)
+	$(FOR) f $(IN) $(LIBRARIES); $(DO) $(CP) $(XCODELIB)$f \
+		$(FRAMEWORKS); $(DONE)
 
-$(AUDIOOBJ):	$(AUDIO).m Audio.h Temperaments.h Makefile
+$(APPNAME): $(APPNAMEX86) $(APPNAMEARM)
+    $(LIPO) -create -output $(APPNAME) $(APPNAMEX86) $(APPNAMEARM)
+
+$(APPNAMEX86): $(SOURCES)
+	$(SWIFTC) $(SOURCES) -o $(APPNAMEX86) $(SFLAGSX86)
+
+$(APPNAMEARM): $(SOURCES)
+	$(SWIFTC) $(SOURCES) -o $(APPNAMEARM) $(SFLAGSARM)
+
+$(AUDIOOBJX86):	$(AUDIO).m Audio.h Temperaments.h Makefile
+	$(CC) -c $(CFLAGSX86) $(AUDIO).m -o $(AUDIOOBJX86)
+
+$(AUDIOOBJARM):	$(AUDIO).m Audio.h Temperaments.h Makefile
+	$(CC) -c $(CFLAGSARM) $(AUDIO).m -o $(AUDIOOBJARM)
 
 $(APPNAME).icns: $(APPNAME).png
 	$(RM) -rf $(APPNAME).iconset
