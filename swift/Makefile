@@ -61,11 +61,11 @@ XCODELIB = /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xc
 
 FRAMEWORKS = Frameworks
 
-SFLAGSX86 = -target x86_64-apple-macosx10.10 \
+SFLAGSX86 = -target x86_64-apple-macos10.12 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
 	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
-SFLAGSARM = -target arm64-apple-macosx10.10 \
+SFLAGSARM = -target arm64-apple-macos11 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
 	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
