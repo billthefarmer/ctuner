@@ -39,7 +39,7 @@ var transPopUp: NSPopUpButton!
 var tempPopUp: NSPopUpButton!
 var keyPopUp: NSPopUpButton!
 
-@NSApplicationMain
+// @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     let kWidth  = CGFloat(400)

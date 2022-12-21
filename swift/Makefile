@@ -45,7 +45,7 @@ APPVDMG = $(APPNAME)-$(APPVERSION).dmg
 HEADER = Tuner-Bridging-Header.h
 SWIFTH = Tuner-Swift.h
 
-SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
+SOURCES = main.swift AppDelegate.swift ScopeView.swift SpectrumView.swift \
 		StrobeView.swift DisplayView.swift MeterView.swift \
 		StaffView.swift TunerView.swift
 
