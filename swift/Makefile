@@ -20,6 +20,7 @@ HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
 LIPO = lipo
+IBTOOL = ibtool
 
 AUDIO = Audio
 AUDIOX86OBJ = $(AUDIO).x86.o
@@ -35,6 +36,7 @@ APPBUNDLE = $(APPNAME).app
 APPBUNDLECONTENTS = $(APPBUNDLE)/Contents
 APPBUNDLEMACOS = $(APPBUNDLECONTENTS)/MacOS
 APPBUNDLERESOURCES = $(APPBUNDLECONTENTS)/Resources
+APPBUNDLEBASE = $(APPBUNDLERESOURCES)/Base.lproj
 APPBUNDLEICON = $(APPBUNDLECONTENTS)/Resources
 
 APPDMG = $(APPNAME).dmg
@@ -55,7 +57,7 @@ LIBRARIES = libswiftAccelerate.dylib libswiftCoreGraphics.dylib \
 	libswiftFoundation.dylib libswiftSwiftOnoneSupport.dylib \
 	libswiftCoreFoundation.dylib libswiftIOKit.dylib libswiftXPC.dylib
 
-XCODELIB = /Applications/Xcode_13.2.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/macosx/
+XCODELIB = /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/macosx/
 
 FRAMEWORKS = Frameworks
 
@@ -73,14 +75,14 @@ CFLAGSARM = -target arm64-apple-macosx10.10
 
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(RM) -rf $(APPBUNDLE)
-	$(MD) $(APPBUNDLE)
-	$(MD) $(APPBUNDLECONTENTS)
-	$(MD) $(APPBUNDLEMACOS)
-	$(MD) $(APPBUNDLERESOURCES)
+	$(MD) -p $(APPBUNDLEMACOS)
+	$(MD) -p $(APPBUNDLERESOURCES)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
-	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
+	$(CP) printf %s 'APPL????' $(APPBUNDLECONTENTS)/PkgInfo
 	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
-	$(CP) MainMenu.nib $(APPBUNDLERESOURCES)/
+	$(IBTOOL) --errors --warnings --notices --output-format \
+		human-readable-text --compile $(APPBUNDLEBASE)/MainMenu.nib \
+		MainMenu.xib
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).entitlements $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
