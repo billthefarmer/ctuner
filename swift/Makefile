@@ -69,9 +69,9 @@ SFLAGSARM = -target arm64-apple-macosx10.10 \
 	-import-objc-header $(HEADER) -emit-objc-header-path $(SWIFTH) \
 	-Xlinker -rpath -Xlinker @loader_path/../Frameworks
 
-CFLAGSX86 = -target x86_64-apple-macosx10.10
+CFLAGSX86 = -target x86_64-apple-macos10.12
 
-CFLAGSARM = -target arm64-apple-macosx10.10
+CFLAGSARM = -target arm64-apple-macos11
 
 $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(RM) -rf $(APPBUNDLE)
