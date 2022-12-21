@@ -45,8 +45,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     let kWidth  = CGFloat(400)
     let kHeight = CGFloat(480)
 
-    @IBOutlet weak var window: NSWindow!
-
     var prefWindow: NSWindow!
     var noteWindow: NSWindow!
 
@@ -57,6 +55,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
         // Insert code here to initialize your application
+        let window = NSWindow()
+        let windowDelegate = WindowDelegate()
 
         // Set up window
         window.setContentSize(NSMakeSize(kWidth, kHeight))
@@ -64,6 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.contentAspectRatio = NSMakeSize(kWidth, kHeight)
         window.showsResizeIndicator = true
         window.collectionBehavior.insert(.fullScreenNone)
+        window.delegate = windowDelegate
 
         // Find the menu
         let menu = NSApp.mainMenu!
@@ -189,6 +190,14 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                      selector: #selector(update),
                                      userInfo: nil,
                                      repeats: true)
+
+        class WindowDelegate: NSObject, NSWindowDelegate
+        {
+            func windowWillClose(_ notification: Notification)
+            {
+                NSApplication.shared.terminate(0)
+            }
+        }
     }
 
     // Update
