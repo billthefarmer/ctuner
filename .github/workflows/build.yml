@@ -42,6 +42,7 @@ jobs:
         run: |
           cd swift
           make dmg
+          ls /Applications/Xcode.app/Contents
       - name: Upload Tuner
         uses: actions/upload-artifact@v2
         with:
