@@ -80,8 +80,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
 	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
-	$(IBTOOL) --errors --warnings --notices \
-		--compile $(APPBUNDLEBASE)/MainMenu.nib MainMenu.xib
+	$(IBTOOL) --compile $(APPBUNDLEBASE)/MainMenu.nib MainMenu.xib
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).entitlements $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
