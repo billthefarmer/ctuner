@@ -20,6 +20,7 @@ HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
 LIPO = lipo
+PRINTF = printf
 IBTOOL = ibtool
 
 AUDIO = Audio
@@ -78,7 +79,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(MD) -p $(APPBUNDLEMACOS)
 	$(MD) -p $(APPBUNDLERESOURCES)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
-	$(CP) printf %s 'APPL????' $(APPBUNDLECONTENTS)/PkgInfo
+	$(PRINTF) %s 'APPL????' $(APPBUNDLECONTENTS)/PkgInfo
 	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
 	$(IBTOOL) --errors --warnings --notices --output-format \
 		human-readable-text --compile $(APPBUNDLEBASE)/MainMenu.nib \
