@@ -45,6 +45,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
     let kWidth  = CGFloat(400)
     let kHeight = CGFloat(480)
 
+    let window = NSWindow()
+
     var prefWindow: NSWindow!
     var noteWindow: NSWindow!
 
@@ -55,7 +57,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
         // Insert code here to initialize your application
-        let window = NSWindow()
         let windowDelegate = WindowDelegate()
 
         // Set up window
