@@ -64,7 +64,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
         window.contentAspectRatio = NSMakeSize(kWidth, kHeight)
         window.showsResizeIndicator = true
         window.collectionBehavior.insert(.fullScreenNone)
-        window.delegate = windowDelegate
 
         // Find the menu
         let menu = NSApp.mainMenu!
