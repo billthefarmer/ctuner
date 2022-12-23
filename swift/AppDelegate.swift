@@ -18,7 +18,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import AppKit
+import Cocoa
 
 var zoomBox: NSButton!
 var filtBox: NSButton!
@@ -39,13 +39,13 @@ var transPopUp: NSPopUpButton!
 var tempPopUp: NSPopUpButton!
 var keyPopUp: NSPopUpButton!
 
-// @NSApplicationMain
+@main
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     let kWidth  = CGFloat(400)
     let kHeight = CGFloat(480)
 
-    let window = NSWindow()
+    @IBOutlet var window: NSWindow!
 
     var prefWindow: NSWindow!
     var noteWindow: NSWindow!
@@ -57,7 +57,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
     func applicationDidFinishLaunching(_ aNotification: Notification)
     {
         // Insert code here to initialize your application
-        let windowDelegate = WindowDelegate()
 
         // Set up window
         window.setContentSize(NSMakeSize(kWidth, kHeight))
@@ -191,14 +190,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                      selector: #selector(update),
                                      userInfo: nil,
                                      repeats: true)
-
-        class WindowDelegate: NSObject, NSWindowDelegate
-        {
-            func windowWillClose(_ notification: Notification)
-            {
-                NSApplication.shared.terminate(0)
-            }
-        }
     }
 
     // Update
@@ -817,5 +808,10 @@ class AppDelegate: NSObject, NSApplicationDelegate
         savePreferences()
         timer.invalidate()
         ShutdownAudio()
+    }
+
+    func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool
+    {
+        return true
     }
 }

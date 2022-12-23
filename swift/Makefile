@@ -11,6 +11,7 @@ MD = mkdir
 CP = cp
 LN = ln
 CC = gcc
+
 FOR = for
 IN = in
 DO = do
@@ -20,7 +21,7 @@ HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
 LIPO = lipo
-IBTOOL = ibtool
+IBT = ibtool
 
 AUDIO = Audio
 AUDIOX86OBJ = $(AUDIO).x86.o
@@ -45,9 +46,9 @@ APPVDMG = $(APPNAME)-$(APPVERSION).dmg
 HEADER = Tuner-Bridging-Header.h
 SWIFTH = Tuner-Swift.h
 
-SOURCES = main.swift AppDelegate.swift ScopeView.swift SpectrumView.swift \
-		StrobeView.swift DisplayView.swift MeterView.swift \
-		StaffView.swift TunerView.swift
+SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
+	StrobeView.swift DisplayView.swift MeterView.swift \
+	StaffView.swift TunerView.swift
 
 LIBRARIES = libswiftAccelerate.dylib libswiftCoreGraphics.dylib \
 	libswiftMetal.dylib libswiftAppKit.dylib libswiftCoreImage.dylib \
@@ -80,7 +81,7 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
 	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
-	$(IBTOOL) --compile $(APPBUNDLEBASE)/MainMenu.nib MainMenu.xib
+	$(IBT) --compile $(APPBUNDLEBASE)/MainMenu.nib Base.lproj/MainMenu.xib
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).entitlements $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
