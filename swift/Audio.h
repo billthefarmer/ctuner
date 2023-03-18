@@ -27,6 +27,8 @@
 #include <CoreAudio/CoreAudio.h>
 #include <Accelerate/Accelerate.h>
 
+#undef SWIFT_NORETURN
+
 #include "Tuner-Swift.h"
 
 // Macros
@@ -173,7 +175,7 @@ OSStatus InputProc(void *, AudioUnitRenderActionFlags *,
 		   const AudioTimeStamp *, UInt32, UInt32,
 		   AudioBufferList *);
 char *AudioUnitErrString(OSStatus);
-void (^ProcessAudio)();
+void (^ProcessAudio)(void);
 
 // Boolean array access functions
 bool getNote(int);

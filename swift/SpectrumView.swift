@@ -334,5 +334,5 @@ class SpectrumView: TunerView
 	    "NF".draw(at: NSMakePoint(rect.minX + 2, rect.minY),
                      withAttributes: attribs)
         }
-    }    
+    }
 }

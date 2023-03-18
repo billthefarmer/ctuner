@@ -21,6 +21,7 @@ HDIU = hdiutil
 SWIFTC = swiftc
 PLB = /usr/libexec/PlistBuddy
 LIPO = lipo
+SIPS = sips
 IBT = ibtool
 
 AUDIO = Audio
@@ -48,7 +49,7 @@ SWIFTH = Tuner-Swift.h
 
 SOURCES = AppDelegate.swift ScopeView.swift SpectrumView.swift \
 	StrobeView.swift DisplayView.swift MeterView.swift \
-	StaffView.swift TunerView.swift
+	StaffView.swift TunerView.swift main.swift
 
 LIBRARIES = libswiftAccelerate.dylib libswiftCoreGraphics.dylib \
 	libswiftMetal.dylib libswiftAppKit.dylib libswiftCoreImage.dylib \
@@ -81,7 +82,6 @@ $(APPBUNDLE): $(APPNAME) $(APPNAME).icns Info.plist $(FRAMEWORKS)
 	$(CP) Info.plist $(APPBUNDLECONTENTS)/
 	$(CP) PkgInfo $(APPBUNDLECONTENTS)/
 	$(CP) -r $(FRAMEWORKS) $(APPBUNDLECONTENTS)/
-	$(IBT) --compile $(APPBUNDLEBASE)/MainMenu.nib Base.lproj/MainMenu.xib
 	$(CP) $(APPNAME).icns $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME).entitlements $(APPBUNDLERESOURCES)/
 	$(CP) $(APPNAME) $(APPBUNDLEMACOS)/
@@ -100,27 +100,27 @@ $(APPNAMEX86): $(SOURCES) $(AUDIOX86OBJ)
 $(APPNAMEARM): $(SOURCES) $(AUDIOARMOBJ)
 	$(SWIFTC) $(SOURCES) $(AUDIOARMOBJ) -o $(APPNAMEARM) $(SFLAGSARM)
 
-$(AUDIOX86OBJ):	$(AUDIO).m Audio.h Temperaments.h Makefile
+$(AUDIOX86OBJ):	$(AUDIO).m $(AUDIO).h Temperaments.h Makefile
 	$(CC) -c $(CFLAGSX86) $(AUDIO).m -o $(AUDIOX86OBJ)
 
-$(AUDIOARMOBJ):	$(AUDIO).m Audio.h Temperaments.h Makefile
+$(AUDIOARMOBJ):	$(AUDIO).m $(AUDIO).h Temperaments.h Makefile
 	$(CC) -c $(CFLAGSARM) $(AUDIO).m -o $(AUDIOARMOBJ)
 
 $(APPNAME).icns: $(APPNAME).png
 	$(RM) -rf $(APPNAME).iconset
 	$(MD) $(APPNAME).iconset
-	sips -z 16 16   $(APPNAME).png --out $(APPNAME).iconset/icon_16x16.png
-	sips -z 32 32   $(APPNAME).png --out $(APPNAME).iconset/icon_16x16@2x.png
-	sips -z 32 32   $(APPNAME).png --out $(APPNAME).iconset/icon_32x32.png
-	sips -z 64 64   $(APPNAME).png --out $(APPNAME).iconset/icon_32x32@2x.png
-	sips -z 128 128 $(APPNAME).png --out $(APPNAME).iconset/icon_128x128.png
-	sips -z 256 256 $(APPNAME).png --out $(APPNAME).iconset/icon_128x128@2x.png
-	sips -z 256 256 $(APPNAME).png --out $(APPNAME).iconset/icon_256x256.png
-	sips -z 512 512 $(APPNAME).png --out $(APPNAME).iconset/icon_256x256@2x.png
-	sips -z 512 512 $(APPNAME).png --out $(APPNAME).iconset/icon_512x512.png
-	$(CP) $(APPNAME).png $(APPNAME).iconset/icon_512x512@2x.png
+	$(SIPS) -z 16 16   $(APPNAME).png --out $(APPNAME).iconset/icon_16x16.png
+	$(SIPS) -z 32 32   $(APPNAME).png --out $(APPNAME).iconset/icon_16x16@2x.png
+	$(SIPS) -z 32 32   $(APPNAME).png --out $(APPNAME).iconset/icon_32x32.png
+	$(SIPS) -z 64 64   $(APPNAME).png --out $(APPNAME).iconset/icon_32x32@2x.png
+	$(SIPS) -z 128 128 $(APPNAME).png --out $(APPNAME).iconset/icon_128x128.png
+	$(SIPS) -z 256 256 $(APPNAME).png --out $(APPNAME).iconset/icon_128x128@2x.png
+	$(SIPS) -z 256 256 $(APPNAME).png --out $(APPNAME).iconset/icon_256x256.png
+	$(SIPS) -z 512 512 $(APPNAME).png --out $(APPNAME).iconset/icon_256x256@2x.png
+	$(SIPS) -z 512 512 $(APPNAME).png --out $(APPNAME).iconset/icon_512x512.png
+	$(SIPS) -z 1024 1024 $(APPNAME).png --out $(APPNAME).iconset/icon_512x512@2x.png
 	iconutil -c icns -o $(APPNAME).icns $(APPNAME).iconset
-	$(RM) -r $(APPNAME).iconset
+#	$(RM) -r $(APPNAME).iconset
 
 clean:
 	$(RM) -rf $(APPBUNDLE)

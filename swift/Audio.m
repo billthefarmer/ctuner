@@ -90,7 +90,7 @@ OSStatus SetupAudio()
     AudioObjectPropertyAddress inputDeviceAOPA =
         {kAudioHardwarePropertyDefaultInputDevice,
          kAudioObjectPropertyScopeGlobal,
-         kAudioObjectPropertyElementMaster};
+         kAudioObjectPropertyElementMain};
 
     // Get device
     status = AudioObjectGetPropertyData(kAudioObjectSystemObject,
@@ -126,7 +126,7 @@ OSStatus SetupAudio()
     AudioObjectPropertyAddress audioDeviceAOPA =
         {kAudioDevicePropertyNominalSampleRate,
          kAudioObjectPropertyScopeGlobal,
-         kAudioObjectPropertyElementMaster};
+         kAudioObjectPropertyElementMain};
 
     // Set the sample rate, if in range, ignore errors
     status = AudioObjectSetPropertyData(id, &audioDeviceAOPA, 0, nil,
@@ -369,7 +369,7 @@ OSStatus InputProc(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
 }
 
 // Process audio
-void (^ProcessAudio)() = ^
+void (^ProcessAudio)(void) = ^
 {
     enum
     {kTimerCount = 64,

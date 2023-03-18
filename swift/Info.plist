@@ -28,7 +28,7 @@
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.music</string>
     <key>LSMinimumSystemVersion</key>
-    <string>10.10</string>
+    <string>10.12</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2020 Bill Farmer. All rights reserved.</string>
     <key>NSMainNibFile</key>
