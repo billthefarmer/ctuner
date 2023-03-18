@@ -46,7 +46,7 @@ var transPopUp: NSPopUpButton!
 var tempPopUp: NSPopUpButton!
 var keyPopUp: NSPopUpButton!
 
-// @NSApplicationMain
+// AppDelegate
 class AppDelegate: NSObject, NSApplicationDelegate
 {
     let kWidth  = CGFloat(400)
@@ -82,12 +82,14 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
 	return NSLocalizedString("Tuner", comment: "The name of this application")
     }()
-    
+
+    // applicationWillFinishLaunching
     func applicationWillFinishLaunching(_ notification: Notification)
     {
         populateMainMenu()
     }
-    
+
+    // populateMainMenu
     func populateMainMenu()
     {
         let mainMenu = NSMenu(title: "MainMenu")
@@ -131,7 +133,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
 
 	NSApp.mainMenu = mainMenu
     }
-    
+
+    // populateApplicationMenu
     func populateApplicationMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("About", comment: "About menu item") + " " + applicationName
@@ -146,7 +149,6 @@ class AppDelegate: NSObject, NSApplicationDelegate
 	menuItem = menu.addItem(withTitle: title,
                                 action: #selector(showPreferences),
                                 keyEquivalent: ",")
-	// menuItem.target = NSApp
 
 	menu.addItem(NSMenuItem.separator())
 
@@ -185,7 +187,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                 keyEquivalent: "q")
 	menuItem.target = NSApp
     }
-    
+
+    // populateFileMenu
     func populateFileMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Print…", comment: "Print menu item")
@@ -200,7 +203,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                      action: #selector(NSWindow.performClose(_: )),
                      keyEquivalent: "w")
     }
-    
+
+    // populateEditMenu
     func populateEditMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Undo", comment: "Undo menu item")
@@ -255,7 +259,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
 	populateSpellingMenu(spellingMenu)
 	menu.setSubmenu(spellingMenu, for: menuItem)
     }
-    
+
+    // populateFindMenu
     func populateFindMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Find…", comment: "Find… menu item")
@@ -288,7 +293,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                      action: #selector(NSResponder.centerSelectionInVisibleArea(_: )),
                      keyEquivalent: "j")
     }
-    
+
+    // populateSpellingMenu
     func populateSpellingMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Spelling…", comment: "Spelling… menu item")
@@ -307,7 +313,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                      action: #selector(NSTextView.toggleContinuousSpellChecking(_: )),
                      keyEquivalent: "")
     }
-    
+
+    // populateViewMenu
     func populateViewMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Show Toolbar", comment: "Show Toolbar menu item")
@@ -329,7 +336,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                 keyEquivalent: "f")
 	menuItem.keyEquivalentModifierMask = [.command, .control]
     }
-    
+
+    // populateWindowMenu
     func populateWindowMenu(_ menu: NSMenu)
     {
         var title = NSLocalizedString("Minimize", comment: "Minimize menu item")
@@ -349,7 +357,8 @@ class AppDelegate: NSObject, NSApplicationDelegate
                                     keyEquivalent: "")
 	menuItem.target = NSApp
     }
-    
+
+    // populateHelpMenu
     func populateHelpMenu(_ menu: NSMenu)
     {
         let title = applicationName + " " + NSLocalizedString("Help", comment: "Help menu item") 
@@ -747,6 +756,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         prefWindow.makeKeyAndOrderFront(self)
     }
 
+    // showNotes
     @objc func showNotes(sender: NSButton)
     {
         if (noteWindow != nil)
@@ -920,6 +930,7 @@ class AppDelegate: NSObject, NSApplicationDelegate
         }
     }
 
+    // popUpChanged
     @objc func popUpChanged(sender: NSPopUpButton)
     {
         let index = sender.indexOfSelectedItem

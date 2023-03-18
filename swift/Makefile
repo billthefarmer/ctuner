@@ -120,7 +120,7 @@ $(APPNAME).icns: $(APPNAME).png
 	$(SIPS) -z 512 512 $(APPNAME).png --out $(APPNAME).iconset/icon_512x512.png
 	$(SIPS) -z 1024 1024 $(APPNAME).png --out $(APPNAME).iconset/icon_512x512@2x.png
 	iconutil -c icns -o $(APPNAME).icns $(APPNAME).iconset
-#	$(RM) -r $(APPNAME).iconset
+	$(RM) -r $(APPNAME).iconset
 
 clean:
 	$(RM) -rf $(APPBUNDLE)
