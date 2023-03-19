@@ -23,8 +23,8 @@ import Cocoa
 // Apparently these aren't declared anywhere
 @objc protocol EditMenuActions
 {
-    func redo(_ sender:AnyObject)
-    func undo(_ sender:AnyObject)
+    func redo(_ sender: AnyObject)
+    func undo(_ sender: AnyObject)
 }
 
 var zoomBox: NSButton!

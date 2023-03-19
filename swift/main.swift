@@ -20,8 +20,6 @@
 
 import Cocoa
 
-print("main...")
-
 autoreleasepool
 {
     let delegate = AppDelegate()
